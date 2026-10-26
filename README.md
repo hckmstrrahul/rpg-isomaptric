@@ -6,11 +6,24 @@
 
 A series of miniature, location-inspired RPG worlds for the browser. **Chapter 001 is London:** a living Three.js diorama with an explorer, traffic, river launches, day and night, and a playful destructible sandbox. More locations are the direction of the project; London is the one available world today.
 
-[![The explorer beside the Thames in a miniature London](public/social/og-london.jpg)](https://rpg-isomaptric.vercel.app)
+[Map composition inspiration](https://x.com/hckmstrrahul/status/1729860085982040454). This is an artistic London-inspired world, not a geographically accurate map. Interiors, multiplayer and saved-world persistence are not implemented.
 
-<p align="center"><img src="docs/media/london-loop.gif" width="400" height="225" alt="A six-second looping reveal: the explorer runs as the camera eases out to reveal London and returns." /></p>
+<table>
+  <tr>
+    <td width="50%" align="center" valign="middle">
+      <a href="https://rpg-isomaptric.vercel.app"><img src="public/social/og-london.jpg" width="100%" alt="The explorer beside the Thames in a miniature London" /></a>
+    </td>
+    <td width="50%" align="center" valign="middle">
+      <img src="docs/media/london-loop.gif" width="100%" alt="A six-second looping reveal: the explorer runs as the camera eases out to reveal London and returns." />
+    </td>
+  </tr>
+</table>
 
-[Watch the sharper six-second MP4](https://rpg-isomaptric.vercel.app/social/london-reveal.mp4). All screenshots, the loop, and the character icon are rendered from the actual project.
+<p align="center">
+  <a href="https://youtu.be/l_WwsOZ4Jgw"><img src="https://i.ytimg.com/vi/l_WwsOZ4Jgw/sddefault.jpg" width="640" alt="Watch London as a Tiny Playable World on YouTube" /></a>
+</p>
+
+[▶ Watch the gameplay video on YouTube](https://youtu.be/l_WwsOZ4Jgw)
 
 ## One city, many little systems
 
@@ -89,5 +102,3 @@ Read [the engineering guide](docs/ENGINEERING.md) for architecture, algorithms, 
 Original code, procedural scene definitions and documentation are **MIT licensed**, copyright © 2026 Rahul Chakraborty ([hckmstrrahul](https://github.com/hckmstrrahul)). Reuse requires retaining the copyright and license notice; visible in-app credit is welcome but not required by the project's MIT license.
 
 Third-party assets keep their own licenses. The small NVIDIA material/bin set is **CC BY 4.0**; lunar maps are credited to **NASA's Scientific Visualization Studio**. See [NOTICE](NOTICE), [NVIDIA attribution](public/assets/nvidia/manifest.json), [Moon credits](public/assets/moon/CREDITS.md), and the [in-app credits](https://rpg-isomaptric.vercel.app/credits.html).
-
-[Map composition inspiration](https://x.com/hckmstrrahul/status/1729860085982040454). This is an artistic London-inspired world, not a geographically accurate map. Interiors, multiplayer and saved-world persistence are not implemented.
