@@ -19,9 +19,7 @@ A series of miniature, location-inspired RPG worlds for the browser. **Chapter 0
   </tr>
 </table>
 
-<p align="center">
-  <a href="https://youtu.be/l_WwsOZ4Jgw"><img src="https://i.ytimg.com/vi/l_WwsOZ4Jgw/sddefault.jpg" width="640" alt="Watch London as a Tiny Playable World on YouTube" /></a>
-</p>
+https://github.com/user-attachments/assets/3212fd84-550a-4bce-9fa4-1f4871d053b8
 
 [▶ Watch the gameplay video on YouTube](https://youtu.be/l_WwsOZ4Jgw)
 
