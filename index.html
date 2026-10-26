@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#a8c8bd" />
+    <meta name="description" content="Tiny playable isometric worlds" />
+    <link rel="canonical" href="https://rpg-isomaptric.vercel.app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="rpg isomaptric" />
+    <meta property="og:description" content="Tiny playable isometric worlds" />
+    <meta property="og:site_name" content="rpg isomaptric" />
+    <meta property="og:url" content="https://rpg-isomaptric.vercel.app/" />
+    <meta property="og:image" content="https://rpg-isomaptric.vercel.app/social/og-london.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:alt" content="The goggle-wearing explorer on a London street, surrounded by a miniature isometric city." />
+    <meta property="og:video" content="https://rpg-isomaptric.vercel.app/social/london-reveal.mp4" />
+    <meta property="og:video:type" content="video/mp4" />
+    <meta property="og:video:width" content="960" />
+    <meta property="og:video:height" content="540" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@hckmstrrahul" />
+    <meta name="twitter:title" content="rpg isomaptric" />
+    <meta name="twitter:description" content="Tiny playable isometric worlds" />
+    <meta name="twitter:image" content="https://rpg-isomaptric.vercel.app/social/og-london.jpg" />
+    <script id="appearance-bootstrap">
+      (() => {
+        let night = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        try {
+          const saved = localStorage.getItem('little-london-appearance');
+          if (saved === 'night' || saved === 'day') night = saved === 'night';
+        } catch { /* The system theme still works when storage is unavailable. */ }
+        document.documentElement.dataset.theme = night ? 'night' : 'day';
+        document.documentElement.style.colorScheme = night ? 'dark' : 'light';
+        document.querySelector('meta[name="theme-color"]').content = night ? '#171c22' : '#a8c8bd';
+      })();
+    </script>
+    <style>
+      html{background:#fbfaef;color:#284a43;font-family:Inter,system-ui,sans-serif}
+      html[data-theme=night]{background:#252d33;color:#dde3e4}
+      .boot-loading{position:fixed;inset:0;display:grid;place-content:center;text-align:center;background:inherit}
+      .boot-loading h2{font-size:1.75rem;font-weight:550;letter-spacing:-.03em}
+    </style>
+    <title>rpg isomaptric</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+  </head>
+  <body>
+    <main id="app" aria-label="City explorer"><div class="boot-loading" role="status" aria-live="polite"><h2>A little world awaits</h2></div></main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

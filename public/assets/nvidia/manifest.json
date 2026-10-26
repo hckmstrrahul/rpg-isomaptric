@@ -1,0 +1,25 @@
+{
+  "creator": "NVIDIA",
+  "license": "CC BY 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "revision": "524747d9b5e1f21b5b18b56041788c01d745f1a1",
+  "sources": [
+    {
+      "package": "environment_floor_a01",
+      "url": "https://huggingface.co/datasets/nvidia/simready-assets/tree/524747d9b5e1f21b5b18b56041788c01d745f1a1/environment_floor_a01"
+    },
+    {
+      "package": "barrier_wall_plastic_orange_a03",
+      "url": "https://huggingface.co/datasets/nvidia/simready-assets/tree/524747d9b5e1f21b5b18b56041788c01d745f1a1/barrier_wall_plastic_orange_a03"
+    },
+    {
+      "package": "trashCan_wheeled_green_a01",
+      "url": "https://huggingface.co/datasets/nvidia/simready-assets/tree/524747d9b5e1f21b5b18b56041788c01d745f1a1/trashCan_wheeled_green_a01"
+    }
+  ],
+  "adaptations": [
+    "Concrete: 512px maps, reduced albedo contrast and saturation, subtle normal intensity in app.",
+    "Brushed aluminium: 256px maps, reduced albedo contrast and saturation, painted tint in app.",
+    "Wheelie bin: original USD mesh decimated, flattened hierarchy, simplified green/charcoal materials, normalized to 1.15 world units, exported to GLB without physics or source textures."
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "name": "rpg-isomaptric",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "audit": "node --experimental-strip-types scripts/audit-city.ts",
+    "audit:ui": "node --experimental-strip-types scripts/audit-interface.ts",
+    "check": "npm test && npm run audit && npm run audit:ui && npm run build",
+    "check:browser": "node scripts/browser-smoke.mjs",
+    "capture:media": "node scripts/capture-media.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@hugeicons/core-free-icons": "^4.3.5",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "sonner": "^2.0.8",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.180.0",
+    "playwright": "1.61.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12"
+  },
+  "description": "Tiny playable isometric worlds. Chapter 001: London.",
+  "license": "MIT",
+  "author": "Rahul Chakraborty <17765524+hckmstrrahul@users.noreply.github.com>",
+  "homepage": "https://rpg-isomaptric.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hckmstrrahul/rpg-isomaptric.git"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  }
+}

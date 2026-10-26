@@ -1,0 +1,9 @@
+.git
+.github
+docs
+tests
+scripts
+artifacts
+node_modules
+README.md
+CONTRIBUTING.md

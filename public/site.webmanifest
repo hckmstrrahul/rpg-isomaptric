@@ -1,0 +1,23 @@
+{
+  "name": "rpg isomaptric",
+  "short_name": "isomaptric",
+  "description": "Tiny playable isometric worlds",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#252d33",
+  "theme_color": "#252d33",
+  "icons": [
+    {
+      "src": "/favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/character-head.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

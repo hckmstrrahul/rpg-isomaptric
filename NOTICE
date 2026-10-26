@@ -1,0 +1,27 @@
+rpg isomaptric — Tiny playable isometric worlds
+Copyright (c) 2026 Rahul Chakraborty (hckmstrrahul)
+https://github.com/hckmstrrahul/rpg-isomaptric
+
+Original source, procedural scene definitions and project documentation:
+MIT License. Preserve the copyright and license notice when redistributing
+copies or substantial portions. Visible in-app credit is appreciated but is
+not required by this project's MIT license.
+
+NVIDIA SimReady assets: CC BY 4.0. The adapted concrete, metal and wheelie-bin
+assets must retain NVIDIA attribution. Source URLs, pinned revision and changes
+are recorded in public/assets/nvidia/manifest.json and credits.html.
+
+Lunar color and elevation maps: NASA Scientific Visualization Studio,
+Lunar Reconnaissance Orbiter / CGI Moon Kit. See
+public/assets/moon/CREDITS.md for the source and processing details.
+
+Inter: Rasmus Andersson and contributors, SIL Open Font License 1.1.
+Hugeicons free icons: MIT License.
+Three.js, React, Sonner and other dependencies: their respective package
+licenses apply. They are not relicensed by this file.
+
+Composition inspiration: Rahul Chakraborty's map reference post
+https://x.com/hckmstrrahul/status/1729860085982040454
+
+This is an artistic London-inspired diorama, not a navigation map or an
+affiliated representation of the buildings, attractions or their operators.
