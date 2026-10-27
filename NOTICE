@@ -16,6 +16,13 @@ Lunar Reconnaissance Orbiter / CGI Moon Kit. See
 public/assets/moon/CREDITS.md for the source and processing details.
 
 Inter: Rasmus Andersson and contributors, SIL Open Font License 1.1.
+Aref Ruqaa: Copyright 2015-2020 The Aref Ruqaa Project Authors,
+SIL Open Font License 1.1; see public/licenses/aref-ruqaa-OFL.txt.
+Font source: https://github.com/google/fonts/tree/main/ofl/arefruqaa
+Museum inscription excerpts: H.H. Sheikh Mohammed bin Rashid Al Maktoum.
+The actual facade calligraphy is by Mattar bin Lahej. Our miniature uses
+short excerpts in Aref Ruqaa as an artistic interpretation, not that artwork.
+Reference: https://museumofthefuture.ae/en/get-help
 Hugeicons free icons: MIT License.
 Three.js, React, Sonner and other dependencies: their respective package
 licenses apply. They are not relicensed by this file.
@@ -23,5 +30,5 @@ licenses apply. They are not relicensed by this file.
 Composition inspiration: Rahul Chakraborty's map reference post
 https://x.com/hckmstrrahul/status/1729860085982040454
 
-This is an artistic London-inspired diorama, not a navigation map or an
+These are artistic London- and Dubai-inspired dioramas, not navigation maps or an
 affiliated representation of the buildings, attractions or their operators.

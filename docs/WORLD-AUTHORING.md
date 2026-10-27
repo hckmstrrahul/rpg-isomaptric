@@ -8,7 +8,7 @@
 - `hud.ts` and `style.css` own the location pill. Links support ordinary navigation, shared URLs, keyboard focus and reduced motion. Selection reconstructs one scene through the themed loader, preserving appearance but resetting temporary world edits.
 - `main.ts` dynamically imports the selected constructor. Only load assets the chapter needs. Return the common scene interface: objects, obstacles, water, update callbacks, lighting and landmarks.
 - `layout.ts` dispatches terrain, water, bridge, arrival and landmark queries. `cityPlan.ts` supplies the selected road plan. These queries also feed planting, teleporting, collision and the minimap.
-- `worlds/dubai/plan.ts`, `architecture.ts` and `world.ts` demonstrate a separate location. London's mature geometry remains in its existing modules; a wholesale move was unnecessary.
+- `worlds/dubai/plan.ts`, `architecture.ts`, `landmarks.ts`, `marina.ts`, `surfaces.ts` and `world.ts` demonstrate a separate location. London's mature geometry remains in its existing modules; a wholesale move was unnecessary.
 
 ## Start with a coherent composition
 

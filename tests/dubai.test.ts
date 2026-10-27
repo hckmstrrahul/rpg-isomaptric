@@ -7,7 +7,8 @@ globalThis.window={location:{href:'https://rpg-isomaptric.vercel.app/?world=duba
 const {createDubaiWorld}=await import('../src/worlds/dubai/world.ts');
 const {canWalk,PLAYER_SPAWN,LANDMARKS,resolveTeleport,surfaceHeight,GROUND,WATER_HEIGHT}=await import('../src/layout.ts');
 const {plotTouchesRoad}=await import('../src/cityPlan.ts');
-const {dubaiLand,dubaiBridge,DUBAI_BRIDGES}=await import('../src/worlds/dubai/plan.ts');
+const {dubaiLand,dubaiBridge,dubaiBridgeLift,DUBAI_BRIDGES,BAY,BAY_OUTLINE,MARINA_CRESCENT,MARINA_ROAD_RADIUS,DUBAI_PATHS}=await import('../src/worlds/dubai/plan.ts');
+const {strokeSections,strokeGeometry,streetWidthAt}=await import('../src/worlds/dubai/surfaces.ts');
 const {plantingIssue}=await import('../src/sandbox.ts');
 const scene=new T.Scene(),world=createDubaiWorld(scene);
 const moving=new Set(world.traffic.cars.flatMap(c=>world.objects.models.get(c.object.id)!.obstacles));
@@ -26,6 +27,38 @@ test('Dubai towers and sculptural waterfront buildings leave every road clear',(
  const conflicts=world.objects.state.objects.filter(o=>o.kind==='building'&&plotTouchesRoad(o,world.roads,.1));
  assert.deepEqual(conflicts.map(o=>`${o.name} at ${o.x}, ${o.z}`),[]);
  for(const route of world.traffic.routes)for(let d=0;d<route.length;d+=1){const p=route.sample(d).point;assert.ok(canWalk(p.x,p.z,staticObstacles,.65),`Traffic blocked at ${p.x}, ${p.z}`);}
+});
+test('named Dubai landmarks survive placement and the museum has a genuine open void',()=>{
+ const names=world.objects.state.objects.filter(o=>o.kind==='building').map(o=>o.name);
+ for(const name of ['Burj Khalifa','Cayan Tower','Emirates Office Tower','Jumeirah Emirates Tower','Index Tower','Museum of the Future','Burj Al Arab'])assert.ok(names.includes(name),`${name} was rejected during placement`);
+ const burj=world.towers.find(t=>t.userData.architecture==='burj')!,cayan=world.towers.find(t=>t.userData.architecture==='cayan')!;
+ assert.equal(cayan.userData.twist,Math.PI/2);
+ const height=(o:T.Object3D)=>new T.Box3().setFromObject(o).getSize(new T.Vector3()).y;
+ assert.ok(world.towers.filter(t=>t!==burj).every(t=>height(burj)>height(t)*1.8));
+ const shell=scene.getObjectByName('Continuous silver torus and elliptical void')!;scene.updateMatrixWorld(true);
+ const origin=new T.Vector3(2,8.6,12).applyMatrix4(shell.matrixWorld),direction=new T.Vector3(0,0,-1).transformDirection(shell.matrixWorld);
+ assert.equal(new T.Raycaster(origin,direction).intersectObject(shell,true).length,0,'The elliptical void is filled');
+ const shellBounds=new T.Box3().setFromObject(shell);assert.ok(shellBounds.min.y<GROUND+1.8,'The shell floats above its mound');
+ assert.ok(shellBounds.max.y-shellBounds.min.y>16.5,'The museum needs its enlarged silhouette');
+});
+test('marina shoreline, circular road and connected promenade share one centre',()=>{
+ for(const p of BAY_OUTLINE)assert.ok(Math.abs(Math.hypot(p.x-BAY.x,p.z-BAY.z)-BAY.rx)<1e-8);
+ for(const p of MARINA_CRESCENT.slice(24,146))assert.ok(Math.abs(Math.hypot(p.x-BAY.x,p.z-BAY.z)-MARINA_ROAD_RADIUS)<1e-8);
+ for(const path of DUBAI_PATHS)for(const s of strokeSections(path.points,path.width))for(const p of [s.left,s.center,s.right])assert.ok(dubaiLand(p.x,p.z),`Promenade leaves dry land at ${p.x}, ${p.z}`);
+ const quay=DUBAI_PATHS[0],arrival=DUBAI_PATHS[1];
+ assert.ok(Math.abs(Math.hypot(arrival.points[0].x-BAY.x,arrival.points[0].z-BAY.z)-(BAY.rx+2.5))<1e-8);
+ assert.equal(quay.points[0].x,89);assert.equal(quay.points.at(-1)!.x,89);assert.equal(arrival.points.at(-1)!.x,36);
+ for(const path of DUBAI_PATHS)for(const p of path.points)assert.ok(canWalk(p.x,p.z,staticObstacles,.3),`Path is blocked at ${p.x}, ${p.z}`);
+});
+test('road joins use butt ends and continuous miters; bridge ramps carry the road surface',()=>{
+ const sections=strokeSections([{x:0,z:0},{x:10,z:0},{x:10,z:10}],4);
+ assert.equal(sections[0].left.x,0);assert.equal(sections[0].right.x,0);
+ assert.equal(sections[2].left.z,10);assert.equal(sections[2].right.z,10);
+ assert.deepEqual(sections[1].left,{x:12,z:-2});assert.deepEqual(sections[1].right,{x:8,z:2});
+ const loop=strokeSections([{x:0,z:0},{x:10,z:0},{x:10,z:10},{x:0,z:10},{x:0,z:0}],4);assert.deepEqual(loop[0],loop.at(-1));
+ const coast=world.roads.find(r=>r.id==='coastal-boulevard')!,road=strokeGeometry(coast.points,p=>streetWidthAt(coast,p),(x,z)=>GROUND+.07+dubaiBridgeLift(x,z)),p=road.getAttribute('position');
+ let deckVertices=0;for(let i=0;i<p.count;i++)if(p.getX(i)>86&&p.getZ(i)>24&&p.getZ(i)<40){deckVertices++;assert.ok(Math.abs(p.getY(i)-(GROUND+.47))<1e-5);assert.ok(Math.abs(Math.abs(p.getX(i)-89)-2.35)<1e-5);}
+ assert.ok(deckVertices>20,'Long straight bridge segment has no ramp/deck samples');road.dispose();
 });
 test('Dubai geometry is finite and foliage / dynamic lighting remain batched',()=>{
  let meshes=0,uniqueTriangles=0;scene.traverse(o=>{if(o instanceof T.Mesh){meshes++;const p=o.geometry.getAttribute('position');for(const v of p.array)assert.ok(Number.isFinite(v));uniqueTriangles+=(o.geometry.index?.count??p.count)/3;}});
@@ -49,11 +82,20 @@ test('destroyed palms release collision and reuse their own instance slots',()=>
  world.objects.damage(palm.object,palm.object.maxHp,1000);assert.ok(!world.obstacles.includes(palm.obstacles[0]));
  const next=world.objects.addTree(palm.object.x,palm.object.z,.7,false,0,'palm')!;assert.equal(world.objects.trees.get(next.id)!.index,old);assert.ok(palm.object.destroyed);
 });
-test('all eight Dubai arrivals connect through the shared walking map',()=>{
+test('all Dubai arrivals connect through the shared walking map',()=>{
  const origin={x:Math.round(PLAYER_SPAWN.x),z:Math.round(PLAYER_SPAWN.z)},queue=[origin],seen=new Set([`${origin.x},${origin.z}`]);
  for(let i=0;i<queue.length;i++)for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
    const p={x:queue[i].x+dx,z:queue[i].z+dz},key=`${p.x},${p.z}`;
    if(!seen.has(key)&&canWalk(p.x,p.z,staticObstacles)){seen.add(key);queue.push(p);}
  }
  for(const l of LANDMARKS)assert.ok(queue.some(p=>Math.hypot(p.x-l.visitX,p.z-l.visitZ)<1.5),`${l.id} is disconnected`);
+});
+test('twenty moored yachts remain in their berths while passing boats stay clear',()=>{
+ assert.equal(world.mooredBoats.length,20);assert.equal(world.boats.filter(b=>b.group.userData.sailing).length,6);
+ const moored=world.mooredBoats.map(b=>({boat:b,x:b.group.position.x,z:b.group.position.z}));
+ for(let i=0;i<160;i++){
+   world.update(1000+i*2);scene.updateMatrixWorld(true);
+   const boxes=moored.map(({boat,x,z})=>{assert.equal(boat.group.position.x,x);assert.equal(boat.group.position.z,z);assert.ok(!dubaiLand(x,z));return world.objects.models.get(boat.object.id)!.localBounds.clone().applyMatrix4(boat.group.matrixWorld);});
+   for(const boat of world.boats){const p=boat.group.position;if(boat.group.userData.sailing)assert.ok(!dubaiBridge(p.x,p.z));const box=world.objects.models.get(boat.object.id)!.localBounds.clone().applyMatrix4(boat.group.matrixWorld);assert.ok(boxes.every(berth=>!box.intersectsBox(berth)),'Passing boat clips a berth');assert.ok(world.marina.bounds.every(pier=>!box.intersectsBox(pier)),'Passing boat clips a pier');}
+ }
 });

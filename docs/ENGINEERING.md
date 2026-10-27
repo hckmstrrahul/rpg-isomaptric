@@ -27,7 +27,7 @@ flowchart LR
 | Area | Main modules | Responsibility |
 | --- | --- | --- |
 | Location | `worldLocation.ts`, `worlds/dubai/plan.ts` | URL/storage selection, chapter metadata, Dubai coastline and route data |
-| Dubai geometry | `worlds/dubai/world.ts`, `worlds/dubai/architecture.ts` | Marina terrain, procedural towers, sculptural shells, villas, palms and shared simulation assembly |
+| Dubai geometry | `worlds/dubai/world.ts`, `architecture.ts`, `landmarks.ts`, `marina.ts`, `surfaces.ts` | Concentric harbour/road geometry, named landmark models, yacht berths, villas, palms and shared simulation assembly |
 | City data | `cityPlan.ts`, `layout.ts`, `boundary.ts` | Street widths, landmarks, river profile, arrivals, footprint rules |
 | Geometry | `world.ts`, `architecture.ts`, `geometry.ts` | Scene assembly, procedural architecture, material batching |
 | Terrain and roads | `terrainBase.ts`, `roadSurfaces.ts`, `bridgeRamp.ts`, `embankment.ts` | Thick cutout, street corners, continuous deck ramps and bank joins |
@@ -48,7 +48,7 @@ The world uses X/Z for the ground plane and Y for height. Gameplay calls one wor
 
 Roads have exactly three asphalt widths: **4.7 m** for bridges and their immediate approaches, **4 m** for main roads, and **3.2 m** for smaller streets. Land borders add **0.75 m** on either side. Junctions reserve full corner quadrants, so grass and furniture cannot cover pavement. Bridge deck polygons split at ramp creases rather than interpolating a single plane through the bank. Painted markings sit flush and do not cast shadows. The 2D map deliberately omits road borders.
 
-London’s upper terrain perimeter stays square. Dubai has a rounded island coastline inside a wider square sea slab; its bay and open channel share one concave coastline polygon. The same dry-ground query drives collision, teleporting, planting and clipped lighting.
+London’s upper terrain perimeter stays square. Dubai has a rounded island coastline inside a wider square sea slab; its bay and open channel share one concave coastline polygon. The same dry-ground query drives collision, teleporting, planting and clipped lighting. Dubai’s bay, promenade and curved road are concentric. Its stroked roads use mitered joins and butt ends; bridge ramps sample elevation creases and widen continuously, avoiding a second overlapping asphalt rectangle.
 
 For London, only the buried portion of the **18-unit** slab tapers and rounds organically. There is no outer perimeter footpath. River railings join parapets outside the drivable width; clear bridge approaches remain usable. Placement checks include conservative full footprints and tree crowns, not just object origins.
 
@@ -84,7 +84,7 @@ Wake history stores **world-space** samples rather than attaching rings to a mov
 
 The night palette is cool charcoal with distinct slate road colors, restrained green vegetation and warm architectural accents. Day and night change shared material uniforms and registered emission/opacity, rather than reconstructing the scene.
 
-London has 205 visible street lanterns; Dubai has 151. Their soft ground washes use 7.2 m radii, low opacity, and geometry clipped to the banks, decks and slab edge. Street and occupied-window washes share **one batched draw call**. A pool of **12 local point lights** eases between nearby fixtures around the camera target. Destroying a lamp or building removes its contribution. This makes local light believable while bounding dynamic lighting cost.
+London has 205 visible street lanterns; Dubai has 149. Their soft ground washes use 7.2 m radii, low opacity, and geometry clipped to the banks, decks and slab edge. Street and occupied-window washes share **one batched draw call**. A pool of **12 local point lights** eases between nearby fixtures around the camera target. Destroying a lamp or building removes its contribution. This makes local light believable while bounding dynamic lighting cost.
 
 House-window colors and occupancy are stable and deterministic. Spill samples actual occupied lower windows on wall faces, not arbitrary points or roofs. Glass towers use suites and darker unoccupied areas. Six rooftop rods carry softened red pulses. The clock's four faces use browser-local time and warm annular illumination. Eye capsules keep their glass transparency while seats, floors, ceiling strips and glazing emit soft blue light. The wheel completes a diorama rotation in 45 seconds by day and 120 seconds by night without resetting its angle on a theme change.
 

@@ -4,8 +4,8 @@ Release date: 27 October 2026. Same Node.js 24 / Three.js / Vite toolchain as th
 
 ## Checks and measured scope
 
-- **136 automated tests pass**, plus the existing city and UI audits, TypeScript and production build.
-- Dubai checks construct the actual scene: all eight destinations connect on foot, building footprints leave roads clear, routes avoid static obstacles, all three bridges clear swept boat bounds, and traffic circulates over ten simulated minutes with the explorer at the starting promenade.
+- **140 automated tests pass**, plus the existing city and UI audits, TypeScript and production build.
+- Dubai checks construct the actual scene: all nine destinations connect on foot, building footprints leave roads clear, routes avoid static obstacles, all three bridges clear swept boat bounds, and traffic circulates over ten simulated minutes with the explorer at the starting promenade.
 - Geometry is finite; palms release collision and reuse their own instance slots. Three road widths remain 3.2, 4 and 4.7 metres. Outer-sea targeting uses water height.
 - Real Chrome checks passed for **both chapters**: saved-theme first paint, walking, ghost teleport, preserved zoom, Birdview, smooth Explore flight, and touch layouts at 320, 390 and 820 pixels.
 - Chapter switching was checked in both directions, including arrow-key/Space activation, selected-state semantics, desktop header alignment and persisted night mode. Dubai's ordinary bomb/plant controls cleared four objects and planted a tree. No browser page errors were reported.
@@ -13,15 +13,21 @@ Release date: 27 October 2026. Same Node.js 24 / Three.js / Vite toolchain as th
 
 These browser runs are simulations, not physical-device certification. Geometry inventories and tests are not universal frame-rate guarantees.
 
+## Marina and architecture refinement
+
+The harbour boundary and road now share a circular centre; the promenade is continuous, junction anchors use mitered joins and butt ends, and bridge roads widen along sampled ramps. Regression checks cover these joins, walking clearance and bridge deck elevations.
+
+The skyline adds recognizable Burj Khalifa, Cayan, Emirates and Index forms. Burj Al Arab occupies the west coast. The Museum of the Future replaces the floating sail roofs with an enlarged, grounded silver torus, a true open void, panel seams and calligraphic glazing. Twenty docked yachts and six moving sailboats accompany the motor fleet. The new tests verify named model presence, the height hierarchy, the museum void, stable berths and route clearance.
+
 ## Dubai budget
 
-The completed world has 27 towers, 31 residences, three sculptural waterfront landmarks, 1,100 trees/palms, 1,800 low shrubs, 151 lamps, 36 vehicles and 18 boats. It measures **1,278 meshes / 449,219 unique triangles**, below the measured London baseline of **1,629 / 819,256**. Instance copies and additional render passes are excluded from that CPU inventory.
+The completed world has 28 skyline towers, the coastal Burj Al Arab, 27 residences, three sculptural waterfront landmarks, 1,100 trees/palms, 1,800 low shrubs, 149 lamps, 36 vehicles, 18 moving yachts and 20 moored yachts. It measures **1,387 meshes / 506,515 unique triangles**, below the measured London baseline of **1,629 / 819,256**. Instance copies and additional render passes are excluded from that CPU inventory.
 
-Both chapters retain the 12-point-light pool, one batched ground-wash draw, bounded reflection resolution/frequency and reusable effects. Dubai adds no downloaded asset pack and skips approximately 835 kB of London-specific optional assets. Only one chapter scene is constructed at a time.
+Both chapters retain the 12-point-light pool, one batched ground-wash draw, bounded reflection resolution/frequency and reusable effects. Dubai adds one 111 kB self-hosted Arabic font, with its bundled OFL license, and no downloaded model/texture pack and skips approximately 835 kB of London-specific optional assets. Only one chapter scene is constructed at a time.
 
-Production chunks are approximately 855 kB (255 kB gzip) for the shared main engine, 18 kB (8 kB gzip) for Dubai, 38 kB (17 kB gzip) for London, and 43 kB (17 kB gzip) for shared world helpers. Notifications remain a separate 257 kB / 79 kB gzip chunk. The shared engine still exceeds Vite's 500 kB advisory threshold.
+Production keeps chapter geometry in lazy chunks. The shared engine is approximately 856 kB / 256 kB gzip; notifications remain a separate 257 kB / 79 kB gzip chunk. The shared engine still exceeds Vite's 500 kB advisory threshold. No dependency was added for the new architecture, marina or Arabic font.
 
-Four Dubai images in `docs/media/` are actual renderer captures. Reproduce them with `node scripts/capture-dubai.mjs HTTPS_CAPTURE_PREVIEW`; capture builds require `VITE_CAPTURE=1`. Production omits the writable capture API. The runtime inspection name `__littleLondon` remains compatible with existing tooling and now reports the active world.
+Eight Dubai images in `docs/media/` are actual renderer captures. Reproduce them with `node scripts/capture-dubai.mjs HTTPS_CAPTURE_PREVIEW`; capture builds require `VITE_CAPTURE=1`. Production omits the writable capture API. The runtime inspection name `__littleLondon` remains compatible with existing tooling and now reports the active world.
 
 ```sh
 npm run check

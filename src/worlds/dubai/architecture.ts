@@ -2,6 +2,7 @@ import * as T from 'three';
 import { Builder, facadeTexture, material, vec } from '../../geometry.ts';
 import { glowMaterial, registerGlow } from '../../lighting.ts';
 import { surfaceMaterial } from '../../nature.ts';
+import { burjKhalifa,cayanTower,emiratesTower,indexTower } from './landmarks.ts';
 import type { TowerPlot } from './plan.ts';
 
 let facades:T.MeshStandardMaterial[]|undefined;
@@ -11,23 +12,16 @@ function glass(index:number) {
 }
 const ivory='#e6e0ca',silver='#bbc7c6',bronze='#9a886c';
 export function marinaTower(plot:TowerPlot) {
-  const b=new Builder(),{w,d,h,style}=plot,facade=glass(style),dark=glass(0);
+  const {w,d,h,style}=plot;
+  if(plot.design==='burj')return burjKhalifa(w,h);
+  if(plot.design==='cayan')return cayanTower(w,d,h);
+  if(plot.design==='emirates')return emiratesTower(w,d,h);
+  if(plot.design==='index')return indexTower(w,d,h);
+  const b=new Builder(),facade=glass(style),dark=glass(0);
   b.box(0,.4,0,w+1.4,.8,d+1.4,'#bdb7a3');
   b.box(0,1.5,0,w+1,2,d+1,dark);
   b.box(0,2.6,0,w+1.3,.18,d+1.3,ivory);
-  if(plot.landmark==='spire') {
-    // Alternating setbacks form a slender skyline crown with a modeled spire.
-    for(let tier=0;tier<7;tier++){
-      const height=(h-13)/7,width=w*(1-tier*.105),depth=d*(1-tier*.09),y=2.7+tier*height;
-      const tierGeometry=new T.BoxGeometry(width,height,depth),tierUV=tierGeometry.getAttribute('uv');
-      for(let i=0;i<tierUV.count;i++)tierUV.setY(i,(tier*height+tierUV.getY(i)*height)/(h-13));
-      b.add(tierGeometry,glass(1),0,y+height/2,0);tierGeometry.dispose();
-      for(const side of [-1,1]){for(const across of [-1,1])b.box(side*width/2,y+height/2,across*depth/2,.16,height,.16,silver);}
-      b.box(0,y+height,0,width+.3,.24,depth+.3,ivory);
-      for(let floor=1;floor<height;floor+=1.35)b.box(0,y+floor,0,width+.12,.08,depth+.12,silver);
-    }
-    b.cylinder(0,h-7,0,.7,10,silver,.22,12);b.cylinder(0,h-1,0,.18,4,silver,.035,10);
-  } else if(style===1) {
+  if(style===1) {
     const g=new T.CylinderGeometry(1,1,h-3,40);b.add(g,facade,0,(h+3)/2,0,w*.5,1,d*.5);g.dispose();
     for(let y=4;y<h;y+=1.35){const ring=new T.CylinderGeometry(1,1,.09,40);b.add(ring,material(silver),0,y,0,w*.505,1,d*.505);ring.dispose();}
     const roof=new T.CylinderGeometry(1,1,.45,40);b.add(roof,material(ivory),0,h,0,w*.53,1,d*.53);roof.dispose();
@@ -103,17 +97,6 @@ export function conservatory() {
   for(let i=1;i<6;i++){const a=i/6*Math.PI;b.tube(Array.from({length:33},(_,j)=>{const z=-16.8+j/32*33.6,k=Math.sqrt(1-z*z/(17*17));return vec(Math.cos(a)*12*k,1+Math.sin(a)*13*k,z);}),.055,silver,32);}
   for(const side of [-1,1])b.box(side*10,.8,0,.12,.12,20,glowMaterial('#bfdfd7',2));
   const root=b.finish();root.scale.set(.8,1,.8);root.name='Harbour Conservatory · ribbed glass shell';return root;
-}
-export function sailCentre() {
-  const b=new Builder();
-  for(const [index,dx] of [-5,5].entries()){
-    b.box(dx,.35,0,8.5,.7,20,ivory);b.box(dx,2,0,7.7,3,19,glass(1));
-    const point=(u:number,v:number)=>vec(dx+(v-.5)*9,3.6+Math.sin(u*Math.PI)*7.5+(1-v)*2.5+(index?.5:0),-10+u*20);
-    const g=surface(24,12,point);b.add(g,roof);g.dispose();
-    for(let v=0;v<=1.01;v+=.125)b.tube(Array.from({length:25},(_,i)=>point(i/24,v)),v===0||v===1?.12:.055,silver,24);
-    for(const side of [-1,1])b.box(dx+side*3.9,1.1,0,.06,.09,19,glowMaterial('#ffdab0',2.6));
-  }
-  const root=b.finish();root.name='Marina Arts Centre · paired sail roofs';return root;
 }
 export function palmResources() {
   const trunkB=new Builder(),leafB=new Builder(),bark=surfaceMaterial('bark');

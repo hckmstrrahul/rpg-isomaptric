@@ -9,10 +9,14 @@ try{
  await page.waitForFunction(()=>window.__capture&&window.__littleLondon,{timeout:180000});
  await mkdir('docs/media',{recursive:true});
  for(const [name,options] of [
-  ['day',{night:false,zoom:.95,focus:[0,12,0]}],
-  ['night',{night:true,zoom:.95,focus:[0,12,0]}],
+  ['day',{night:false,zoom:.9,focus:[0,22,0]}],
+  ['night',{night:true,zoom:.9,focus:[0,22,0]}],
   ['waterfront',{night:true,zoom:2.6,focus:[-40,5,60]}],
   ['explorer',{night:false,zoom:16,focus:[20,2,0],character:{x:20,z:0,yaw:Math.PI/3}}],
+  ['marina',{night:false,zoom:5.5,focus:[-32,0,-13]}],
+  ['museum-night',{night:true,zoom:7.5,focus:[52,9,62]}],
+  ['burj-al-arab',{night:false,zoom:4.5,focus:[-78,22,25],offset:[250,110,160]}],
+  ['skyline',{night:false,zoom:1.5,focus:[0,42,-56],offset:[170,110,250]}],
  ]){
   const stats=await page.evaluate(o=>window.__capture.render({...o,ui:'none'}),options);
   await page.screenshot({path:`docs/media/dubai-${name}.jpg`,type:'jpeg',quality:87});console.log(name,stats);

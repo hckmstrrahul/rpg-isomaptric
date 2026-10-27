@@ -4,18 +4,20 @@ import { riverMaterial, surfaceMaterial } from '../../nature.ts';
 import { createTerrainBase } from '../../terrainBase.ts';
 import { WorldObjects } from '../../interactables.ts';
 import { createTraffic } from '../../traffic.ts';
-import { createBoat } from '../../vehicles.ts';
+import { createYacht, createMarinaDocks, DOCK_ANGLES } from './marina.ts';
 import { BoatWakes } from '../../boatWakes.ts';
 import { GROUND, WATER_HEIGHT, LANDMARKS, PLAYER_SPAWN, surfaceHeight, bridgeLiftAt, type Obstacle } from '../../layout.ts';
 import { ROAD_ASPHALT, roadDash } from '../../roadSurfaces.ts';
-import { roadClearance, plotTouchesRoad, streetSurfacePath } from '../../cityPlan.ts';
+import { roadClearance, plotTouchesRoad } from '../../cityPlan.ts';
 import { glowMaterial, lightHalo, lightPool, registerThemeColor } from '../../lighting.ts';
 import { LocalNightLighting, localNightLight, createRooftopBeacon, updateRooftopBeacons } from '../../localNightLighting.ts';
 import { NightGroundGlows } from '../../nightGroundGlows.ts';
 import type { CityAssets } from '../../importedAssets.ts';
 import type { Destructible } from '../../sandbox.ts';
-import { dubaiRoads, dubaiLand, dubaiBridge, dubaiBridgeLift, ISLAND, LAND_OUTLINE, BAY, DUBAI_BRIDGES, DUBAI_GARDENS, TOWER_PLOTS, DUBAI_TRAFFIC_LOOPS, ellipse, bayPoint } from './plan.ts';
-import { marinaTower, pearlPavilion, conservatory, sailCentre, palmResources, courtyardHouse } from './architecture.ts';
+import { dubaiRoads, dubaiLand, dubaiBridge, dubaiBridgeLift, ISLAND, LAND_OUTLINE, BAY, DUBAI_BRIDGES, DUBAI_GARDENS, TOWER_PLOTS, DUBAI_TRAFFIC_LOOPS, ellipse, bayPoint, DUBAI_PATHS, MARINA_PROMENADE } from './plan.ts';
+import { museumOfFuture, burjAlArab } from './landmarks.ts';
+import { strokeGeometry, streetWidthAt } from './surfaces.ts';
+import { marinaTower, pearlPavilion, conservatory, palmResources, courtyardHouse } from './architecture.ts';
 
 export function createDubaiWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
   let seed=40129;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
@@ -38,10 +40,11 @@ export function createDubaiWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
   const river=riverMaterial(true),waterGeo=new T.PlaneGeometry(252,252,1,1);waterGeo.rotateX(-Math.PI/2);
   const water=new T.Mesh(waterGeo,river.material);water.position.y=WATER_HEIGHT;water.name='Dubai · turquoise sea and open marina';water.receiveShadow=true;scene.add(water);
   for(const side of [-1,1])for(const axis of ['x','z'] as const){const face=new T.PlaneGeometry(252,1.6),mesh=new T.Mesh(face,material('#377f87',.68));mesh.position.set(axis==='x'?side*126:0,-2,axis==='z'?side*126:0);mesh.rotation.y=axis==='x'?side*Math.PI/2:side===1?0:Math.PI;scene.add(mesh);}
-  for(const road of roads) {
-    const outer=road.width+1.5,height=(x:number,z:number)=>GROUND+.07+dubaiBridgeLift(x,z);
-    streets.ribbon(streetSurfacePath(road.points,outer),outer,(x,z)=>height(x,z)-.035,pavement);
-    streets.ribbon(streetSurfacePath(road.points,road.width),road.width,height,ROAD_ASPHALT);
+  for(const road of roads.filter(r=>!r.bridge)) {
+    const height=(x:number,z:number)=>GROUND+.07+dubaiBridgeLift(x,z);
+    const border=strokeGeometry(road.points,p=>streetWidthAt(road,p)+1.5,(x,z)=>height(x,z)-.035);
+    const asphalt=strokeGeometry(road.points,p=>streetWidthAt(road,p),height);
+    streets.add(border,pavement);streets.add(asphalt,ROAD_ASPHALT);border.dispose();asphalt.dispose();
     // Sample markings in metres, independent of curve tessellation and without shadows.
     let distance=0,next=1.2;
     for(let i=1;i<road.points.length;i++){
@@ -94,24 +97,24 @@ export function createDubaiWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
   const towers:T.Object3D[]=[];
   for(const plot of TOWER_PLOTS){
     if(blocked(plot.x,plot.z,plot.w+1.4,plot.d+1.4,.35)||!dryFootprint(plot.x,plot.z,plot.w+1.4,plot.d+1.4)||plotTouchesRoad({...plot,w:plot.w+1.4,d:plot.d+1.4},roads,.2))continue;
-    const {root}=place(marinaTower(plot),plot.x,plot.z,plot.landmark==='spire'?'Skyline Spire':'Marina tower','building',plot.landmark);
-    const beacon=createRooftopBeacon(towers.length*.37);beacon.position.y=plot.h+(plot.style===3?5.5:2.2);root.add(beacon);beacons.push(beacon);towers.push(root);buildingLight(root,plot.w,plot.d);
+    const {root}=place(marinaTower(plot),plot.x,plot.z,plot.name??'Marina tower','building',plot.landmark);
+    const beacon=createRooftopBeacon(towers.length*.37);beacon.position.y=plot.h+(plot.design==='burj'?.05:plot.design==='emirates'?3.6:plot.design?0:plot.style===3?5.5:2.2);root.add(beacon);beacons.push(beacon);towers.push(root);buildingLight(root,plot.w,plot.d);
   }
   const petalModel=pearlPavilion();petalModel.scale.setScalar(1.35);
   const petal=place(petalModel,-72,59,'Pearl Pavilion','building','petal');buildingLight(petal.root,17,17,'#c9e2ee');
   const domeModel=conservatory();domeModel.rotation.y=Math.PI/2;domeModel.scale.set(.9,1.25,1.15);
   const dome=place(domeModel,9,68,'Harbour Conservatory','building','conservatory');buildingLight(dome.root,19,27,'#a6d8de');
-  const sailModel=sailCentre();sailModel.scale.set(1.2,1.4,.85);
-  const sails=place(sailModel,52,62,'Marina Arts Centre','building','sails');buildingLight(sails.root,18,20,'#f4d7ac');
-  details.ribbon([{x:14,z:0},{x:36,z:0}],1.7,GROUND+.03,pavement);
-  // Promenade paths follow the water, with small projecting marina fingers.
-  const quay=Array.from({length:129},(_,i)=>bayPoint(i/128*Math.PI*2,2.5));
-  for(let i=1;i<quay.length;i++)if(dubaiLand(quay[i].x,quay[i].z,.6)&&dubaiLand(quay[i-1].x,quay[i-1].z,.6))details.ribbon([quay[i-1],quay[i]],1.2,GROUND+.04,pavement);
-  const dockSpecs=[{x:-50,z:-3,w:15,d:1.1},{x:-11,z:-12,w:21,d:1.1},{x:-54,z:40,w:13,d:1.1}];
-  for(const dock of dockSpecs){
-    details.box(dock.x,WATER_HEIGHT+.42,dock.z,dock.w,.3,dock.d,'#b0a98d');
-    for(let x=dock.x-dock.w/2+2;x<dock.x+dock.w/2;x+=3)details.box(x,WATER_HEIGHT+.42,dock.z+2.2,.6,.25,5.2,'#c6bd9e');
-  }
+  const museum=place(museumOfFuture(),52,62,'Museum of the Future','building','sails');buildingLight(museum.root,20,15,'#f4d7ac');
+  const hotel=place(burjAlArab(),-78,25,'Burj Al Arab','building','burj-al-arab');buildingLight(hotel.root,14,14,'#c7e4f3');
+  const hotelBeacon=createRooftopBeacon(.8);hotelBeacon.position.set(-3.5,46,0);hotel.root.add(hotelBeacon);beacons.push(hotelBeacon);
+  for(const path of DUBAI_PATHS){const geo=strokeGeometry(path.points,path.width,GROUND+.04);details.add(geo,pavement);geo.dispose();}
+  const quay=MARINA_PROMENADE;
+  const marina=createMarinaDocks();scene.add(marina.root);
+  const mooredBoats=marina.berths.map((berth,index)=>{
+    const yacht=createYacht(berth.length,berth.sailing,true);yacht.root.position.set(berth.x,WATER_HEIGHT+.025,berth.z);yacht.root.rotation.y=berth.yaw;scene.add(yacht.root);
+    const object=objects.registerModel(yacht.root,berth.sailing?'Moored sailing yacht':'Moored motor yacht','boat');
+    return {group:yacht.root,object,length:yacht.length,phase:index*.7};
+  });
   // Low-rise neighbourhoods occupy coherent courtyards outside the skyline core.
   const homes:T.Object3D[]=[];
   for(const [x,z] of [
@@ -131,7 +134,7 @@ export function createDubaiWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
   const terrace=ellipse(9,68,22.5,13.5,96);details.ribbon(terrace,.8,GROUND+.028,pavement);
   // Modern slender lamps use the same 12-light pool and one batched wash as London.
   const lamp=(x:number,z:number)=>{
-    if(!arrivalClear(x,z,.35)||(!dubaiLand(x,z,.35)&&!dubaiBridge(x,z))||roadClearance({x,z},roads)<.18||blocked(x,z,.35,.35,.3)||streetLamps.some(p=>Math.hypot(x-p.x,z-p.z)<6.5))return;
+    if(!arrivalClear(x,z,.35)||(!dubaiLand(x,z,.35)&&!dubaiBridge(x,z))||roadClearance({x,z},roads)<.18||roadClearance({x,z},DUBAI_PATHS)<.15||blocked(x,z,.35,.35,.3)||streetLamps.some(p=>Math.hypot(x-p.x,z-p.z)<6.5))return;
     const b=new Builder();b.cylinder(0,1.65,0,.045,3.3,'#647b7d',.035,8);b.box(.23,3.3,0,.55,.075,.22,'#d7dcd1');b.box(.23,3.25,0,.4,.025,.16,glowMaterial('#ffe1b4',4.6));
     const {root}=place(b.finish(),x,z,'Marina street light','prop');
     const halo=lightHalo('#ffe4be',3,.13);halo.position.set(.23,3.25,0);root.add(halo);
@@ -143,12 +146,12 @@ export function createDubaiWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
       while(next<=distance+len){const t=(next-distance)/len,offset=road.width/2+.55,x=a.x+dx*t,z=a.z+dz*t;lamp(x-dz/len*offset*side,z+dx/len*offset*side);side*=-1;next+=12;}distance+=len;
     }
   }
-  for(let i=0;i<quay.length;i+=5)lamp(quay[i].x,quay[i].z);
+  for(let i=1;i<quay.length-1;i+=5){const p=quay[i],length=Math.hypot(p.x-BAY.x,p.z-BAY.z);lamp(p.x+(p.x-BAY.x)/length*1.2,p.z+(p.z-BAY.z)/length*1.2);}
   // Palms and broadleaf trees are destructible, instanced and share live collision.
   const palms=palmResources();objects.registerTreeSpecies('palm',palms.trunk,palms.foliage,palms.bark,palms.leaves,'Date palm',5.25,4.4);
   const tree=(x:number,z:number,scale:number,palm=false)=>{
     const radius=(palm?2.2:1.4)*scale;
-    if(!dubaiLand(x,z,radius+.4)||roadClearance({x,z},roads)<radius+.8||blocked(x,z,radius*2,radius*2,.3)||!arrivalClear(x,z,radius))return false;
+    if(!dubaiLand(x,z,radius+.4)||roadClearance({x,z},roads)<radius+.8||roadClearance({x,z},DUBAI_PATHS)<radius+.2||blocked(x,z,radius*2,radius*2,.3)||!arrivalClear(x,z,radius))return false;
     if(objects.state.objects.some(o=>!o.destroyed&&o.kind==='tree'&&Math.hypot(x-o.x,z-o.z)<(palm?2.5:1.8)*scale))return false;
     objects.addTree(x,z,scale,false,0,palm?'palm':'default');return true;
   };
@@ -159,7 +162,7 @@ export function createDubaiWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
   const shrubGeo=new T.IcosahedronGeometry(1,1),shrubMat=material('#547d3e'),shrubs=new T.InstancedMesh(shrubGeo,shrubMat,2200),matrix=new T.Matrix4(),rotation=new T.Quaternion();let shrubCount=0;
   for(let i=0;i<13000&&shrubCount<1800;i++){
     const x=range(-96,96),z=range(-94,94),r=range(.25,.7);
-    if(!dubaiLand(x,z,r+.25)||roadClearance({x,z},roads)<r+1.1||blocked(x,z,r*2,r*2,.15)||!arrivalClear(x,z,r))continue;
+    if(!dubaiLand(x,z,r+.25)||roadClearance({x,z},roads)<r+1.1||roadClearance({x,z},DUBAI_PATHS)<r+.2||blocked(x,z,r*2,r*2,.15)||!arrivalClear(x,z,r))continue;
     // Low groundcover remains traversable; tall trunks alone enter collision.
     matrix.compose(vec(x,GROUND+r*.3,z),rotation,vec(r,r*.5,r*.8));shrubs.setMatrixAt(shrubCount,matrix);shrubs.setColorAt(shrubCount,new T.Color().setHSL(.20+random()*.09,.26+random()*.25,.33+random()*.18));shrubCount++;
   }
@@ -170,27 +173,32 @@ export function createDubaiWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
     const a=LAND_OUTLINE[i-1],b=LAND_OUTLINE[i],len=Math.hypot(b.x-a.x,b.z-a.z),n=Math.max(1,Math.ceil(len/2.2));
     for(let j=0;j<n;j++){const t=j/n,u=(j+1)/n,x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t,cx=a.x+(b.x-a.x)*u,cz=a.z+(b.z-a.z)*u;
       if(DUBAI_BRIDGES.some(bx=>Math.min(Math.abs(x-bx),Math.abs(cx-bx))<3.6&&z>18&&z<46))continue;
+      const radius=Math.hypot(x-BAY.x,z-BAY.z),angle=Math.atan2(z-BAY.z,x-BAY.x);
+      if(Math.abs(radius-BAY.rx)<.5&&DOCK_ANGLES.some(a=>Math.abs(Math.atan2(Math.sin(angle-a),Math.cos(angle-a)))<.04))continue;
       rails.beam(vec(x,GROUND+.05,z),vec(x,GROUND+.75,z),.035,'#668181',6);for(const y of [.36,.74])rails.beam(vec(x,GROUND+y,z),vec(cx,GROUND+y,cz),.025,'#8da8a6',5);
     }
   }
   const railings=rails.finish();railings.name='Dubai · continuous waterfront railings';scene.add(railings);scene.add(details.finish());
   const traffic=createTraffic(scene,objects,{loops:DUBAI_TRAFFIC_LOOPS,junctions:[{x:-89,z:-67},{x:-89,z:-44},{x:89,z:-67},{x:89,z:-44},{x:36,z:-22},{x:68,z:-22},{x:68,z:47},{x:89,z:47}],laneSign:-1,carsPerRoute:6,city:'Dubai'});
   const wakes=new BoatWakes(scene),boats:{group:T.Group;object:Destructible;length:number;phase:number;speed:number;lane:number;curve:T.CatmullRomCurve3}[]=[];
-  const harbourPath=[[-43,0],[-24,-10],[-7,0],[-1,20],[7,30],[40,30],[78,30],[103,29],[104,37],[77,35],[40,35],[2,35],[-13,35],[-35,31],[-47,17]];
+  const harbourPath=[[-39,2],[-25,-7],[-10,1],[-5,16],[2,28],[40,30],[78,30],[103,29],[104,37],[77,35],[40,35],[3,35],[-13,27],[-28,27],[-40,20]];
   const outerPath=[[-104,-80],[-90,-104],[80,-104],[104,-80],[104,78],[79,104],[-78,104],[-104,80]];
   for(let i=0;i<18;i++){
-    const path=i<12?harbourPath:outerPath,curve=new T.CatmullRomCurve3(path.map(([x,z])=>vec(x,0,z)),true,'centripetal');
-    const boat=createBoat(3.2+(i%4)*.25,['#f0e9d7','#c9d9d7','#456d7a'][i%3],i%4===0);boat.root.name=i%4===0?'Marina passenger launch':'Dubai motor yacht';scene.add(boat.root);
-    const object=objects.registerModel(boat.root,boat.root.name,'boat');boats.push({group:boat.root,object,length:boat.length,phase:(i<12?i/12:(i-12)/6),speed:i<12?.0045:.0016,lane:0,curve});
+    const sailing=i>=12,path=sailing?ellipse(BAY.x,BAY.z,10.5,11.5,32).slice(0,-1).map(p=>[p.x,p.z]):i<8?harbourPath:outerPath;
+    const curve=new T.CatmullRomCurve3(path.map(([x,z])=>vec(x,0,z)),true,'centripetal');
+    const boat=createYacht(sailing?3.4:3.8+(i%3)*.45,sailing);scene.add(boat.root);
+    const object=objects.registerModel(boat.root,boat.root.name,'boat');boats.push({group:boat.root,object,length:boat.length,phase:sailing?(i-12)/6:i<8?i/8:(i-8)/4,speed:sailing?.004:i<8?.0045:.0016,lane:0,curve});
   }
   const localLighting=new LocalNightLighting(scene),groundGlows=new NightGroundGlows(scene,pools);
   const update=(time:number,player?:{x:number;z:number},night=false)=>{
     river.time.value=time;objects.updateWind(time);traffic.update(time,player);
     for(const boat of boats){if(boat.object.destroyed)continue;const t=T.MathUtils.euclideanModulo(boat.phase+time*boat.speed,1),p=boat.curve.getPointAt(t),tangent=boat.curve.getTangentAt(t);
       boat.group.position.set(p.x,WATER_HEIGHT+.025+Math.sin(time*1.1+boat.phase*20)*.018,p.z);boat.group.rotation.y=Math.atan2(tangent.x,tangent.z);boat.group.rotation.z=Math.sin(time*.7+boat.phase*10)*.012;objects.syncModelPose(boat.object);wakes.emit(boat.object.id,boat.group.position,boat.group.rotation.y,boat.length,time);
-    }wakes.update(time);
+    }
+    for(const boat of mooredBoats){if(boat.object.destroyed)continue;boat.group.position.y=WATER_HEIGHT+.025+Math.sin(time*.8+boat.phase)*.018;boat.group.rotation.z=Math.sin(time*.6+boat.phase)*.009;objects.syncModelPose(boat.object);}
+    wakes.update(time);
   };
   const updateLights=(dt:number,focus:T.Vector3,time:number,night:boolean,reduced=false)=>{groundGlows.update();localLighting.update(dt,focus,night);updateRooftopBeacons(beacons,time,night,reduced);};
   update(0);
-  return {obstacles,roads,objects,water,river,traffic,boats,wakes,update,updateLights,updateClock:(_date=new Date())=>{},landmarks:LANDMARKS,localLighting,groundGlows,beacons,streetLamps,railings,furniture,bins:[],hydrants:[],gardens:DUBAI_GARDENS,circularSites:[],towers,homes,bridgeRoots,shrubs};
+  return {obstacles,roads,objects,water,river,traffic,boats,wakes,update,updateLights,updateClock:(_date=new Date())=>{},landmarks:LANDMARKS,localLighting,groundGlows,beacons,streetLamps,railings,furniture,bins:[],hydrants:[],gardens:DUBAI_GARDENS,circularSites:[],towers,homes,bridgeRoots,shrubs,marina,mooredBoats};
 }

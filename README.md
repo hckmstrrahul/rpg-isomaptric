@@ -27,9 +27,9 @@ https://github.com/user-attachments/assets/3212fd84-550a-4bce-9fa4-1f4871d053b8
 
 - **Explore by default.** Walk, run, or click open ground to fly there along a smooth obstacle-clearing arc. A gentle zoom breathes out and back in, with no landing impact or camera shake.
 - **A miniature London.** Westminster, a live four-face clock tower, Tower Bridge, the London Eye, the Gherkin, an abbey, gardens, and a curved Thames. Most geometry and materials are generated in code.
-- **A waterfront Dubai.** 27 towers, three sculptural pavilions, 31 limestone residences, a sheltered marina and three shipping bridges. 1,100 palms and broadleaf trees plus 1,800 low shrubs bring the landscape into the streets. [Dubai construction notes](docs/DUBAI.md).
-- **Cities in motion.** London has 44 vehicles across cars, buses, cabs, vans, trucks, bicycles and motorcycles; left-hand traffic, timed signals and player avoidance. 22 boats leave fading world-space wakes and pass beneath three bridges. Dubai uses 36 vehicles with right-hand traffic, eight signal junctions, and 18 marina and coastal boats.
-- **Day and night.** Warm clock rings, softly blue Eye capsules, occupied windows, 205 street lanterns, red rooftop beacons, and a world-space moon with a critically damped entrance. Dubai adds illuminated tower suites, softly lit glass shells and 151 waterfront street lights. Appearance persists through loading and location changes.
+- **A waterfront Dubai.** 28 skyline towers, the coastal Burj Al Arab, three sculptural waterfront landmarks and 27 limestone residences, a sheltered marina and three shipping bridges. 1,100 palms and broadleaf trees plus 1,800 low shrubs bring the landscape into the streets. [Dubai construction notes](docs/DUBAI.md).
+- **Cities in motion.** London has 44 vehicles across cars, buses, cabs, vans, trucks, bicycles and motorcycles; left-hand traffic, timed signals and player avoidance. 22 boats leave fading world-space wakes and pass beneath three bridges. Dubai uses 36 vehicles with right-hand traffic, eight signal junctions, 18 moving motor/sailing yachts, and 20 moored yachts across five connected piers.
+- **Day and night.** Warm clock rings, softly blue Eye capsules, occupied windows, 205 street lanterns, red rooftop beacons, and a world-space moon with a critically damped entrance. Dubai adds illuminated tower suites, softly lit glass shells and 149 waterfront street lights. Appearance persists through loading and location changes.
 - **A playful sandbox.** “Bomb objects” fires straight, fiery shells up to 50 m, with projected blast previews and water splashes. Plant trees within 50 m, including on cleared plots. Reload restores the city.
 - **Camera and touch controls.** Slow arrival zoom, smooth follow, Birdview, free orbit, pinch, and a ghost-preview teleport. Separate pointer tracking supports simultaneous touch movement, running and tool use.
 - **Small details that hold up close.** Tiled roofs on every face, modeled goggles and armor, British railings and hydrant markers, glazed telephone boxes, bridge ramps and flush road paint.
@@ -55,6 +55,14 @@ https://github.com/user-attachments/assets/3212fd84-550a-4bce-9fa4-1f4871d053b8
 | Sculptural waterfront | The same explorer in Dubai |
 | --- | --- |
 | ![Pearl Pavilion, villas and the ribbed conservatory](docs/media/dubai-waterfront.jpg) | ![Explorer among the palms beside the marina](docs/media/dubai-explorer.jpg) |
+
+| Marina yachts and piers | Museum of the Future at night |
+| --- | --- |
+| ![Moored motor yachts, sailboats and connected marina piers](docs/media/dubai-marina.jpg) | ![Enlarged metallic Museum of the Future with illuminated calligraphic glazing](docs/media/dubai-museum-night.jpg) |
+
+| Burj Al Arab on the coast | Dubai landmark skyline |
+| --- | --- |
+| ![Sail-shaped Burj Al Arab with its helipad and white exoskeleton](docs/media/dubai-burj-al-arab.jpg) | ![Burj Khalifa, Cayan Tower, Emirates Towers and Index Tower in the skyline](docs/media/dubai-skyline.jpg) |
 
 ## Run it
 

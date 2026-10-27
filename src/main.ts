@@ -82,7 +82,7 @@ async function init() {
   const ground=new T.Mesh(new T.PlaneGeometry(2400,2400),new T.MeshStandardMaterial({color:'#a9c9b9',roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-SOIL_DEPTH-.1;ground.receiveShadow=true;scene.add(ground);
   const camera=new T.OrthographicCamera(-140,140,126,-126,.1,1800);
   const compactViewport=matchMedia('(max-width: 1100px), (max-width: 1366px) and (pointer: coarse)');
-  const overviewZoom=()=>compactViewport.matches?1.8:1;
+  const overviewZoom=()=>compactViewport.matches?1.8:WORLD_ID==='dubai'?.95:1;
   const characterZoom=()=>compactViewport.matches?8:6;
   let arrivalZoom:ReturnType<typeof createArrivalZoom>|null=null;
   let cameraGlide:ReturnType<typeof createCameraGlide>|null=null;
@@ -108,6 +108,7 @@ async function init() {
   };
   resize();addEventListener('resize',resize);compactViewport.addEventListener('change',resize);
   const [assets,moonTextures]=await Promise.all([WORLD_ID==='dubai'?Promise.resolve({loaded:[]}):loadCityAssets(),loadMoonTextures()]);
+  if(WORLD_ID==='dubai')await (await import('./worlds/dubai/landmarks.ts')).loadDubaiLettering();
   const world=WORLD_ID==='dubai'?(await import('./worlds/dubai/world.ts')).createDubaiWorld(scene,assets):(await import('./world.ts')).createWorld(scene,assets),character=createCharacter();scene.add(character.root);
   character.root.position.set(PLAYER_SPAWN.x,surfaceHeight(PLAYER_SPAWN.x,PLAYER_SPAWN.z)+.13,PLAYER_SPAWN.z);
   controls.target.copy(character.root.position);camera.position.copy(character.root.position).add(initialOffset);controls.update();
@@ -325,7 +326,7 @@ async function init() {
     arrivalZoom?.cancel();cameraGlide?.cancel();clearOrbitInertia();setFollowing(true);
     canvas.focus({preventScroll:true});
   }
-  const overview=()=>{cameraGlide?.cancel();setTeleport(false);setBirdview(false);setFollowing(compactViewport.matches);zoomTarget=overviewZoom();cameraGoal=compactViewport.matches?character.root.position.clone():new T.Vector3(0,2,0);orientationGoal=initialOffset.clone();};
+  const overview=()=>{cameraGlide?.cancel();setTeleport(false);setBirdview(false);setFollowing(compactViewport.matches);zoomTarget=overviewZoom();cameraGoal=compactViewport.matches?character.root.position.clone():new T.Vector3(0,WORLD_ID==='dubai'?22:2,0);orientationGoal=initialOffset.clone();};
   $('teleport-button').onclick=()=>setTeleport(!teleportOpen);$('teleport-cancel').onclick=()=>setTeleport(false);
   $('help-button').onclick=()=>setHelp(!helpOpen);$('help-close').onclick=()=>setHelp(false);
   $('touch-help').onclick=()=>setHelp(!helpOpen);
