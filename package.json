@@ -18,6 +18,7 @@
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
     "@hugeicons/core-free-icons": "^4.3.5",
+    "polygon-clipping": "0.15.7",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "sonner": "^2.0.8",
@@ -31,7 +32,7 @@
     "typescript": "^5.9.3",
     "vite": "^7.1.12"
   },
-  "description": "Seven tiny playable isometric worlds, from London to a fictional Moon base.",
+  "description": "Six tiny playable isometric worlds, from London to a fictional Moon base.",
   "license": "MIT",
   "author": "Rahul Chakraborty <17765524+hckmstrrahul@users.noreply.github.com>",
   "homepage": "https://rpg-isomaptric.vercel.app",

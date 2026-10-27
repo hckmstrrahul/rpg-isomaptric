@@ -28,6 +28,7 @@ export const SERVICE_PATHS:Road[]=[
 ];
 export const PADS=[{x:56,z:-24,r:15},{x:55,z:55,r:14}];
 export const FLAT_SITES=[
+ {x:-56,z:-53,w:18,d:10},{x:55,z:13,w:18,d:10},
  {x:0,z:0,w:49,d:42},{x:-58,z:-25,w:28,d:26},{x:-53,z:42,w:29,d:23},{x:-5,z:65,w:32,d:24},{x:-17,z:-68,w:42,d:24},{x:60,z:-72,w:28,d:25},
 ];
 export const CRATERS=[
@@ -45,4 +46,4 @@ export function lunarHeight(x:number,z:number){
  return 1.35+y*blend*blend*(3-2*blend);
 }
 const LAND=[p(-106,-106),p(106,-106),p(106,106),p(-106,106),p(-106,-106)];
-export const PLAN:WorldPlan={spawn:{x:0,z:24},landmarks:MOON_LANDMARKS,roads:()=>SERVICE_PATHS,landAt:(x,z,margin=0)=>Math.abs(x)<=106-margin&&Math.abs(z)<=106-margin,bridgeAt:()=>false,heightAt:lunarHeight,map:{extent:216,land:[LAND],gardens:[]},camera:{focus:[0,1.35,0],zoom:.85,offset:[90,100,120]},waterColor:'#0b1420',waterVisible:false,moonVisible:false};
+export const PLAN:WorldPlan={spawn:{x:0,z:24},landmarks:MOON_LANDMARKS,roads:()=>SERVICE_PATHS,landAt:(x,z,margin=0)=>Math.abs(x)<=106-margin&&Math.abs(z)<=106-margin,bridgeAt:()=>false,heightAt:lunarHeight,map:{extent:216,land:[LAND],gardens:[],craters:CRATERS},camera:{focus:[0,1.35,0],zoom:.85,offset:[90,100,120]},waterColor:'#0b1420',waterVisible:false,moonVisible:false};

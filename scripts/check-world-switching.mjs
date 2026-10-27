@@ -8,6 +8,7 @@ const state=p=>p.evaluate(()=>window.__littleLondon.getState());
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'reduce'});page.on('pageerror',e=>report.errors.push(e.message));
  await page.goto(new URL('/?world=london',base).href);await ready(page);
+ assert.equal(await page.locator('[data-world]').count(),6);assert.equal(await page.locator('[data-world="hyderabad"]').count(),0);
  await page.locator('#theme-button').click();assert.equal((await state(page)).night,true);
  await page.locator('[data-world="dubai"]').click();await ready(page);assert.equal((await state(page)).world,'dubai');assert.equal((await state(page)).night,true);
  assert.equal(await page.locator('[data-world="dubai"]').getAttribute('aria-selected'),'true');
@@ -26,13 +27,15 @@ try{
  assert.equal((await state(page)).world,'london');assert.equal((await state(page)).night,true);assert.equal((await state(page)).tool,'explore');
  assert.equal(await page.evaluate(()=>localStorage.getItem('rpg-isomaptric-world')),'london');
  report.checks.push({name:'keyboard chapter navigation preserves night and resets sandbox'});
- const chapterIds=['bengaluru','agra','hyderabad','lisbon','moon'];
+ const chapterIds=['bengaluru','agra','lisbon','moon'];
  for(const id of chapterIds){
   await page.locator(`[data-world="${id}"]`).click();await ready(page);await page.waitForFunction(id=>window.__littleLondon.getState().world===id,id);
   assert.equal((await state(page)).night,true);assert.equal((await state(page)).tool,'explore');
+  assert.equal(await page.locator('.brand p').textContent(),'Tiny playable isometric worlds');
   await page.locator('#scene').focus();const before=(await state(page)).position;
   for(const key of ['KeyD','KeyS','KeyA','KeyW']){await page.keyboard.down(key);await page.waitForTimeout(220);await page.keyboard.up(key);const now=(await state(page)).position;if(Math.hypot(now.x-before.x,now.z-before.z)>.2)break;}
   const moved=(await state(page)).position;assert.ok(Math.hypot(moved.x-before.x,moved.z-before.z)>.2,`${id} walking`);
+  assert.equal(await page.locator('[data-sonner-toast]').filter({hasText:/discovered/i}).count(),0,`${id} discoveries should be silent`);
   await page.keyboard.press('KeyB');await page.keyboard.down('Space');await page.waitForTimeout(1100);await page.keyboard.up('Space');assert.ok((await state(page)).shots>=2,`${id} firing`);
   await page.keyboard.press('KeyT');await page.waitForTimeout(150);
   for(const key of ['KeyD','KeyS','KeyA','KeyW','KeyD','KeyS','KeyA','KeyW']){

@@ -10,7 +10,7 @@ import {NightGroundGlows} from '../../nightGroundGlows.ts';
 import type {CityAssets} from '../../importedAssets.ts';
 import {strokeGeometry} from '../shared/surfaces.ts';
 import {PLAN,MOON_LANDMARKS,SERVICE_PATHS,PADS,CRATERS,lunarHeight,pathDistance,siteDistance} from './plan.ts';
-import {METAL,PALE,DARK,habitat,rocket,observatory,greenhouse,lander,solarFarm,communications,roverWorkshop,rover,astronaut,greenhouseTreeResources} from './architecture.ts';
+import {METAL,PALE,DARK,habitat,rocket,observatory,greenhouse,lander,solarFarm,communications,roverWorkshop,rover,astronaut,goldSatellite,greenhouseTreeResources} from './architecture.ts';
 
 function regolith(){
  const n=256,color=new Uint8Array(n*n*4),bump=new Uint8Array(n*n*4);
@@ -63,6 +63,15 @@ export function createMoonWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}){
  for(const [x,z,w,d] of [[-22,-39,.3,19],[37,-42,.3,17],[19,25,12,.3],[-40,39,.3,5]])details.box(x,lunarHeight(x,z)+.15,z,w,.3,d,DARK);
  for(const [x,z,yaw] of [[-21,65,Math.PI/2],[13,64,-.4],[68,68,.8],[-43,-38,1.4]]){const root=rover();root.rotation.y=yaw;place(root,x,z,'Six-wheel lunar rover','prop');}
  for(const [x,z,yaw] of [[9,23,-.4],[40,58,1.7],[-37,38,.7]]){const root=astronaut();root.rotation.y=yaw;place(root,x,z,'Fictional expedition astronaut','prop');}
+ const satellites:T.Object3D[]=[];
+ for(const [x,z,yaw] of [[-56,-53,.28],[55,13,-.3]]){const root=goldSatellite();root.rotation.y=yaw;satellites.push(place(root,x,z,'Gold-foil satellite service module','prop'));}
+ // Low-height cyan/amber service markers and pad arcs share static emission
+ // batches. They add futuristic wayfinding without adding dynamic light sources.
+ for(const [i,pad] of PADS.entries())for(let j=0;j<32;j++){
+  const a=j*Math.PI/16,r=pad.r-.8,x=pad.x+Math.cos(a)*r,z=pad.z+Math.sin(a)*r;
+  details.box(x,GROUND+.19,z,.5,.08,.16,glowMaterial(i?'#e1b877':'#7bcbdc',1.65),-a);
+ }
+ for(const side of [-1,1])for(const z of [-15,-5,5,15]){const x=side*25.5;details.box(x,GROUND+.38,z,.18,.66,.3,METAL);details.box(x,GROUND+.72,z,.22,.08,.34,glowMaterial('#8bdbdf',1.8));}
  // Sealed trees use the existing planting and destruction lifecycle. The first
  // instance bank holds tree/planter/ribs; its second bank is one transparent dome.
  const tree=greenhouseTreeResources();objects.registerTreeSpecies('default',tree.trunk,tree.foliage,tree.bark,tree.leaves,'Sealed greenhouse tree',3.4,3.2);objects.treePreviewGeometry=tree.preview;
@@ -79,5 +88,5 @@ export function createMoonWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}){
  const localLighting=new LocalNightLighting(scene),groundGlows=new NightGroundGlows(scene,pools);
  const update=(_time:number,_player?:{x:number;z:number},_night=false)=>{};
  const updateLights=(dt:number,focus:T.Vector3,_time:number,night:boolean,_reduced=false)=>{groundGlows.update();localLighting.update(dt,focus,night);};
- return {obstacles,roads,objects,water,river,traffic,update,updateLights,updateClock:(_date=new Date())=>{},landmarks:MOON_LANDMARKS,landmarkRoots,localLighting,groundGlows,streetLamps,rocks,craters:CRATERS,ground,fictional:true};
+ return {obstacles,roads,objects,water,river,traffic,update,updateLights,updateClock:(_date=new Date())=>{},landmarks:MOON_LANDMARKS,landmarkRoots,localLighting,groundGlows,streetLamps,rocks,craters:CRATERS,ground,satellites,fictional:true};
 }

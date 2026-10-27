@@ -50,3 +50,14 @@ test('Explore picking reaches the bottom of a deep lunar crater',async()=>{
  assert.ok(point&&Math.abs(point.y-lunarHeight(crater.x,crater.z))<1e-8);
  assert.equal(resolveTeleport(point!.x,point!.z,world.obstacles).valid,true);
 });
+
+test('Lunar minimap craters match the terrain and gold satellites sit on level service pads',()=>{
+ assert.deepEqual(PLAN.map.craters,CRATERS);
+ assert.equal(world.satellites.length,2);
+ for(const satellite of world.satellites){
+  satellite.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(satellite);
+  assert.ok(Math.abs(bounds.min.y-lunarHeight(satellite.position.x,satellite.position.z))<.15,'Satellite feet must contact the service pad');
+  let gold=false;satellite.traverse(o=>{if(!(o instanceof T.Mesh))return;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof T.MeshStandardMaterial&&m.metalness>.75&&m.color.r>m.color.g*1.3&&m.color.g>m.color.b*1.5)gold=true;});
+  assert.ok(gold,'Satellite body needs its gold metallic material');
+ }
+});

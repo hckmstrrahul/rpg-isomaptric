@@ -2,7 +2,21 @@
 
 Updated: 28 October 2026. Same Node.js 24 / Three.js / Vite toolchain as the first release. The lockfile remains authoritative.
 
-## Seven-world expansion
+## Six-world refinement
+
+Hyderabad has been removed. Bengaluru, Agra and Lisbon now have connected street surfaces, approach-aligned signals and tested circulating traffic. Bengaluru adds office towers and cyclists, repairs roof faces/seat heights, and enlarges Vidhana Soudha. Agra enlarges its Taj and dry precinct by 1.7× and adds 184 varied dwellings. Lisbon adds 497 dwellings, 25 mixed vessels, bridge traffic and a wooded **Pena Palace · Sintra** corner inset. The palace's location is an explicitly disclosed artistic inclusion.
+
+Tiered fountains in Bengaluru and Lisbon share animated water geometry; Moon Base adds gold-foil satellites, batched guidance lights and subtle crater relief on its minimap. All worlds retain the default subtitle and start the explorer on accessible ground near the center. Discoveries update the counter without toasts.
+
+The backdrop now comes from the full-screen scene background, with a transparent shadow receiver. Day/night renders at low orbit angles show no exposed ground-plane edge in any world. Independent review also samples actual transformed building triangles along road centers, asphalt edges and pavements; it distinguishes intended overhead structures from road collisions. [Current refinement review](refinement-review.md). The previous review below is retained as a historical record, not evidence for the current revision.
+
+Road polygon union runs once at construction. Curbs are subtracted from the asphalt footprint on curved terrain, with adaptive height subdivision and redundant collinear points removed before triangulation. Fountains animate one shared water uniform per world; satellites and guide markers add no realtime lights. The shared pool remains limited to twelve local lights. Cold browser loading checks continue to reject requests for inactive worlds.
+
+**185 automated tests pass**, plus city/UI audits, TypeScript, the production build and all six static loading graphs. New checks cover joined road faces, shared adaptive triangle edges, dense hill-road/curb clearance, bridge landings, continuously closed hill sides, supported roofs, central arrivals, sustained signalized traffic and lunar hardware/map correspondence. `npm audit` reports zero known dependency vulnerabilities.
+
+Serial desktop samples at 1440×900, DPR 1 on Chrome / Apple M5 Max held approximately **60 fps in all six worlds, by day and night**, with p95 frame times of 16.7–16.8 ms. These six-second settled samples do not establish performance on low-end hardware. Lisbon's richer final scene remains within the unchanged scene-inventory budget at 1,434 meshes and 622,365 triangles, including repeated mesh references; pooled lights and bounded reflections remain unchanged.
+
+## Previous seven-world expansion
 
 Five selected-only chapters add Bengaluru’s civic/Cubbon Park district, Agra’s Taj riverfront, Hyderabad’s Old City, Lisbon’s Belém–Alcântara/Almada district and the explicitly fictional Moon Base. [Production plan and primary sources](WORLD-EXPANSION.md); [independent visual review ledger](WORLD-VISUAL-REVIEW.md).
 

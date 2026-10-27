@@ -5,15 +5,14 @@ const base=process.argv[2];
 if(!base?.startsWith('https://'))throw new Error('Pass an HTTPS preview built with VITE_CAPTURE=1');
 const chapters=[
   ['bengaluru',[0,3,0],1.05,{focus:[-45,7,-43],zoom:4,offset:[260,100,20]}],
-  ['agra',[0,2,7],1.05,{focus:[0,6,-9],zoom:5,offset:[100,100,260]}],
-  ['hyderabad',[0,3,0],1.05,{focus:[0,5,-15],zoom:9,offset:[100,60,260]}],
+  ['agra',[0,2,7],1.05,{focus:[0,10,-5],zoom:3.5,offset:[100,100,260]}],
   ['lisbon',[0,3,0],.95,{focus:[-30,5,-25],zoom:2.5,offset:[80,100,260]}],
   ['moon',[0,3,0],1.05,{focus:[0,10,0],zoom:3.5,offset:[120,110,240]}],
 ];
 await mkdir('docs/media',{recursive:true});
 const browser=await chromium.launch({channel:'chrome',headless:true});
 try{
-  for(const [id,focus,zoom,detail] of chapters){
+  for(const [id,focus,zoom,detail] of chapters.filter(([id])=>!process.argv[3]||process.argv[3].split(',').includes(id))){
     const page=await browser.newPage({viewport:{width:1600,height:900},deviceScaleFactor:1,reducedMotion:'reduce'});
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
     await page.goto(`${base}/?world=${id}`);

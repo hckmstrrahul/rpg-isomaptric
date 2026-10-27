@@ -11,11 +11,11 @@ import { installResponsivePinch } from './zoomInput.ts';
 import { createCharacter } from './character.ts';
 import { CityMap } from './map.ts';
 import { DamageBars } from './damageBars.ts';
-import { LANDMARKS, GROUND, WATER_HEIGHT, PLAYER_SPAWN, surfaceHeight, walkStep } from './layout.ts';
+import { LANDMARKS, GROUND, WATER_HEIGHT, PLAYER_SPAWN, surfaceHeight, walkStep, insideWorld } from './layout.ts';
 import { GameEffects } from './effects.ts';
 import { BOMB_RANGE, FIRE_INTERVAL, type Destructible } from './sandbox.ts';
 import { pickSceneTeleport, projectTerrainRay } from './teleport3d.ts';
-import { SOIL_DEPTH, insideTerrain } from './boundary.ts';
+import { SOIL_DEPTH } from './boundary.ts';
 import { WORLD_ID, WORLD_NAME, WORLD_DISTRICT, worldUrl, type WorldId } from './worldLocation.ts';
 import {ACTIVE_PLAN} from './worldPlan.ts';
 import './style.css';
@@ -33,12 +33,10 @@ import { createExploreFlight, type ExploreFlightFrame } from './exploreFlight.ts
 
 document.querySelector<HTMLElement>('#app')!.innerHTML=hud;
 installInputFocus();
-document.title=`rpg isomaptric · ${WORLD_NAME}${WORLD_ID==='moon'?' · Fictional bonus':''}`;
+document.title=`rpg isomaptric · ${WORLD_NAME}`;
 if(WORLD_ID==='moon'){
-  document.querySelector('.help-intro')!.textContent='This is a fictional lunar outpost. In Explore, click or tap open ground to fly there. Trees grow inside sealed greenhouses.';
+  document.querySelector('.help-intro')!.textContent='Explore the lunar outpost. In Explore, click or tap open ground to fly there. Trees grow inside sealed greenhouses.';
   document.querySelector('#tree-tool')!.setAttribute('title','Plant a tree in a sealed greenhouse');
-  document.querySelector('#world-moon')!.setAttribute('aria-label','Moon Base — fictional bonus world');
-  document.querySelector('.brand p')!.textContent='A fictional lunar outpost';
 }
 document.querySelector('#scene')!.setAttribute('aria-label',`Interactive three-dimensional ${WORLD_NAME}. Use WASD or arrow keys to walk. Click open ground to fly, drag to orbit and scroll to zoom.`);
 const worldTabs=[...document.querySelectorAll<HTMLAnchorElement>('[data-world]')];
@@ -88,7 +86,9 @@ async function init() {
   sun.shadow.mapSize.set(4096,4096);sun.shadow.camera.left=-165;sun.shadow.camera.right=165;sun.shadow.camera.top=165;sun.shadow.camera.bottom=-165;
   sun.shadow.camera.near=1;sun.shadow.camera.far=450;sun.shadow.normalBias=.12;sun.shadow.bias=-.00008;sun.shadow.radius=2;scene.add(sun);
   const fill=new T.DirectionalLight('#c9e8f1',.4);fill.position.set(70,80,-110);scene.add(fill);
-  const ground=new T.Mesh(new T.PlaneGeometry(2400,2400),new T.MeshStandardMaterial({color:'#a9c9b9',roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-SOIL_DEPTH-.1;ground.receiveShadow=true;scene.add(ground);
+  // The canvas background supplies the color everywhere. A transparent shadow
+  // receiver keeps the miniature grounded without a visible plane/horizon edge.
+  const ground=new T.Mesh(new T.PlaneGeometry(20000,20000),new T.ShadowMaterial({color:'#000000',opacity:.22}));ground.rotation.x=-Math.PI/2;ground.position.y=-SOIL_DEPTH-.1;ground.receiveShadow=true;ground.frustumCulled=false;scene.add(ground);
   const camera=new T.OrthographicCamera(-140,140,126,-126,.1,1800);
   const compactViewport=matchMedia('(max-width: 1100px), (max-width: 1366px) and (pointer: coarse)');
   const overviewZoom=()=>compactViewport.matches?1.8:ACTIVE_PLAN.camera.zoom;
@@ -122,7 +122,6 @@ async function init() {
     dubai:async()=> (await import('./worlds/dubai/world.ts')).createDubaiWorld(scene,assets),
     agra:async()=> (await import('./worlds/agra/world.ts')).createAgraWorld(scene,assets),
     bengaluru:async()=> (await import('./worlds/bengaluru/world.ts')).createBengaluruWorld(scene,assets),
-    hyderabad:async()=> (await import('./worlds/hyderabad/world.ts')).createHyderabadWorld(scene,assets),
     moon:async()=> (await import('./worlds/moon/world.ts')).createMoonWorld(scene,assets),
     lisbon:async()=> (await import('./worlds/lisbon/world.ts')).createLisbonWorld(scene,assets),
   };
@@ -153,7 +152,7 @@ async function init() {
     scene.background=new T.Color(lunar?'#07121c':night?'#171c22':'#a8c8bd');scene.environmentIntensity=night?.19:.28;
     skyLight.intensity=lunar?(night?.28:.65):night?.72:1.25;skyLight.color.set(night?'#a3afbd':'#d6ecf3');skyLight.groundColor.set(lunar?'#555b64':night?'#3b4846':'#667349');
     fill.intensity=night?.22:.4;fill.color.set(night?'#9baab8':'#c9e8f1');
-    ground.material.color.set(lunar?'#07121c':night?'#252c31':'#a9c9b9');world.river.material.color.set(night?'#344854':ACTIVE_PLAN.waterColor);world.river.night.value=night?1:0;
+    ground.material.opacity=night?.18:.22;world.river.material.color.set(night?'#344854':ACTIVE_PLAN.waterColor);world.river.night.value=night?1:0;
     miniMap.night=night;
     renderer.toneMappingExposure=night?1.14:1.04;
     void document.documentElement.offsetHeight;
@@ -243,7 +242,7 @@ async function init() {
     if(helpOpen||tool==='explore'||exploreFlight||flightFrame)return;
     if(!exploring)startExploring(false);
     updateAim();
-    if(!aimValid){const landClick=canvasClick&&tool==='bomb'&&insideTerrain(aimPoint.x,aimPoint.z)&&surfaceHeight(aimPoint.x,aimPoint.z)!==WATER_HEIGHT;if(!silent||landClick)toolNotice(aimIssue!);return;}
+    if(!aimValid){const landClick=canvasClick&&tool==='bomb'&&insideWorld(aimPoint.x,aimPoint.z)&&surfaceHeight(aimPoint.x,aimPoint.z)!==WATER_HEIGHT;if(!silent||landClick)toolNotice(aimIssue!);return;}
     if(persistentMessage)dismissToast();
     const p=character.root.position;
     character.body.rotation.y=Math.atan2(aimPoint.x-p.x,aimPoint.z-p.z);
@@ -460,7 +459,7 @@ async function init() {
       for(const l of LANDMARKS) {const d=Math.hypot(p.x-l.visitX,p.z-l.visitZ);if(d<distance){nearest=l;distance=d;}}
       $('location-name').textContent=distance<24?nearest.short:WORLD_DISTRICT;
       if(exploring&&!flightFrame?.airborne&&distance<11&&!visited.has(nearest.id)) {
-        visited.add(nearest.id);toast(`${nearest.short} discovered · ${visited.size} of ${LANDMARKS.length}`);
+        visited.add(nearest.id);
         $('visited-count').textContent=`${visited.size} of ${LANDMARKS.length} places discovered`;
       }
       lastDiscovery=now;

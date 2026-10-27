@@ -136,4 +136,4 @@ See [Dubai construction notes](DUBAI.md) for architectural and performance decis
 
 The absolute terrain height field feeds tree matrices and targeting bounds, traffic signals, walking, click picking, projected tool aim and flight clearance. Flight clearance samples terrain between endpoints in addition to testing building footprints, so hilly Lisbon and lunar crater rims are respected. Dry chapters do not allocate or update the reflection target; Moon Base also omits the Earth-view Moon textures and sky object.
 
-See [expansion process and geographic scope](WORLD-EXPANSION.md), plus per-chapter source notes under `src/worlds/`, for the four new real-world districts and explicitly fictional lunar bonus.
+See [expansion process and geographic scope](WORLD-EXPANSION.md), plus per-chapter source notes under `src/worlds/`, for the three newer real-world districts and fictional lunar world.

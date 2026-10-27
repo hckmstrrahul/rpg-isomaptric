@@ -4,6 +4,25 @@ import {registerGlow,glowMaterial} from '../../lighting.ts';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const METAL=material('#aab1b4',.43,.46),PALE=material('#c6c9c6'),DARK=material('#37434b'),SOLAR=material('#203743',.32,.24);
+const GOLD=material('#c69a3f',.32,.82),GOLD_SEAM=material('#75551f',.39,.7);
+export function goldSatellite(){
+ const b=new Builder();
+ b.cylinder(0,1.55,0,2.05,2.5,GOLD,1.7,8);b.cylinder(0,2.86,0,1.72,.16,METAL,1.72,8);
+ for(let i=0;i<8;i++){const a=i*Math.PI/4,aa=a+Math.PI/8;
+  b.beam(vec(Math.sin(a)*2.05,.3,Math.cos(a)*2.05),vec(Math.sin(a)*1.7,2.8,Math.cos(a)*1.7),.035,GOLD_SEAM,5);
+  for(const y of [.6,1.1,1.6,2.1])b.beam(vec(Math.sin(aa-.16)*1.92,y,Math.cos(aa-.16)*1.92),vec(Math.sin(aa+.16)*1.82,y+.16,Math.cos(aa+.16)*1.82),.016,GOLD_SEAM,4);
+ }
+ for(const side of [-1,1]){
+  b.beam(vec(side*1.4,1.8,0),vec(side*6.7,1.8,0),.09,METAL,8);
+  for(let n=0;n<3;n++){const x=side*(3.25+n*1.8);b.box(x,1.88,0,1.7,.11,3.8,SOLAR);for(let j=-3;j<=3;j++)b.box(x,1.945,j*.5,1.62,.012,.018,METAL);for(const dx of [-.54,0,.54])b.box(x+dx,1.946,0,.018,.012,3.7,METAL);}
+  b.beam(vec(side*.9,.4,.8),vec(side*2.6,0,1.8),.075,METAL,8);b.beam(vec(side*.9,.4,-.8),vec(side*2.6,0,-1.8),.075,METAL,8);
+  for(const z of [-1.8,1.8])b.cylinder(side*2.6,.08,z,.36,.16,PALE,.36,12);
+ }
+ b.cylinder(0,3.6,0,.07,1.4,METAL,.05,8);
+ const dish=new T.SphereGeometry(1.1,24,10,0,Math.PI*2,0,Math.PI*.38);dish.scale(1,.32,1);b.add(dish,METAL,0,4.28,0,1,1,1,Math.PI);dish.dispose();
+ b.beam(vec(0,4.1,0),vec(0,4.9,0),.035,GOLD_SEAM,6);b.sphere(0,4.9,0,.12,.12,.12,GOLD);
+ return b.finish();
+}
 const GLASS=registerGlow(new T.MeshStandardMaterial({color:'#385d6c',emissive:'#8bb8c5',roughness:.3,metalness:.25}),.27,.01);
 const STRIP=glowMaterial('#b6d8e4',1.35);
 let greenhouseGlass:T.MeshPhysicalMaterial|undefined;

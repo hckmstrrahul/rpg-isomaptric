@@ -40,6 +40,7 @@ function column(b:Builder,x:number,y:number,z:number,h:number,r=.22,color=TRIM){
  b.cylinder(x,y+h*.5,z,r,h,color,r*.85,10);b.box(x,y+.14,z,r*2.9,.28,r*2.9,color);b.box(x,y+h-.12,z,r*3.3,.24,r*3.3,color);
  b.cylinder(x,y+.35,z,r*1.35,.13,color,r*1.35,12);b.cylinder(x,y+h-.39,z,r*1.45,.16,color,r*1.3,12);
  b.box(x,y+h-.24,z,r*3.7,.14,r*3.7,color);b.box(x,y+.03,z,r*3.3,.12,r*3.3,color);
+ for(const yy of [.56,.72,h-.72,h-.88])b.cylinder(x,y+yy,z,r*1.13,.085,color,r*1.13,12);
  for(const side of [-1,1])for(const axis of [-1,1])b.sphere(x+side*r*.9,y+h-.42,z+axis*r*.9,r*.48,r*.25,r*.48,color);
 
 }
@@ -86,7 +87,13 @@ export function vidhanaSoudha(){
  for(const y of [3.1,5.45])for(let x=-4.4;x<=4.4;x+=2.2)b.box(x,y,10.74,1.15,1.5,.055,GLASS);
  for(const z of [11.3,13.15])for(let i=0;i<6;i++)column(b,-5.35+i*2.14,2.05,z,4.85,.25);
  b.box(0,7.03,12.1,14.2,.38,3.4,granite());b.box(0,7.35,12.1,14.8,.34,3.85,GRANITE);b.box(0,7.65,12.1,15.6,.23,4.5,TRIM);b.box(0,7.83,12.1,16.2,.15,4.9,TRIM);
- for(let i=0;i<14;i++)b.box(0,.1+i*.145,16.45-i*.235,14.2,.2,1.1,granite());
+ // The broad actual entrance has a long, shallow flight rather than a few
+ // oversized blocks. All treads overlap their risers and meet the portico.
+ for(let i=0;i<45;i++)b.box(0,.035+i*.045,17-i*.082,15.4,.09,.5,granite());
+ for(const side of [-1,1]){
+  b.beam(vec(side*7.8,.5,17.2),vec(side*7.8,2.5,13.35),.18,TRIM,8);
+  for(let i=0;i<12;i++)b.cylinder(side*7.8,.25+i*.17,16.9-i*.3,.075,.65,GRANITE,.075,8);
+ }
  for(const x of [-6.5,6.5]){b.box(x,4.6,11,1.1,4.9,1.25,granite());carvedCrest(b,x,6.1,11.7,.9);}
  // The dome's octagonal pavilion, corbelled balcony and cardinal chaithya
  // ornaments are prominent in actual close photographs of the building.
@@ -94,10 +101,10 @@ export function vidhanaSoudha(){
  for(let i=0;i<8;i++){const a=i*Math.PI/4;column(b,Math.sin(a)*3.25,7.65,7.8+Math.cos(a)*3.25,1.65,.15);}
  b.cylinder(0,9.7,7.8,3.95,.25,TRIM,3.95,8);b.cylinder(0,10.05,7.8,3.5,.55,granite(),3.5,24);
  for(let i=0;i<32;i++){const a=i*Math.PI/16;b.box(Math.sin(a)*3.72,9.3,7.8+Math.cos(a)*3.72,.17,.5,.25,GRANITE,a);b.cylinder(Math.sin(a)*3.77,10.12,7.8+Math.cos(a)*3.77,.045,.55,TRIM,.045,6);}
- dome(b,0,10.5,7.8,3.65,2.6);
+ dome(b,0,10.5,7.8,3.35,3.1);
  for(let i=0;i<4;i++){const a=i*Math.PI/2;carvedCrest(b,Math.sin(a)*3.35,11,7.8+Math.cos(a)*3.35,1.0,a);}
- b.cylinder(0,13.35,7.8,.43,.5,material('#9b8e6a'),.38,12);
- for(let i=0;i<4;i++){const a=i*Math.PI/2;b.sphere(Math.sin(a)*.21,13.88,7.8+Math.cos(a)*.21,.2,.48,.2,'#bda56b');b.sphere(Math.sin(a)*.27,14.22,7.8+Math.cos(a)*.27,.21,.21,.21,'#bda56b');}
+ b.cylinder(0,13.9,7.8,.43,.5,material('#9b8e6a'),.38,12);
+ for(let i=0;i<4;i++){const a=i*Math.PI/2;b.sphere(Math.sin(a)*.21,14.43,7.8+Math.cos(a)*.21,.2,.48,.2,'#bda56b');b.sphere(Math.sin(a)*.27,14.77,7.8+Math.cos(a)*.27,.21,.21,.21,'#bda56b');}
  // Four smaller front domes and two rear domes have raised square pavilions,
  // not loose spheres sitting on an undifferentiated roof.
  for(const [x,z,r] of [[-22,7,1.55],[-7.4,8.4,1.12],[7.4,8.4,1.12],[22,7,1.55],[-22,-12,1.4],[22,-12,1.4]]){
@@ -107,16 +114,27 @@ export function vidhanaSoudha(){
  }
  for(const z of [10.8,-14.6])for(const x of [-15,15])balustrade(b,x,z,16,6.8);
  for(let x=-6.5;x<=6.5;x+=.65){b.box(x,8.15,14,.3,.5,.23,GRANITE);b.cylinder(x,8.48,14,.16,.23,TRIM,0,6);}carvedCrest(b,0,8.5,14.1,1.65);
+ // Latticed stone parapets and deep capital brackets frame the eastern porch.
+ for(const z of [10.65,-14.7])for(const x of [-18,-14,-10,10,14,18])carvedCrest(b,x,7.05,z,.58,z<0?Math.PI:0);
+ for(const z of [11.3,13.15])for(let i=0;i<6;i++){
+  const x=-5.35+i*2.14;
+  for(const side of [-1,1])b.box(x+side*.32,6.63,z,.32,.36,.7,TRIM);
+ }
  const text=canvasTexture(1024,96,c=>{c.fillStyle=GRANITE;c.fillRect(0,0,1024,96);c.fillStyle='#514e42';c.textAlign='center';c.font='bold 43px serif';c.fillText("GOVERNMENT WORK IS GOD’S WORK",512,61);});
  const sign=new T.MeshStandardMaterial({map:text,roughness:.9});const geo=new T.PlaneGeometry(12.7,.5);b.add(geo,sign,0,7.24,14.04);geo.dispose();
- const root=b.finish();root.name='Vidhana Soudha · carved granite pavilions and seven domes';root.rotation.y=Math.PI/2;root.userData.architecture='neo-dravidian';root.userData.smallDomes=6;root.userData.entranceColumns=12;root.userData.carvedCivicFacade=true;return root;
+ const root=b.finish();root.name='Vidhana Soudha · carved granite pavilions and seven domes';root.rotation.y=Math.PI/2;root.scale.set(1.22,1.22,1.22);root.userData.architecture='neo-dravidian';root.userData.smallDomes=6;root.userData.entranceColumns=12;root.userData.entranceSteps=45;root.userData.carvedCivicFacade=true;return root;
 }
 function pediment(b:Builder,x:number,y:number,z:number,w:number,h:number,d:number,color=REDTRIM){
  const s=new T.Shape();s.moveTo(-w/2,0);s.lineTo(w/2,0);s.lineTo(0,h);s.closePath();const g=new T.ExtrudeGeometry(s,{depth:d,bevelEnabled:false});b.add(g,material(color),x,y,z);g.dispose();
 }
-function pitchedRoof(b:Builder,x:number,y:number,z:number,w:number,d:number,h:number,color='#a8664e'){
- const vertices=[-w/2,0,-d/2,w/2,0,-d/2,0,h,-d/2,-w/2,0,d/2,w/2,0,d/2,0,h,d/2];
- const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setIndex([0,1,2,3,5,4,0,2,5,0,5,3,2,1,4,2,4,5]);g.computeVertexNormals();b.add(g,material(color),x,y,z);g.dispose();
+export function pitchedRoof(b:Builder,x:number,y:number,z:number,w:number,d:number,h:number,color='#a8664e'){
+ // The ridge follows each wing's long axis instead of spanning its short end.
+ const across=Math.min(w,d),along=Math.max(w,d),yaw=w>d?Math.PI/2:0;
+ const vertices=[-across/2,0,-along/2,across/2,0,-along/2,0,h,-along/2,-across/2,0,along/2,across/2,0,along/2,0,h,along/2];
+ // Exterior-facing slopes/gables plus a closed soffit. The previous winding
+ // faced inward, so roofs disappeared from above and looked detached in orbit.
+ const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setIndex([0,2,1,3,4,5,0,5,2,0,3,5,2,4,1,2,5,4,0,1,4,0,4,3]);g.computeVertexNormals();b.add(g,material(color),x,y,z,1,1,1,0,yaw);g.dispose();
+ b.box(x,y-.045,z,w,.09,d,material(color));
 }
 export function attaraKacheri(){
  const b=new Builder();
@@ -153,7 +171,7 @@ export function library(){
  const root=b.finish();root.name='Seshadri Iyer Memorial Hall · red library';return root;
 }
 export function governmentMuseum(){
- const b=new Builder();b.box(0,2.4,0,21,4.4,10,RED);windows(b,21,4,10,.6,2,1.65,REDTRIM);pitchedRoof(b,0,4.7,0,22,10.5,1.25);
+ const b=new Builder();b.box(0,2.4,0,21,4.4,10,RED);windows(b,21,4,10,.6,2,1.65,REDTRIM);b.box(0,4.64,0,21.6,.24,10.3,REDTRIM);pitchedRoof(b,0,4.72,0,22,10.5,1.25);
  for(const x of [-8.4,0,8.4]){b.box(x,2.9,5.4,4.5,5.3,2.8,RED);pediment(b,x,5.6,6.3,5.3,1.25,.4);for(const xx of [-1.25,1.25])column(b,x+xx,.55,7,4.9,.18,REDTRIM);}
  b.box(0,.25,0,22,.5,14,GRANITE);const root=b.finish();root.rotation.y=Math.PI/2;root.name='Government Museum · red verandah and pediments';return root;
 }
@@ -173,7 +191,7 @@ export function urbanBlock(index:number,w=8,d=9,h=5){
  const b=new Builder(),style=index%5,color=['#c9bba1','#c3bcaa','#d8cdb6','#b3c2ba','#c7ac95'][style];
  if(style===1){
   // Low tile-roof bungalow/office remnant, sheltered by a real veranda.
-  b.box(0,1.65,-.6,w-1,3.3,d-1.5,color);windows(b,w-1,2.8,d-1.5,.4,1,1.6,color);pitchedRoof(b,0,3.35,-.5,w+.25,d+.2,1.35,'#945f44');
+  b.box(0,1.65,-.6,w-1,3.3,d-1.5,color);const glazing=new Builder();windows(glazing,w-1,2.8,d-1.5,.4,1,1.6,color);const facade=glazing.finish();facade.position.z=-.6;b.absorb(facade);pitchedRoof(b,0,3.27,-.5,w+.25,d+.2,1.35,'#945f44');
   b.box(0,.2,d/2-.5,w,.4,1.4,GRANITE);for(const x of [-w*.4,0,w*.4])column(b,x,.4,d/2-.5,2.5,.11,color);b.box(0,2.95,d/2-.55,w,.18,1.6,color);
  }else if(style===3){
   // Restrained office facade with horizontal glazing and shaded vertical fins.
@@ -187,6 +205,27 @@ export function urbanBlock(index:number,w=8,d=9,h=5){
   if(style===2)for(let i=0;i<3;i++)b.box((i-1)*w*.23,.85,d/2+.04,w*.2,1.5,.07,['#566c63','#805b43','#786e53'][i]);
  }
  const root=b.finish();root.name='Central Bengaluru street fabric';root.userData.urbanStyle=style;return root;
+}
+/** Bounded central-city office towers, with three distinct facade systems. */
+export function officeTower(index:number,w=8,d=9,h=22){
+ const b=new Builder(),style=index%3,stone=['#c5c2ae','#bfc9c1','#c7b5a1'][style],glass=material(['#41616a','#3b545d','#506c70'][style],.32,.24);
+ b.box(0,.5,0,w+1,1,d+1,stone);b.box(0,1.7,0,w,2.4,d,stone);
+ const setback=style===1?.75:0,ww=w-setback,dd=d-setback;
+ b.box(0,(h+2.9)/2,0,ww,h-2.9,dd,style===2?stone:glass);
+ if(style===0){
+  for(const side of [-1,1])for(let x=-ww/2+.35;x<ww/2;x+=1.3)b.box(x,(h+2.9)/2,side*(dd/2+.08),.11,h-2.9,.22,'#a4b8b6');
+  for(const side of [-1,1])for(let z=-dd/2+.35;z<dd/2;z+=1.3)b.box(side*(ww/2+.08),(h+2.9)/2,z,.22,h-2.9,.11,'#a4b8b6');
+  for(let y=4;y<h;y+=2.7)b.box(0,y,0,ww+.18,.12,dd+.18,'#b2bcb5');
+ }else if(style===1){
+  for(let y=3.8;y<h;y+=1.7){b.box(0,y,0,ww+.2,.16,dd+.2,'#c8d0c7');for(const side of [-1,1])b.box(0,y-.45,side*(dd/2+.02),ww-.3,.6,.04,Math.floor(y)%4===0?warmGlass():glass);}
+  for(const x of [-ww/2,ww/2])b.box(x,h/2+1,0,.42,h-1,dd+.4,stone);
+ }else{
+  const facade=new Builder();windows(facade,ww,h-3.5,dd,3.1,Math.floor((h-3)/1.8),1.45,stone);b.absorb(facade.finish());
+  for(let y=5;y<h;y+=3.6)b.box(0,y,0,ww+.18,.13,dd+.18,'#dfd6c1');
+ }
+ b.box(0,h+.1,0,ww+.6,.25,dd+.6,'#d4d5c7');b.box(0,h+.65,0,ww*.55,1.1,dd*.55,'#86958f');
+ b.box(0,h+1.24,0,ww*.6,.13,dd*.6,'#c8cbbb');
+ const root=b.finish();root.name='Bengaluru · central-city office tower';root.userData.urbanStyle=5+style;root.userData.highRise=true;return root;
 }
 export function rainTreeResources(){
  const tree=treeResources();return {trunk:tree.trunk.clone().scale(1.4,1.22,1.4),foliage:tree.foliage.clone().scale(1.72,1.05,1.72),bark:tree.bark,leaves:tree.leaves};

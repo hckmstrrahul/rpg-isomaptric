@@ -31,7 +31,7 @@ export class CityMap {
     const palette=this.night?{
       background:'#222a30',land:'#394541',water:'#354852',bank:'#65716f',road:ROAD_NIGHT_COLOR,building:'#879195',tree:'#465a4b',path:'#778070',
     }:{background:this.full?'#e7eadc':'#e6e9d9',land:'#c4d0a6',water:'#56aeb1',bank:'#f2e9cf',road:ROAD_COLOR,building:'#a6ac98',tree:'#95ad7c',path:'#eae3c5'};
-    if(ACTIVE_PLAN.moonVisible===false){palette.land=this.night?'#414a53':'#babfc2';palette.background=this.night?'#202a32':'#d2d5d6';palette.bank=palette.land;palette.tree=this.night?'#647870':'#9eaaa3';}
+    if(ACTIVE_PLAN.moonVisible===false){palette.land=this.night?'#303c48':'#b4bec6';palette.background=this.night?'#202a35':'#c6cfd4';palette.bank=palette.land;palette.tree=this.night?'#749a9b':'#91aaaa';palette.building=this.night?'#849da9':'#7a929f';palette.road=this.night?'#5b7b8d':'#778e9c';}
     if(this.full){ctx.fillStyle=palette.background;ctx.fillRect(0,0,size,size);}
     const polygon=(points:{x:number;z:number}[],color:string)=>{
       ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(map(p.x),map(p.z)):ctx.moveTo(map(p.x),map(p.z)));ctx.closePath();ctx.fillStyle=color;ctx.fill();
@@ -39,6 +39,19 @@ export class CityMap {
     ctx.fillStyle=ACTIVE_PLAN.waterVisible===false||ACTIVE_PLAN.londonRiver?palette.background:palette.water;ctx.fillRect(0,0,size,size);
     for(const land of ACTIVE_PLAN.map.land)polygon(land,palette.land);
     for(const water of ACTIVE_PLAN.map.water??[])polygon(water,palette.water);
+    if(ACTIVE_PLAN.map.craters){
+      // The same crater coordinates drive the terrain and this quiet relief map.
+      ctx.save();
+      for(const crater of ACTIVE_PLAN.map.craters){
+        const x=map(crater.x),z=map(crater.z),r=crater.r*k;
+        const shade=ctx.createRadialGradient(x+r*.15,z+r*.16,r*.08,x,z,r*1.22);
+        shade.addColorStop(0,this.night?'#07111d55':'#3b4f6133');shade.addColorStop(.72,this.night?'#101b2638':'#52657526');shade.addColorStop(1,'#596b7c00');
+        ctx.fillStyle=shade;ctx.beginPath();ctx.arc(x,z,r*1.22,0,Math.PI*2);ctx.fill();
+        ctx.lineWidth=Math.max(.65,r*.07);ctx.strokeStyle=this.night?'#a9c8d43a':'#f0f7fa60';ctx.beginPath();ctx.arc(x,z,r,Math.PI*.88,Math.PI*1.91);ctx.stroke();
+        ctx.lineWidth=.6;ctx.strokeStyle=this.night?'#14233155':'#5d718e33';ctx.beginPath();ctx.arc(x,z,r*.83,Math.PI*.02,Math.PI*.83);ctx.stroke();
+      }
+      ctx.restore();
+    }
     // Road fills only: borders belong to the 3D scene. Square caps retain the
     // continuous corner joins without outlining each block on this small map.
     ctx.save();ctx.lineCap='square';

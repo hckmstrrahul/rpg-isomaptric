@@ -4,6 +4,7 @@ import { TRAFFIC_NORTH, ROAD_SOUTH } from './cityPlan.ts';
 import { WorldObjects } from './interactables.ts';
 import { createRoadVehicle, VEHICLE_TYPES } from './roadVehicles.ts';
 import { createTrafficSignals, signalPhase } from './trafficSignals.ts';
+import type {Road} from './cityPlan.ts';
 
 export class RoadRoute {
   private curve=new T.CurvePath<T.Vector3>();
@@ -79,10 +80,10 @@ function bridgeLoop(north:number,south:number) {
   for(let z=south-8;z>north+7;z-=2)points.push(new T.Vector3(bank(z,1,4.2),0,z));
   points.push(new T.Vector3(bank(north,1,4.2),0,north),points[0].clone());return points;
 }
-export function createTraffic(scene:T.Scene,objects:WorldObjects,options?:{loops:{x:number;z:number}[][];junctions:{x:number;z:number}[];laneSign?:number;carsPerRoute?:number;city?:string}) {
+export function createTraffic(scene:T.Scene,objects:WorldObjects,options?:{loops:{x:number;z:number}[][];junctions:{x:number;z:number}[];laneSign?:number;carsPerRoute?:number;city?:string;roads?:Road[]}) {
   const routes=options?options.loops.flatMap(loop=>{const p=loop.map(p=>new T.Vector3(p.x,0,p.z));return [new RoadRoute(p,options.laneSign),new RoadRoute([...p].reverse(),options.laneSign)];}):[-1,1].flatMap(side=>{const p=bankLoop(side);return [new RoadRoute(p),new RoadRoute([...p].reverse())];});
   if(!options)for(const [north,south] of [[-51,8],[8,48]]){const p=bridgeLoop(north,south);routes.push(new RoadRoute(p),new RoadRoute([...p].reverse()));}
-  const signals=createTrafficSignals(scene,options?.junctions);
+  const signals=createTrafficSignals(scene,options?.junctions,options?.roads);
   const parked:{x:number;z:number;length:number}[]=[{...PLAYER_SPAWN,length:4},...LANDMARKS.map(l=>({x:l.visitX,z:l.visitZ,length:3}))];
   const cars=routes.flatMap((route,index)=>Array.from({length:options?.carsPerRoute??(index<4?8:3)},(_,i)=>{
     let kind=VEHICLE_TYPES[(i+index*2)%VEHICLE_TYPES.length];

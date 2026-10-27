@@ -1,6 +1,6 @@
 # Building the next world
 
-The seven chapters are **London, Dubai, Bengaluru, Agra, Hyderabad, Lisbon** and the fictional **Moon Base**. They share the renderer, explorer, input, camera, sandbox and effects. Their geometry and spatial plans differ. This is a small explicit location boundary, not a downloadable world format or general-purpose plug-in engine.
+The six chapters are **London, Dubai, Bengaluru, Agra, Lisbon** and the fictional **Moon Base**. They share the renderer, explorer, input, camera, sandbox and effects. Their geometry and spatial plans differ. This is a small explicit location boundary, not a downloadable world format or general-purpose plug-in engine.
 
 ## Current extension points
 
@@ -41,4 +41,4 @@ New terrestrial chapters must establish a coherent district with actual landmark
 
 Use `worlds/shared/surfaces.ts` for generic road strokes; never import another chapter for a helper. Type-only imports are safe for shared contracts. Chapter metadata belongs in `worldLocation.ts` without geometry or asset imports. Add both selected-plan and constructor loaders, and run `node scripts/audit-world-loading.mjs` after building. An HTTPS URL adds cold-browser network checks.
 
-`heightAt` returns absolute surface elevation. Shared walking, trees, signals, aiming and flight clearance use this field. Dry districts set `waterVisible:false` to skip reflection allocation. The lunar bonus also sets `moonVisible:false` to skip the Earth-view lunar textures/object. All worlds retain the common runtime shape, including a hidden water mesh when unused.
+`heightAt` returns absolute surface elevation. Shared walking, trees, signals, aiming and flight clearance use this field. Dry districts set `waterVisible:false` to skip reflection allocation. Moon Base also sets `moonVisible:false` to skip the Earth-view lunar textures/object. All worlds retain the common runtime shape, including a hidden water mesh when unused.

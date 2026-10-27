@@ -4,7 +4,7 @@ import {chromium} from 'playwright';
 const base=process.argv[2];
 const manifest=process.env.WORLD_MANIFEST?JSON.parse(await readFile(process.env.WORLD_MANIFEST,'utf8')):base?await (await fetch(new URL('/.vite/manifest.json',base))).json():JSON.parse(await readFile('dist/.vite/manifest.json','utf8'));
 const worlds=Object.keys(manifest).filter(k=>/^src\/worlds\/[^/]+\/plan\.ts$/.test(k)).map(k=>k.split('/')[2]);
-assert.deepEqual([...worlds].sort(),['agra','bengaluru','dubai','hyderabad','lisbon','london','moon'],'All seven chapter plans must exist in the build');
+assert.deepEqual([...worlds].sort(),['agra','bengaluru','dubai','lisbon','london','moon'],'All six chapter plans must exist in the build');
 const graph=(key,seen=new Set())=>{if(seen.has(key))return seen;seen.add(key);for(const dep of manifest[key]?.imports??[])graph(dep,seen);return seen;};
 const worldEntry=id=>id==='london'?'src/world.ts':`src/worlds/${id}/world.ts`;
 const report={static:[],network:[]};

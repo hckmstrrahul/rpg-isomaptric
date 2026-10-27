@@ -2,11 +2,11 @@
 
 **Tiny playable isometric worlds**
 
-[Play London](https://rpg-isomaptric.vercel.app/?world=london) · [Play Dubai](https://rpg-isomaptric.vercel.app/?world=dubai) · [Bengaluru](https://rpg-isomaptric.vercel.app/?world=bengaluru) · [Agra](https://rpg-isomaptric.vercel.app/?world=agra) · [Hyderabad](https://rpg-isomaptric.vercel.app/?world=hyderabad) · [Lisbon](https://rpg-isomaptric.vercel.app/?world=lisbon) · [Moon Base](https://rpg-isomaptric.vercel.app/?world=moon) · [Engineering guide](docs/ENGINEERING.md) · [Build another world](docs/WORLD-AUTHORING.md) · [MIT license](LICENSE)
+[Play London](https://rpg-isomaptric.vercel.app/?world=london) · [Play Dubai](https://rpg-isomaptric.vercel.app/?world=dubai) · [Bengaluru](https://rpg-isomaptric.vercel.app/?world=bengaluru) · [Agra](https://rpg-isomaptric.vercel.app/?world=agra) · [Lisbon](https://rpg-isomaptric.vercel.app/?world=lisbon) · [Moon Base](https://rpg-isomaptric.vercel.app/?world=moon) · [Engineering guide](docs/ENGINEERING.md) · [Build another world](docs/WORLD-AUTHORING.md) · [MIT license](LICENSE)
 
-Seven miniature playable worlds share one explorer, traffic, day and night, and a destructible sandbox. Choose **London, Dubai, Bengaluru, Agra, Hyderabad, Lisbon**, or **Moon Base**, a clearly fictional bonus world, with the pill selector at the top.
+Six miniature playable worlds share one explorer, traffic, day and night, and a destructible sandbox. Choose **London, Dubai, Bengaluru, Agra, Lisbon**, or **Moon Base**, a fictional lunar world, with the pill selector at the top.
 
-[Map composition inspiration](https://x.com/hckmstrrahul/status/1729860085982040454). London and Dubai are artistic city compositions. The four new terrestrial chapters use real landmark relationships within simplified, artistically scaled districts: Cubbon Park, the Taj riverfront, Hyderabad’s Old City, and Belém–Alcântara/Almada. They are not navigation maps. Moon Base depicts an invented settlement. Interiors, multiplayer and saved-world persistence are not implemented. [Research, scope and production process](docs/WORLD-EXPANSION.md).
+[Map composition inspiration](https://x.com/hckmstrrahul/status/1729860085982040454). London and Dubai are artistic city compositions. The three newer terrestrial chapters use real landmark relationships within simplified, artistically scaled districts: Cubbon Park, the Taj riverfront, and Belém–Alcântara/Almada with a clearly labelled Sintra hilltop excursion. They are not navigation maps. Moon Base depicts an invented settlement. Interiors, multiplayer and saved-world persistence are not implemented. [Research, scope and production process](docs/WORLD-EXPANSION.md).
 
 <table>
   <tr>
@@ -23,18 +23,19 @@ https://github.com/user-attachments/assets/3212fd84-550a-4bce-9fa4-1f4871d053b8
 
 [▶ Watch the gameplay video on YouTube](https://youtu.be/l_WwsOZ4Jgw)
 
-## Seven worlds, shared little systems
+## Six worlds, shared little systems
 
 - **Explore by default.** Walk, run, or click open ground to fly there along a smooth obstacle-clearing arc. A gentle zoom breathes out and back in, with no landing impact or camera shake.
 - **A miniature London.** Westminster, a live four-face clock tower, Tower Bridge, the London Eye, the Gherkin, an abbey, gardens, and a curved Thames. Most geometry and materials are generated in code.
 - **A waterfront Dubai.** 28 skyline towers, the coastal Burj Al Arab, three sculptural waterfront landmarks and 27 limestone residences, a sheltered marina and three shipping bridges. 1,100 palms and broadleaf trees plus 1,800 low shrubs bring the landscape into the streets. [Dubai construction notes](docs/DUBAI.md).
-- **Four researched city districts.** Bengaluru’s granite legislature and red civic buildings in Cubbon Park; Agra’s single Taj, charbagh and Yamuna; Charminar and the bazaars of Hyderabad; Lisbon’s limestone monuments, tiled roofs, hills and Tagus suspension bridge.
-- **A fictional lunar bonus.** Cratered terrain, pressure habitats, landing pads and a solar farm. Planting creates a tree in a sealed greenhouse.
+- **Three researched city districts.** Bengaluru’s enlarged granite legislature, grounded red civic buildings, office towers and Cubbon Park fountain; Agra’s grand Taj, charbagh, Yamuna and dense Taj Ganj housing; Lisbon’s limestone monuments, varied tiled-roof neighborhoods, hills and Tagus suspension bridge. A wooded corner contains the requested **Pena Palace · Sintra** excursion.
+- **A lunar world.** Cratered terrain, pressure habitats, landing pads, gold-foil satellites, a solar farm and a crater-relief minimap. Planting creates a tree in a sealed greenhouse.
 - **Only the selected world loads.** Chapter plans and geometry are separate dynamic imports. London’s asset pack and Dubai’s lettering load only in their own chapters; a location change releases the previous scene. Dry worlds skip river reflections.
 - **Cities in motion.** London has 44 vehicles across cars, buses, cabs, vans, trucks, bicycles and motorcycles; left-hand traffic, timed signals and player avoidance. 22 boats leave fading world-space wakes and pass beneath three bridges. Dubai uses 36 vehicles with right-hand traffic, eight signal junctions, 18 moving motor/sailing yachts, and 20 moored yachts across five connected piers.
 - **Day and night.** Warm clock rings, softly blue Eye capsules, occupied windows, 205 street lanterns, red rooftop beacons, and a world-space moon with a critically damped entrance. Dubai adds illuminated tower suites, softly lit glass shells and 147 waterfront street lights. Appearance persists through loading and location changes.
 - **A playful sandbox.** “Grenade Gun” fires straight, fiery shells up to 50 m, with projected blast previews and water splashes. Plant trees within 50 m, including on cleared plots. Reload restores the city.
 - **Camera and touch controls.** Slow arrival zoom, smooth follow, Birdview, free orbit and pinch. Separate pointer tracking supports simultaneous touch movement, running and tool use.
+- **Connected and grounded.** City roads meet at joined junctions and continue to the miniature's cut edges. Signals face their approaches; traffic runs on tested circulating routes. Every world starts the explorer near its center on accessible ground. Discoveries update the counter silently.
 - **Small details that hold up close.** Tiled roofs on every face, modeled goggles and armor, British railings and hydrant markers, glazed telephone boxes, bridge ramps and flush road paint.
 
 | Day | Night |
@@ -69,7 +70,7 @@ https://github.com/user-attachments/assets/3212fd84-550a-4bce-9fa4-1f4871d053b8
 
 ## Chapter 003 · Bengaluru
 
-The inland Cubbon Park civic district: Vidhana Soudha, Attara Kacheri, mature park canopy and the southern city edge.
+The inland Cubbon Park civic district: a larger Vidhana Soudha, Attara Kacheri, mature park canopy, a flowing fountain and varied office towers. Cars and cyclists circulate on the connected civic ring.
 
 | Day | Night |
 | --- | --- |
@@ -77,31 +78,25 @@ The inland Cubbon Park civic district: Vidhana Soudha, Attara Kacheri, mature pa
 
 ## Chapter 004 · Agra
 
-One Taj Mahal beside the Yamuna, with its mosque, jawab, charbagh and Great Gate; Mehtab Bagh lies across the river.
+A grander Taj Mahal beside the Yamuna, with four detached minarets, mosque, jawab, charbagh and Great Gate; Mehtab Bagh lies across the river. The monument and precinct are artistically enlarged, with 184 varied dwellings around Taj Ganj.
 
 | Day | Night |
 | --- | --- |
 | ![Agra Taj riverfront, gardens and Taj Ganj by day](docs/media/agra-day.jpg) | ![Agra riverfront and softly lit Taj Mahal at night](docs/media/agra-night.jpg) |
 
-## Chapter 005 · Hyderabad
+## Chapter 005 · Lisbon
 
-Charminar anchors the Old City, with Mecca Masjid, Laad Bazaar, Gulzar Houz and Chowmahalla Palace in their relative districts.
-
-| Day | Night |
-| --- | --- |
-| ![Charminar and Hyderabad Old City market streets by day](docs/media/hyderabad-day.jpg) | ![Hyderabad Old City and restrained landmark lighting at night](docs/media/hyderabad-night.jpg) |
-
-## Chapter 006 · Lisbon
-
-Belém–Alcântara and Almada face one another across the Tagus: limestone monuments, MAAT, tiled street rows and the 25 de Abril Bridge.
+Belém–Alcântara and Almada face one another across the Tagus: limestone monuments, MAAT, 497 varied dwellings, a flowing fountain and the 25 de Abril Bridge. Twenty-five vessels mix launches, sails, yachts, catamarans, ferries and one large ship. Pena Palace stands on a wooded corner hill, explicitly labelled as a **Sintra excursion**; this is an artistic inset rather than its real geographic position.
 
 | Day | Night |
 | --- | --- |
 | ![Lisbon and Almada banks connected by the red suspension bridge](docs/media/lisbon-day.jpg) | ![Lisbon waterfront landmarks and bridge at night](docs/media/lisbon-night.jpg) |
 
-## Bonus · Moon Base
+![Pena Palace's yellow rotunda, red clock tower and layered terraces on the wooded Sintra excursion hill](docs/media/lisbon-pena-palace.jpg)
 
-A **fictional settlement** on cratered lunar terrain, with pressure habitats, solar arrays, rovers and contained greenhouse planting.
+## Chapter 006 · Moon Base
+
+A **fictional settlement** on cratered lunar terrain, with pressure habitats, gold-foil satellites, solar arrays, rovers and contained greenhouse planting. Its minimap uses subtle crater relief while retaining the shared game controls and default subtitle.
 
 | Sunlit terrain | Base lights |
 | --- | --- |
@@ -142,7 +137,7 @@ There is no backend, account, API key, paid service, or external runtime asset r
 | Change world | Location pill at the top; arrow keys then Enter or Space when focused |
 | Help / cancel | `?` / `Escape` |
 
-The location URL is shareable (`?world=london`, `dubai`, `bengaluru`, `agra`, `hyderabad`, `lisbon` or `moon`), and the last selected location is remembered. Changing worlds rebuilds the scene and resets its temporary sandbox edits. Focus the canvas to use gameplay keys. Mobile and tablet offer a directional pad and independent Run and tool buttons. The toolbelt has three modes: **Explore**, **Grenade Gun** and **Plant a Tree**. Explore is selected on load and has no weapon or red marker. Travel is part of Explore; there is no separate Teleport tab or `M` shortcut. Invalid water and occupied destinations cannot be used for travel. Click or tap a valid destination in Explore to fly there; the gentle zoom returns to its previous level on arrival.
+The location URL is shareable (`?world=london`, `dubai`, `bengaluru`, `agra`, `lisbon` or `moon`), and the last selected location is remembered. Changing worlds rebuilds the scene and resets its temporary sandbox edits. Focus the canvas to use gameplay keys. Mobile and tablet offer a directional pad and independent Run and tool buttons. The toolbelt has three modes: **Explore**, **Grenade Gun** and **Plant a Tree**. Explore is selected on load and has no weapon or red marker. Travel is part of Explore; there is no separate Teleport tab or `M` shortcut. Invalid water and occupied destinations cannot be used for travel. Click or tap a valid destination in Explore to fly there; the gentle zoom returns to its previous level on arrival.
 
 ## How it works
 

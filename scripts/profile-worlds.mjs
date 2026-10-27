@@ -1,6 +1,6 @@
 import {chromium} from 'playwright';
 import {writeFile,mkdir} from 'node:fs/promises';
-const base=process.argv[2],ids=(process.argv[3]??'london,dubai,bengaluru,agra,hyderabad,lisbon,moon').split(',');
+const base=process.argv[2],ids=(process.argv[3]??'london,dubai,bengaluru,agra,lisbon,moon').split(',');
 if(!base?.startsWith('https://'))throw new Error('Pass HTTPS deployment');
 const browser=await chromium.launch({channel:'chrome',headless:true}),report=[];
 await mkdir('artifacts',{recursive:true});

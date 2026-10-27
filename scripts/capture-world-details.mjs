@@ -3,9 +3,8 @@ import {mkdir,writeFile} from 'node:fs/promises';
 const base=process.argv[2],label=process.argv[3]??'world-details';
 if(!base?.startsWith('https://'))throw new Error('Pass HTTPS capture preview');
 const shots={
- agra:[['taj-side',{focus:[0,6,-9],zoom:6,offset:[260,85,30]}],['taj-rear',{focus:[0,6,-9],zoom:6,offset:[-180,100,-180]}]],
+ agra:[['taj-side',{focus:[0,10,-5],zoom:3.6,offset:[260,85,30]}],['taj-rear',{focus:[0,10,-5],zoom:3.6,offset:[-180,100,-180]}]],
  bengaluru:[['vidhana-front',{focus:[-45,7,-43],zoom:4.5,offset:[260,100,20]}],['attara-front',{focus:[15,4,-34],zoom:5,offset:[-260,90,15]}]],
- hyderabad:[['charminar-front',{focus:[0,5,-15],zoom:11,offset:[100,60,260]}],['charminar-side',{focus:[0,5,-15],zoom:10,offset:[-260,75,20]}]],
  lisbon:[['maat-waterfront',{focus:[2,3,-22],zoom:10,offset:[30,65,260]}],['maat-above',{focus:[2,3,-22],zoom:9,offset:[50,250,50]}],['belem-south',{focus:[-80,5,-3],zoom:7,offset:[120,70,260]}],['jeronimos',{focus:[-45,5,-34],zoom:5,offset:[30,80,260]}],['tejo-rear',{focus:[-14,9,-18],zoom:8,offset:[-180,80,-220]}],['tejo-side',{focus:[-14,9,-18],zoom:8,offset:[260,70,30]}]],
  moon:[['crater-low',{focus:[-74,-1,-72],zoom:5,offset:[160,70,200]}],['habitat-low',{focus:[0,10,0],zoom:5,offset:[120,65,240]}],['habitat-rear',{focus:[0,10,0],zoom:4,offset:[-200,100,-220]}]],
 };

@@ -2,11 +2,18 @@ import * as T from 'three';
 import {Builder,material,vec,canvasTexture} from '../../geometry.ts';
 import {registerGlow} from '../../lighting.ts';
 
-/** Original procedural geometry, metres converted at 1 world unit = 5.5 m.
+/** Original procedural geometry; the hero ensemble is uniformly enlarged by its world.
  * Architectural references: tajmahal.gov.in/the-taj-exteriors.aspx and
  * tajmahal.gov.in/outlying-building.aspx. No photographic textures or pseudo-script. */
 const ivory='#eee9db',edge='#ded8c9',sandstone='#a75c45',sandEdge='#c48868',inlay='#756c63';
-const marble=material(ivory,.52,.025),shadow=material('#464845'),red=material(sandstone),gold=material('#b99a5c',.36,.55);
+const marbleMap=canvasTexture(256,256,c=>{
+  c.fillStyle='#eeeade';c.fillRect(0,0,256,256);
+  for(let y=0;y<256;y+=2)for(let x=0;x<256;x+=2){const v=232+Math.floor(6*(Math.sin(x*1.37+y*.83)*.5+.5));c.fillStyle=`rgba(${v},${v-2},${v-9},.32)`;c.fillRect(x,y,2,2);}
+  c.strokeStyle='rgba(130,122,112,.07)';c.lineWidth=.6;
+  for(let i=0;i<7;i++){c.beginPath();for(let x=0;x<=256;x+=8){const y=i*43+Math.sin(x*.027+i)*5;x?c.lineTo(x,y):c.moveTo(x,y);}c.stroke();}
+});marbleMap.wrapS=marbleMap.wrapT=T.RepeatWrapping;
+const marble=new T.MeshStandardMaterial({color:'#ffffff',map:marbleMap,roughness:.68,metalness:0});marble.userData.worldTile=2.6;
+const shadow=material('#464845'),red=material(sandstone),gold=material('#b99a5c',.36,.55);
 const inlayLine=new T.MeshStandardMaterial({color:inlay,roughness:.81,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});inlayLine.userData.noShadow=true;
 
 function archPath(w:number,h:number,bottom=0) {
@@ -38,7 +45,7 @@ function chhatri(b:Builder,x:number,y:number,z:number,r=.58,mat:T.Material=marbl
   b.cylinder(x,y+.88,z,r*1.18,.13,mat,r*1.18,16);onion(b,x,y+.95,z,r, r*1.06,mat);
 }
 function minaret(b:Builder,x:number,z:number) {
-  b.cylinder(x,.17,z,.72,.34,marble,.72,16);
+  b.cylinder(x,1.34,z,.62,.22,marble,.62,16);
   b.cylinder(x,3.38,z,.43,6.5,marble,.31,24);
   for(const y of [2.35,4.65,6.55]){
     b.cylinder(x,y,z,.57,.12,edge,.57,24);b.cylinder(x,y+.16,z,.54,.11,marble,.54,24);
@@ -73,6 +80,15 @@ export function tajMahal() {
       for(let j=0;j<10;j++){const q=point(s*1.86,base+.43+j*.45,5.235);b.box(q.x,q.y,q.z,.052,.12,.025,'#8e7f64',yaw);}
     }
     const a=point(0,base+5.07,5.23);b.box(a.x,a.y,a.z,3.5,.045,.045,inlay,yaw);
+    // Marble dado panels, recessed lattice and small floral stone inlays sit below
+    // the subsidiary arches. No invented calligraphic lettering is painted here.
+    for(const sign of [-1,1]){
+      for(const y of [.15,2.55,5.19]){const q=point(sign*3.0,base+y,5.245);b.box(q.x,q.y,q.z,1.36,.026,.025,edge,yaw);}
+      for(const x of [-.48,.48]){const q=point(sign*3+x,base+1.25,5.24);b.box(q.x,q.y,q.z,.024,2.1,.025,edge,yaw);}
+      for(const j of [-1,0,1]){const q=point(sign*3+j*.2,base+.62,5.255);b.box(q.x,q.y,q.z,.015,.55,.025,'#998d78',yaw);}
+      for(const j of [-1,1]){const q=point(sign*3+j*.2,base+.91,5.26);b.sphere(q.x,q.y,q.z,.058,.075,.025,material('#a77c69'));}
+      for(let row=0;row<4;row++)for(let col=0;col<4;col++){const q=point(sign*3+(col-1.5)*.17,base+2.8+row*.25,5.25);b.box(q.x,q.y,q.z,.025,.25,.025,edge,yaw);}
+    }
     // Low pierced parapet: short posts only, merged into the architecture batch.
     for(let j=-8;j<=8;j++){const q=point(j*.4,base+5.42,5.22);b.box(q.x,q.y,q.z,.055,.26,.055,edge);}
     const q=point(0,base+5.57,5.22);b.box(q.x,q.y,q.z,7,.045,.055,edge,yaw);
@@ -81,6 +97,7 @@ export function tajMahal() {
     const yaw=Math.atan2(x,z),cx=x*4.45,cz=z*4.45;
     b.box(cx-Math.sin(yaw)*.16,base+2.625,cz-Math.cos(yaw)*.16,2.07,5.25,.32,marble,yaw);
     for(let j=0;j<2;j++)arch(b,cx+Math.sin(yaw)*.04,base+.3+j*2.34,cz+Math.cos(yaw)*.04,1.35,2,marble,yaw);
+    for(const d of [-.13,.13])b.cylinder(cx+Math.sin(yaw)*.11+Math.cos(yaw)*d,base+2.69,cz+Math.cos(yaw)*.11-Math.sin(yaw)*d,.045,5.37,edge,.037,8);
     chhatri(b,x*3.4,base+5.36,z*3.4,.81);
     minaret(b,x*7.88,z*7.88);
   }
@@ -111,6 +128,9 @@ export function mosque(jawab=false) {
   }
   for(const z of [-6.4,6.4])for(const x of [-2.4,2.4])chhatri(b,x,3.72,z,.43,red);
   for(const z of [-6.1,-5.3,-3.3,-2.4,-1.6,1.6,2.4,3.3,5.3,6.1])b.box(2.96,1.8,z,.035,2.55,.055,'#dcc7a6');
+  for(const z of [-5.4,-3.6,-1.8,0,1.8,3.6,5.4])arch(b,-2.93,.45,z,1.15,2.65,red,-Math.PI/2,'#d1ac89');
+  for(const side of [-1,1])for(const x of [-1.7,0,1.7])arch(b,x,.45,side*6.85,1.1,2.55,red,side>0?0:Math.PI,'#d1ac89');
+  for(const side of [-1,1])b.box(0,3.38,side*6.86,5.9,.1,.1,'#d6b99a');
   const root=b.finish();root.name=jawab?'Jawab · red sandstone guesthouse':'Taj mosque · western prayer hall';if(jawab)root.rotation.y=Math.PI;return root;
 }
 export function greatGate() {
@@ -143,30 +163,53 @@ export function arcade(length:number,height=2.15) {
   return b.finish();
 }
 const houseMaterials=new Map<number,T.MeshStandardMaterial>();
+const HOUSE_COLORS=['#c9b18c','#e6d4ae','#b6c7b3','#c58f7c','#d6bd94','#a9b6af','#d4c4b5','#b7bfbd'];
 function houseFacade(style:number) {
   if(houseMaterials.has(style))return houseMaterials.get(style)!;
-  const colors=['#cfbca0','#e5d6b8','#b8c5b6','#c99b83','#dfc9a8','#aab4aa'];
-  const map=canvasTexture(128,128,c=>{c.fillStyle=colors[style%6];c.fillRect(0,0,128,128);for(let y=0;y<2;y++)for(let x=0;x<3;x++){c.fillStyle='#726b5f';c.fillRect(x*42+13,y*64+19,17,30);c.fillStyle='#434d4b';c.fillRect(x*42+15,y*64+21,13,24);c.fillStyle='#e3d8bf';c.fillRect(x*42+11,y*64+50,21,3);}});
-  const emission=canvasTexture(128,128,c=>{c.fillStyle='#000';c.fillRect(0,0,128,128);for(let y=0;y<2;y++)for(let x=0;x<3;x++){if((x*3+y+style)%4===0)continue;c.fillStyle=(x+y+style)%3===0?'#9bafa5':'#e6bd7c';c.fillRect(x*42+15,y*64+21,13,24);}});
-  const mat=registerGlow(new T.MeshStandardMaterial({map,emissiveMap:emission,emissive:'#ffffff',roughness:.92}),.44);mat.userData.facadeCap=material(colors[style%6]);houseMaterials.set(style,mat);return mat;
+  const color=HOUSE_COLORS[style%8];
+  const map=canvasTexture(192,192,c=>{
+    c.fillStyle=color;c.fillRect(0,0,192,192);
+    // Fine, uneven plaster courses and bounded weathering, shared by whole rows.
+    for(let i=0;i<80;i++){const x=(i*73+style*11)%192,y=(i*41+style*37)%192;c.fillStyle=i%2?'rgba(99,75,53,.04)':'rgba(255,244,218,.12)';c.fillRect(x,y,4+i%9,1+i%3);}
+    if(style%4===3){c.strokeStyle='rgba(130,99,72,.16)';c.lineWidth=1;for(let y=0;y<192;y+=12){c.beginPath();c.moveTo(0,y);c.lineTo(192,y);c.stroke();for(let x=(y%24?0:12);x<192;x+=24){c.beginPath();c.moveTo(x,y);c.lineTo(x,y+12);c.stroke();}}}
+    for(let y=0;y<3;y++)for(let x=0;x<3;x++){
+      const xx=x*64+21,yy=y*64+18;c.fillStyle='#e2d1ad';c.fillRect(xx-3,yy-3,28,35);c.fillStyle='#48514b';c.fillRect(xx,yy,22,29);
+      c.fillStyle=style%2?'#797f64':'#777263';c.fillRect(xx+1,yy+1,style%3===0?9:3,27);
+      c.fillStyle='#e5d8bd';c.fillRect(xx-4,yy+31,30,3);c.fillStyle='rgba(70,61,44,.21)';c.fillRect(xx-4,yy+34,30,2);
+    }
+    c.fillStyle='rgba(236,224,198,.45)';c.fillRect(0,63,192,3);c.fillRect(0,127,192,3);
+  });
+  const emission=canvasTexture(192,192,c=>{c.fillStyle='#000';c.fillRect(0,0,192,192);for(let y=0;y<3;y++)for(let x=0;x<3;x++){if((x*3+y+style)%3===0)continue;c.fillStyle=(x+y+style)%4===0?'#9ba8a1':'#cbb17f';c.fillRect(x*64+23,y*64+20,17,23);}});
+  const mat=registerGlow(new T.MeshStandardMaterial({map,emissiveMap:emission,emissive:'#ffffff',roughness:.95}),.32);mat.userData.facadeCap=material(color);houseMaterials.set(style,mat);return mat;
 }
 export function tajGanjHouse(index:number,w:number,d:number,h:number) {
-  const b=new Builder(),colors=['#cfbca0','#e5d6b8','#b8c5b6','#c99b83','#dfc9a8','#aab4aa'],color=colors[index%6];
-  b.box(0,h/2,0,w,h,d,houseFacade(index%6));b.box(0,h+.05,0,w+.12,.12,d+.12,color);
-  for(const x of [-1,1])b.box(x*(w-.12)/2,h+.24,0,.12,.35,d,color);
-  for(const z of [-1,1])b.box(0,h+.24,z*(d-.12)/2,w,.35,.12,color);
-  if(index%3!==0)b.cylinder(w*.22,h+.58,-d*.25,.35,.65,'#48524d',.35,10);
-  if(index%4===0){b.box(-w*.23,h+.7,-d*.15,w*.4,1.2,d*.45,color);b.box(-w*.23,h+1.34,-d*.15,w*.44,.1,d*.49,'#b9a68d');}
-  b.box(0,.6,d/2+.01,.7,1.2,.035,'#554b3e');
-  if(index%2===0){b.box(0,1.4,d/2+.35,w*.8,.08,.7,index%4===0?'#8e6655':'#87977c');b.box(-w*.33,.7,d/2+.6,.035,1.4,.035,'#716c59');b.box(w*.33,.7,d/2+.6,.035,1.4,.035,'#716c59');}
-  const root=b.finish();root.name='Taj Ganj · courtyard house';return root;
+  const b=new Builder(),color=HOUSE_COLORS[index%8],front=d/2;
+  b.box(0,h/2,0,w,h,d,houseFacade(index%8));b.box(0,h+.04,0,w+.12,.12,d+.12,color);
+  for(const x of [-1,1])b.box(x*(w-.12)/2,h+.21,0,.12,.31,d,color);
+  for(const z of [-1,1])b.box(0,h+.21,z*(d-.12)/2,w,.31,.12,color);
+  if(index%3!==0){b.box(w*.22,h+.16,-d*.25,.86,.22,.86,'#aaa18d');b.cylinder(w*.22,h+.57,-d*.25,.32,.64,'#48524d',.32,10);}
+  if(index%4===0){b.box(-w*.23,h+.51,-d*.15,w*.4,.9,d*.45,color);b.box(-w*.23,h+1.01,-d*.15,w*.44,.1,d*.49,'#b9a68d');}
+  if(index%4===1){b.box(w*.18,h+.32,0,w*.32,.5,d*.48,'#968b78');b.box(w*.18,h+.59,0,w*.38,.07,d*.54,color);}
+  b.box(0,.56,front+.025,.72,1.12,.045,'#554b3e');b.box(0,1.18,front+.055,.88,.09,.12,'#ded0b4');
+  if(index%2===0){
+    b.box(0,1.42,front+.35,w*.8,.09,.7,index%4===0?'#9b6955':'#7e9079');
+    for(const x of [-1,1])b.box(x*w*.33,.69,front+.6,.045,1.38,.045,'#716c59');
+    for(let i=0;i<5;i++)b.box((i-2)*w*.13,.65,front+.05,w*.12,1.15,.05,index%4===0?'#7d6152':'#778677');
+  }
+  if(index%3===1){
+    b.box(0,h*.59,front+.25,w*.65,.1,.54,'#b8aa8c');
+    b.box(0,h*.59+.29,front+.48,w*.65,.04,.035,'#645b4b');
+    for(let i=-3;i<=3;i++)b.box(i*w*.1,h*.59+.16,front+.48,.025,.29,.025,'#645b4b');
+    for(const x of [-1,1])b.box(x*w*.25,h*.59-.18,front+.14,.08,.36,.28,color);
+  }
+  const root=b.finish();root.name='Taj Ganj · courtyard house';root.userData.roofHeight=h;return root;
 }
-/** Attached bazaar frontage is a single batched destructible, with an inhabited
- * terrace rhythm rather than a field of separate suburban cubes. */
-export function tajGanjRow(index:number,count:number,width=4.2,depth=4.8) {
+/** An attached row shares party walls and two cached facade families. Roofline,
+ * courtyards, shutters, balconies and service roofs change from lot to lot. */
+export function tajGanjRow(index:number,count:number,width=3.65,depth=4.8) {
   const b=new Builder();
   for(let i=0;i<count;i++){
-    const home=tajGanjHouse((index%3)*2+i%2,width,depth,3.1+((index*3+i*7)%5)*.42);
+    const home=tajGanjHouse((index%4)*2+i%2,width,depth,2.5+((index*3+i*7)%6)*.34);
     home.position.x=(i-(count-1)/2)*width;b.absorb(home);
   }
   const root=b.finish();root.name='Taj Ganj · attached bazaar terrace';root.userData.houseCount=count;return root;

@@ -1,12 +1,11 @@
-export type WorldId = 'london' | 'dubai' | 'agra' | 'lisbon' | 'bengaluru' | 'hyderabad' | 'moon';
+export type WorldId = 'london' | 'dubai' | 'agra' | 'lisbon' | 'bengaluru' | 'moon';
 export const WORLDS:{id:WorldId;name:string;district:string}[]=[
   {id:'london',name:'London',district:'The Thames embankment'},
   {id:'dubai',name:'Dubai',district:'Dubai waterfront'},
   {id:'bengaluru',name:'Bengaluru',district:'Cubbon Park civic district'},
   {id:'agra',name:'Agra',district:'Taj riverfront'},
-  {id:'hyderabad',name:'Hyderabad',district:'Charminar and the Old City'},
   {id:'lisbon',name:'Lisbon',district:'Belém and the Tagus'},
-  {id:'moon',name:'Moon Base',district:'Fictional lunar outpost'},
+  {id:'moon',name:'Moon Base',district:'Lunar habitat district'},
 ];
 export function parseWorld(value: string | null | undefined): WorldId | null {
   return WORLDS.some(world=>world.id===value)?value as WorldId:null;

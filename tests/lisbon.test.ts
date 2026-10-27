@@ -5,7 +5,7 @@ const context=new Proxy({}, {get:()=>()=>{},set:()=>true});
 globalThis.document={createElement:()=>({width:256,height:256,getContext:()=>context})} as unknown as Document;
 globalThis.window={location:{href:'https://rpg-isomaptric.vercel.app/?world=lisbon'},localStorage:{getItem:()=>null}} as unknown as Window & typeof globalThis;
 const {createLisbonWorld}=await import('../src/worlds/lisbon/world.ts');
-const {PLAN,NORTH_BANK,SOUTH_BANK,shoreAt,BRIDGE,bridgeX,lisbonLand,lisbonBridge}=await import('../src/worlds/lisbon/plan.ts');
+const {PLAN,NORTH_BANK,SOUTH_BANK,shoreAt,BRIDGE,bridgeX,lisbonLand,lisbonBridge,PENA,landHeight,bridgeHeight}=await import('../src/worlds/lisbon/plan.ts');
 const {canWalk,surfaceHeight}=await import('../src/layout.ts');
 const {plotTouchesRoad}=await import('../src/cityPlan.ts');
 const scene=new T.Scene(),world=createLisbonWorld(scene),moving=new Set(world.traffic.cars.flatMap(c=>world.objects.models.get(c.object.id)!.obstacles)),staticObstacles=world.obstacles.filter(o=>!moving.has(o));
@@ -16,7 +16,49 @@ test('buildings do not overlap roads and traffic follows clear routes',()=>{cons
 test('terrain heights and instanced trees match walking elevation',()=>{for(const tree of world.objects.trees.values()){const matrix=new T.Matrix4();world.objects.forest.getMatrixAt(tree.index,matrix);const p=new T.Vector3().setFromMatrixPosition(matrix);assert.ok(Math.abs(p.y-surfaceHeight(tree.object.x,tree.object.z)-.08)<1e-5);}for(const l of PLAN.landmarks)assert.ok(Number.isFinite(PLAN.heightAt(l.visitX,l.visitZ)));});
 test('Lisbon geometry is finite and uses bounded drawing and shared light pools',()=>{let meshes=0,triangles=0;scene.traverse(o=>{if(o instanceof T.Mesh){meshes++;const p=o.geometry.getAttribute('position');for(const v of p.array)assert.ok(Number.isFinite(v));triangles+=(o.geometry.index?.count??p.count)/3;}});console.log(`Lisbon geometry: ${meshes} meshes, ${Math.round(triangles)} triangles`);assert.ok(world.homes.length>=35);assert.ok(world.terraceDwellings>=140);assert.ok(world.objects.trees.size>=600);assert.ok(world.shrubs.count>=900);assert.equal(world.localLighting.slots.length,12);assert.ok(meshes<1500,`${meshes} meshes`);assert.ok(triangles<650000,`${triangles} triangles`);});
 test('Tagus boats stay on the estuary and fit below the bridge',()=>{scene.updateMatrixWorld(true);for(let i=0;i<300;i++){world.update(i*2);for(const boat of world.boats){const p=boat.group.position;assert.ok(!lisbonLand(p.x,p.z),`Boat beached at ${p.x},${p.z}`);if(lisbonBridge(p.x,p.z)){const box=world.objects.models.get(boat.object.id)!.localBounds.clone().applyMatrix4(boat.group.matrixWorld);assert.ok(box.max.y<PLAN.heightAt(p.x,p.z)-1.5);}}}});
-test('Lisbon traffic runs for ten simulated minutes around the starting player',()=>{const start=world.traffic.cars.map(c=>c.distance);for(let i=1;i<=6000;i++)world.update(600+i*.1,PLAN.spawn);world.traffic.cars.forEach((c,i)=>assert.ok(c.distance-start[i]>c.route.length*.7,`Vehicle ${i} advanced only ${c.distance-start[i]} / ${c.route.length}`));});
+test('Lisbon traffic runs for ten simulated minutes around the starting player',()=>{const start=world.traffic.cars.map(c=>c.distance);let recent:number[]=[];for(let i=1;i<=6000;i++){world.update(600+i*.1,PLAN.spawn);if(i===5000)recent=world.traffic.cars.map(c=>c.distance);}world.traffic.cars.forEach((c,i)=>{assert.ok(c.distance-start[i]>c.route.length*.7,`Vehicle ${i} advanced only ${c.distance-start[i]} / ${c.route.length}`);assert.ok(c.distance-recent[i]>20,`Vehicle ${i} stopped flowing in the final 100 seconds`);});});
 test('Lisbon water is clipped to the Tagus and both banks reach the cutaway edges',()=>{assert.ok(lisbonLand(120,-110));assert.ok(lisbonLand(-120,110));for(const [x,z]of[[0,-120],[0,120],[120,-90],[-120,-90],[-120,110],[120,110]]){const ray=new T.Raycaster(new T.Vector3(x,30,z),new T.Vector3(0,-1,0));assert.equal(ray.intersectObject(world.water).length,0,`False ocean behind a bank at ${x},${z}`);}const p=world.water.geometry.getAttribute('position');for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);assert.ok(z>=shoreAt(x,NORTH_BANK)-.001&&z<=shoreAt(x,SOUTH_BANK)+.001);}});
 test('MAAT has an opaque upward-facing ceramic roof across the glazed enclosure',()=>{const root=world.towers.find(r=>r.name==='MAAT · Belém waterfront')!;scene.updateMatrixWorld(true);const shells:T.Mesh[]=[];root.traverse(o=>{if(o instanceof T.Mesh&&!Array.isArray(o.material)&&o.material instanceof T.MeshStandardMaterial&&o.material.color.getHexString()==='e8e6d9')shells.push(o);});assert.ok(shells.length);for(const u of [-.7,0,.7])for(const v of [-.7,0,.7]){const p=root.localToWorld(new T.Vector3(u*9,10,v*4.1*Math.sqrt(1-u*u))),ray=new T.Raycaster(p,new T.Vector3(0,-1,0));assert.ok(ray.intersectObjects(shells).length,`Missing roof at ${u},${v}`);}});
-test('Lisbon street fabric uses four attached multi-dwelling archetypes',()=>{assert.equal(new Set(world.homes.map(r=>r.userData.rowType)).size,4);assert.ok(world.terraceDwellings>=160);assert.ok(world.homes.every(r=>r.userData.dwellings>=3));assert.ok(world.homes.some(r=>Math.abs(r.rotation.y)>.1));});
+test('Lisbon street fabric has dense low and tall housing, including both cut margins',()=>{assert.ok(new Set(world.homes.map(r=>r.userData.rowType)).size>=8);assert.ok(world.terraceDwellings>=450);assert.ok(world.homes.filter(r=>r.position.z< -100).length>=10);assert.ok(world.homes.filter(r=>r.position.z>100).length>=15);assert.ok(world.homes.some(r=>r.userData.rowType===6||r.userData.rowType===7));assert.ok(world.homes.every(r=>r.userData.dwellings>=3));assert.ok(world.homes.some(r=>Math.abs(r.rotation.y)>.1));});
+
+
+test('every road ends at a cut edge or another road, with continuous bridge approach grades',()=>{
+ const distance=(p:{x:number;z:number},a:{x:number;z:number},b:{x:number;z:number})=>{const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.z-a.z)*dz)/(dx*dx+dz*dz)));return Math.hypot(p.x-a.x-t*dx,p.z-a.z-t*dz);};
+ for(const road of world.roads)for(const end of [road.points[0],road.points.at(-1)!]){
+  if(Math.abs(Math.max(Math.abs(end.x),Math.abs(end.z))-126)<.01)continue;
+  assert.ok(world.roads.some(other=>other!==road&&other.points.some((p,i)=>i>0&&distance(end,other.points[i-1],p)<.01)),`${road.id} disconnected end at ${end.x},${end.z}`);
+ }
+ for(const p of [BRIDGE.north,BRIDGE.south])assert.ok(Math.abs(bridgeHeight(p.z)-landHeight(p.x,p.z))<.001,'Bridge curb jumps at land connection');
+ assert.ok(world.traffic.routes.some(route=>Array.from({length:Math.ceil(route.length)},(_,i)=>route.sample(i).point).some(p=>!lisbonLand(p.x,p.z)&&lisbonBridge(p.x,p.z))),'No traffic crosses the bridge');
+});
+test('Pena is a labelled Sintra excursion with a grounded hill and clear arrival',()=>{
+ const l=PLAN.landmarks.find(l=>l.id==='pena-palace')!,palace=world.towers.find(r=>r.name===l.name)!;assert.ok(l.name.includes('Sintra')&&l.description.includes('outside'));assert.ok(palace);assert.ok(landHeight(PENA.x,PENA.z)-landHeight(PENA.x+40,PENA.z)>9);assert.ok(canWalk(l.visitX,l.visitZ,staticObstacles));
+ const box=new T.Box3().setFromObject(palace);assert.ok(box.max.y-box.min.y>20);assert.ok(box.min.x>-124&&box.min.z>-124);assert.ok(box.max.x< -65&&box.max.z< -82);
+});
+test('the mixed Tagus fleet includes one large ship and its full hull remains on water',()=>{
+ assert.equal(world.boats.length,25);assert.equal(new Set(world.boats.map(b=>b.object.name)).size,6);assert.equal(world.boats.filter(b=>b.length>=14).length,1);
+ for(let sample=0;sample<120;sample++){world.update(sample*5);for(const boat of world.boats){boat.group.updateMatrixWorld(true);const bounds=world.objects.models.get(boat.object.id)!.localBounds;for(const x of [bounds.min.x,bounds.max.x])for(const z of [bounds.min.z,bounds.max.z]){const p=boat.group.localToWorld(new T.Vector3(x,0,z));assert.ok(!lisbonLand(p.x,p.z),`${boat.object.name} hull clips shore at ${p.x},${p.z}`);}}}
+});
+
+
+test('Pena hill road, bridge landings and palace path stay above terrain without pavement overlap',async()=>{
+ const {ROAD_ASPHALT}=await import('../src/roadSurfaces.ts');scene.updateMatrixWorld(true);
+ for(const road of world.roads.filter(r=>r.id==='ajuda-hills'||r.bridge)){
+ for(let i=1;i<road.points.length;i++){const a=road.points[i-1],b=road.points[i],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);if(road.bridge?!lisbonLand(a.x,a.z):Math.hypot(a.x-PENA.x,a.z-PENA.z)>42)continue;
+  const steps=road.bridge?[.15,.5,.85]:Array.from({length:Math.ceil(len/.15)},(_,j)=>(j+.5)/Math.ceil(len/.15));
+  for(const t of steps)for(const offset of [-.49,-.25,0,.25,.49]){const x=a.x+dx*t-dz/len*road.width*offset,z=a.z+dz*t+dx/len*road.width*offset,ray=new T.Raycaster(new T.Vector3(x,70,z),new T.Vector3(0,-1,0)),asphalt=ray.intersectObject(world.streetRoot,true).filter(h=>(h.object as T.Mesh).material===ROAD_ASPHALT)[0],ground=ray.intersectObject(world.ground,true)[0];assert.ok(asphalt,`Missing hill asphalt at ${x},${z}`);assert.ok(asphalt.point.y>ground.point.y+.005,`Grass penetrates road by ${ground.point.y-asphalt.point.y} at ${x},${z}`);const pavement=ray.intersectObject(world.streetRoot,true).filter(h=>(h.object as T.Mesh).material instanceof T.MeshStandardMaterial&&(h.object as T.Mesh).material!==ROAD_ASPHALT);assert.ok(!pavement.some(h=>(h.object as T.Mesh).material.name.includes('calçada')),`Pavement covers asphalt at ${x},${z}`);}
+  if(!road.bridge)for(const t of steps)for(const offset of [-.5,-.15,.15,.5]){const side=Math.sign(offset),distance=side*(road.width/2+Math.abs(offset)),x=a.x+dx*t-dz/len*distance,z=a.z+dz*t+dx/len*distance,ray=new T.Raycaster(new T.Vector3(x,70,z),new T.Vector3(0,-1,0)),curb=ray.intersectObject(world.streetRoot,true).find(h=>(h.object as T.Mesh).material.name.includes('calçada')||(h.object as T.Mesh).material===ROAD_ASPHALT),ground=ray.intersectObject(world.ground,true)[0];assert.ok(curb&&curb.point.y>ground.point.y+.001,`Curb penetrates terrain at ${x},${z}: ${curb?curb.point.y-ground.point.y:'missing'}`);}
+ }
+ }
+ for(let i=1;i<world.palaceApproach.points.length;i++){const a=world.palaceApproach.points[i-1],b=world.palaceApproach.points[i],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);for(let t=.05;t<1;t+=.1)for(const offset of [-.85,0,.85]){const x=a.x+dx*t-dz/len*offset,z=a.z+dz*t+dx/len*offset,ray=new T.Raycaster(new T.Vector3(x,70,z),new T.Vector3(0,-1,0)),walk=ray.intersectObject(world.palaceWalk)[0],ground=ray.intersectObject(world.ground,true)[0];assert.ok(walk&&walk.point.y>ground.point.y+.01,`Palace path buried at ${x},${z}`);}}
+});
+
+
+test('the rear hill cut wall follows the terrain edge continuously without stepped gaps',()=>{
+ scene.updateMatrixWorld(true);
+ world.cutWalls.traverse(object=>{if(!(object instanceof T.Mesh))return;const p=object.geometry.getAttribute('position');for(let i=0;i<p.count;i++)if(p.getY(i)>-2.7)assert.ok(Math.abs(p.getY(i)-landHeight(p.getX(i),p.getZ(i)))<.00002,'Cut-wall top does not meet a terrain boundary vertex');});
+ for(let x=-117.3;x<-64;x+=.47){const x0=-126+Math.floor((x+126)/2)*2,t=(x-x0)/2,y=landHeight(x0,-126)*(1-t)+landHeight(x0+2,-126)*t;
+  const below=new T.Raycaster(new T.Vector3(x,y-.015,-130),new T.Vector3(0,0,1),0,4.1),above=new T.Raycaster(new T.Vector3(x,y+.015,-130),new T.Vector3(0,0,1),0,4.1);
+  assert.ok(below.intersectObject(world.cutWalls,true).length,`Missing wall immediately below the rear hill at ${x}`);assert.equal(above.intersectObject(world.cutWalls,true).length,0,`Wall protrudes above rear hill at ${x}`);
+ }
+});

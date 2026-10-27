@@ -3,10 +3,9 @@ import {mkdir,writeFile} from 'node:fs/promises';
 const base=process.argv[2],ids=(process.argv[3]??'agra,lisbon').split(','),label=process.argv[4]??'world-review';
 if(!base?.startsWith('https://'))throw new Error('Pass HTTPS preview URL');
 const specs={
- agra:{focus:[0,2,7],hero:[0,6,-9],zoom:6,offset:[40,90,280]},
+ agra:{focus:[0,2,7],hero:[0,10,-5],zoom:3.6,offset:[40,90,280]},
  lisbon:{focus:[0,3,0],hero:[65,12,0],zoom:1.8,offset:[-200,120,220]},
  bengaluru:{focus:[0,3,0],hero:[-35,9,-45],zoom:3.5,offset:[170,130,220]},
- hyderabad:{focus:[0,3,0],hero:[0,7,0],zoom:7,offset:[180,120,240]},
  moon:{focus:[0,3,0],hero:[0,8,0],zoom:3,offset:[180,140,220]},
  london:{focus:[0,2,0],hero:[-44,12,16],zoom:4,offset:[180,120,240]},
  dubai:{focus:[0,22,0],hero:[52,10,62],zoom:7,offset:[160,90,277]},

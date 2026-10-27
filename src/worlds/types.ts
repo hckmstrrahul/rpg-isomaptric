@@ -11,7 +11,7 @@ export type WorldPlan={
   bridgeAt:(x:number,z:number)=>boolean;
   /** Absolute walkable surface elevation, including hills and bridge ramps. */
   heightAt:(x:number,z:number)=>number;
-  map:{extent:number;land:PlanPoint[][];water?:PlanPoint[][];gardens:{x:number;z:number;r:number}[]};
+  map:{extent:number;land:PlanPoint[][];water?:PlanPoint[][];gardens:{x:number;z:number;r:number}[];craters?:{x:number;z:number;r:number;depth:number}[]};
   camera:{focus:[number,number,number];zoom:number;offset?:[number,number,number]};
   waterColor:string;
   /** The lunar bonus has no terrestrial water or lunar sky object. */

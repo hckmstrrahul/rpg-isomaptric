@@ -1,6 +1,7 @@
 import {insideTerrain} from './boundary.ts';
 import {ACTIVE_PLAN} from './worldPlan.ts';
-export const SIZE=216,HALF=SIZE/2,GROUND=1.35,WATER_HEIGHT=-1.2;
+export const SIZE=ACTIVE_PLAN.map.extent,HALF=SIZE/2,GROUND=1.35,WATER_HEIGHT=-1.2;
+export const insideWorld=(x:number,z:number,margin=0)=>Math.abs(x)<HALF-margin&&Math.abs(z)<HALF-margin&&(!ACTIVE_PLAN.londonRiver||insideTerrain(x,z,margin));
 export const PLAYER_SPAWN=ACTIVE_PLAN.spawn;
 export const ROAD_HEIGHT=GROUND+.07,BRIDGE_LIFT=.4,BRIDGE_HEIGHT=ROAD_HEIGHT+BRIDGE_LIFT;
 export type Obstacle={x:number;z:number;w:number;d:number};
@@ -23,7 +24,7 @@ export function surfaceHeight(x:number,z:number){
 
 export function canWalk(x: number, z: number, obstacles: Obstacle[], radius = 0.46): boolean {
   if (!Number.isFinite(x) || !Number.isFinite(z)) return false;
-  if (Math.abs(x) > HALF - 2 || Math.abs(z) > HALF - 2 || !insideTerrain(x,z,radius)) return false;
+  if (Math.abs(x) > HALF - 2 || Math.abs(z) > HALF - 2 || !insideWorld(x,z,radius)) return false;
   if (isWater(x,z,.5) && !isOnBridge(x,z)) return false;
   return !obstacles.some(b => Math.abs(x - b.x) < b.w / 2 + radius && Math.abs(z - b.z) < b.d / 2 + radius);
 }
