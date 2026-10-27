@@ -31,7 +31,7 @@ https://github.com/user-attachments/assets/3212fd84-550a-4bce-9fa4-1f4871d053b8
 - **Cities in motion.** London has 44 vehicles across cars, buses, cabs, vans, trucks, bicycles and motorcycles; left-hand traffic, timed signals and player avoidance. 22 boats leave fading world-space wakes and pass beneath three bridges. Dubai uses 36 vehicles with right-hand traffic, eight signal junctions, 18 moving motor/sailing yachts, and 20 moored yachts across five connected piers.
 - **Day and night.** Warm clock rings, softly blue Eye capsules, occupied windows, 205 street lanterns, red rooftop beacons, and a world-space moon with a critically damped entrance. Dubai adds illuminated tower suites, softly lit glass shells and 149 waterfront street lights. Appearance persists through loading and location changes.
 - **A playful sandbox.** “Bomb objects” fires straight, fiery shells up to 50 m, with projected blast previews and water splashes. Plant trees within 50 m, including on cleared plots. Reload restores the city.
-- **Camera and touch controls.** Slow arrival zoom, smooth follow, Birdview, free orbit, pinch, and a ghost-preview teleport. Separate pointer tracking supports simultaneous touch movement, running and tool use.
+- **Camera and touch controls.** Slow arrival zoom, smooth follow, Birdview, free orbit and pinch. Separate pointer tracking supports simultaneous touch movement, running and tool use.
 - **Small details that hold up close.** Tiled roofs on every face, modeled goggles and armor, British railings and hydrant markers, glazed telephone boxes, bridge ramps and flush road paint.
 
 | Day | Night |
@@ -90,7 +90,6 @@ There is no backend, account, API key, paid service, or external runtime asset r
 | Walk / run | `WASD` or arrows / hold `Shift` |
 | Bomb objects | `B`, then click or hold `Space` |
 | Plant a tree | `T` equips and plants; click / `Space` repeats |
-| Teleport with a ghost preview | `M`, choose a spot, click or `Enter`; arrows move the ghost |
 | Orbit / pan / zoom | Left drag / right drag or two fingers / wheel or pinch |
 | Follow / city / character | `F` / `R` / `C` |
 | Straight-down follow | Birdview button |
@@ -98,7 +97,7 @@ There is no backend, account, API key, paid service, or external runtime asset r
 | Change world | London / Dubai at the top; arrow keys then Enter or Space when focused |
 | Help / cancel | `?` / `Escape` |
 
-The location URL is shareable (`?world=london` or `?world=dubai`), and the last selected location is remembered. Changing worlds rebuilds the scene and resets its temporary sandbox edits. Focus the canvas to use gameplay keys. Mobile and tablet offer a directional pad and independent Run and tool buttons. Explore has no weapon or red marker. Invalid water and occupied destinations cannot be used for travel. The separate teleport tool moves the character immediately and glides the camera while preserving zoom.
+The location URL is shareable (`?world=london` or `?world=dubai`), and the last selected location is remembered. Changing worlds rebuilds the scene and resets its temporary sandbox edits. Focus the canvas to use gameplay keys. Mobile and tablet offer a directional pad and independent Run and tool buttons. Explore has no weapon or red marker. Invalid water and occupied destinations cannot be used for travel. Click or tap a valid destination in Explore to fly there; the gentle zoom returns to its previous level on arrival.
 
 ## How it works
 
@@ -106,11 +105,11 @@ The interesting work is in the constraints between systems, not just the landmar
 
 | Technique | What it achieves |
 | --- | --- |
-| One shared street and river plan | Rendering, collision, traffic, planting, teleporting and the minimap agree about usable space. |
+| One shared street and river plan | Rendering, collision, traffic, planting, Explore travel and the minimap agree about usable space. |
 | Instanced vegetation and merged geometry | 950 London trees or 1,100 Dubai trees share species-specific bark and foliage layers; static surfaces are batched while destructible objects retain their identity. |
 | Bounded local lighting | A pool of 12 nearby point lights and one batched ground-wash layer support hundreds of visible fixtures without one dynamic light per bulb. |
 | Projected targeting shaders | Circular bomb and planting previews follow roofs, hulls and terrain rather than disappearing below them. |
-| Analytic camera and travel curves | Frame-rate-independent arrival, moon damping, teleport glides and smooth flight with reduced-motion alternatives. |
+| Analytic camera and travel curves | Frame-rate-independent arrival, moon damping and smooth flight with reduced-motion alternatives. |
 | Geometry-level regression checks | Tests inspect the built city, including street corners, bridge triangles, traffic separation and reachable landmarks. |
 
 Read [the engineering guide](docs/ENGINEERING.md) for architecture, algorithms, rendering tradeoffs and module ownership. [World authoring](docs/WORLD-AUTHORING.md) explains how to approach the next location using the implemented location boundary while keeping the character and game systems shared. [Contributing](CONTRIBUTING.md) includes asset and media workflows. [Release validation](docs/RELEASE.md) records checks and measured budgets.

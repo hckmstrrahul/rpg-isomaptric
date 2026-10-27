@@ -28,15 +28,11 @@ try {
     if(saved==='day') {
       const initial=await state(page);await page.locator('#scene').focus();await page.keyboard.down('KeyD');await page.waitForTimeout(450);await page.keyboard.up('KeyD');const moved=await state(page);
       assert.ok(Math.hypot(moved.position.x-initial.position.x,moved.position.z-initial.position.z)>.2);report.checks.push({name:'keyboard movement',from:initial.position,to:moved.position});
-      await page.keyboard.press('KeyM');assert.equal((await state(page)).teleportOpen,true);
-      let marked;
-      for(const direction of ['ArrowRight','ArrowLeft','ArrowUp','ArrowDown']) {
-        await page.keyboard.press('Escape');await page.keyboard.press('KeyM');
-        for(let i=0;i<5;i++){await page.keyboard.press(direction);marked=await state(page);if(marked.teleportDestination?.valid)break;}
-        if(marked.teleportDestination?.valid)break;
-      }
-      assert.ok(marked.teleportDestination?.valid,'Keyboard ghost can select nearby open ground');
-      await page.keyboard.press('Enter');await page.waitForTimeout(150);const teleported=await state(page);assert.equal(teleported.teleportOpen,false);assert.equal(teleported.zoom,marked.zoom);report.checks.push({name:'keyboard ghost teleport preserves zoom',position:teleported.position,zoom:teleported.zoom});
+      assert.deepEqual(await page.locator('#toolbelt .equipment').evaluateAll(nodes=>nodes.map(node=>node.id)),['explore-tool','bomb-tool','tree-tool']);
+      assert.equal(await page.locator('#teleport-button,#teleport-panel').count(),0);
+      await page.keyboard.press('KeyM');assert.equal((await state(page)).tool,'explore');
+      assert.equal(await page.locator('.brand-links').evaluate(node=>getComputedStyle(node).marginTop),'12px');
+      report.checks.push({name:'three tools; Explore replaces Teleport; header link gap is 12px'});
       await page.locator('#birdview').click();await page.waitForTimeout(250);assert.equal(await page.locator('#birdview').getAttribute('aria-pressed'),'true');report.checks.push({name:'Birdview',zoom:(await state(page)).zoom});
       await page.locator('#theme-button').click();assert.equal((await state(page)).night,true);assert.equal(await page.evaluate(()=>localStorage.getItem('little-london-appearance')),'night');report.checks.push({name:'theme toggle persists'});
       await page.screenshot({path:'artifacts/browser-desktop.png'});
@@ -50,12 +46,8 @@ try {
   let flightStart;
   const candidates=[[790,470],[700,490],[650,450],[800,400],[720,540],[580,450],[900,450],...Array.from({length:7},(_,row)=>Array.from({length:9},(_,col)=>[400+col*80,220+row*60])).flat()];
   for(const [x,y]of candidates) {
-    // The chapters have different shorelines. Pick visible valid ground before
-    // checking the flight instead of assuming London screen coordinates apply.
-    await desktop.locator('#scene').focus();await desktop.keyboard.press('KeyM');await desktop.mouse.move(x,y);await desktop.waitForTimeout(80);
-    const pick=(await state(desktop)).teleportDestination;await desktop.keyboard.press('Escape');
-    if(!pick?.valid)continue;
-    const from=(await state(desktop)).position;if(Math.hypot(pick.position.x-from.x,pick.position.z-from.z)<2)continue;
+    // Click candidate ground through Explore itself; blocked picks remain harmless.
+    await desktop.locator('#scene').focus();
     await desktop.mouse.click(x,y);await desktop.waitForTimeout(50);const value=await state(desktop);if(value.flying){flightStart=value;break;}
   }
   assert.ok(flightStart,'A visible ground click should start Explore flight');

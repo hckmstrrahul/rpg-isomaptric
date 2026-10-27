@@ -17,9 +17,9 @@ This records the release interface, replacing earlier development snapshots. Aut
 
 ## Input and motion coverage
 
-Tests cover camera-relative keyboard teleport, invalid destinations, live collision changes, focus scoping, input modality, simultaneous held touch contacts and release/blur behavior. Live reduced-motion preference changes affect ambient animation and travel. Flight has no landing effect or shake. First-paint tests execute the inline appearance bootstrap with stored preferences and unavailable storage.
+Tests cover Explore destination picking, invalid destinations, live collision changes, focus scoping, input modality, simultaneous held touch contacts and release/blur behavior. Live reduced-motion preference changes affect ambient animation and travel. Flight has no landing effect or shake. First-paint tests execute the inline appearance bootstrap with stored preferences and unavailable storage.
 
-Explore is the default tool. Bomb and tree actions require explicit mode selection. Keyboard shortcuts are scoped to the canvas/body; focused controls do not also move or fire. Help contains camera button alternatives to gestures. Keyboard focus gets a visible theme-aware outline; pointer input does not retain it. Teleport has a ghost, keyboard positioning and confirmation. Notifications avoid repetitive object-cleared messages and retain actionable graphics errors.
+Explore is the default tool. Bomb and tree actions require explicit mode selection. Keyboard shortcuts are scoped to the canvas/body; focused controls do not also move or fire. Help contains camera button alternatives to gestures. Keyboard focus gets a visible theme-aware outline; pointer input does not retain it. The toolbelt has three modes: Explore, Bomb objects and Plant a Tree. Explore handles click/tap travel; the separate Teleport tab and shortcut are removed. Notifications avoid repetitive object-cleared messages and retain actionable graphics errors.
 
 ## Rendered review
 

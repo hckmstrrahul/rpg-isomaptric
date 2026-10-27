@@ -47,7 +47,7 @@ a{color:inherit;text-underline-offset:3px}
 .brand p{font-size:.875rem;font-weight:450;line-height:1.4;margin:7px 0 0;color:var(--muted)}
 .brand-separator{display:none}
 .inspiration-link{display:inline-block;pointer-events:auto;font-size:.75rem;font-weight:450;line-height:1.4;color:var(--muted);margin-top:8px}
-.brand-links{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+.brand-links{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
 .brand-links .inspiration-link{margin:0}
 .link-separator{width:1px;height:12px;background:var(--muted);opacity:.5;flex-shrink:0}
 .view-actions{top:var(--top);right:var(--right);display:flex;align-items:stretch;gap:12px}
@@ -80,7 +80,7 @@ a{color:inherit;text-underline-offset:3px}
 .shortcut-help{display:flex;align-items:center;justify-content:center;gap:8px;flex-shrink:0;min-height:24px;padding:0 6px;border-radius:6px;font-size:var(--caption);color:var(--muted);white-space:nowrap}
 .shortcut-help.active{background:var(--subtle);color:var(--ink)}
 .shortcut-divider{flex:0 0 1px;align-self:center;height:22px;background:var(--line);margin-inline:-12px}
-.toolbelt{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));flex:0 1 auto;gap:4px;padding:4px;max-width:100%;border-radius:28px}
+.toolbelt{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));flex:0 1 auto;gap:4px;padding:4px;max-width:100%;border-radius:28px}
 .equipment{position:relative;display:flex;align-items:center;gap:9px;border-radius:999px;padding:6px 15px;text-align:left;color:var(--muted);min-width:0;min-height:44px}
 .equipment>span{min-width:0;font-size:.6875rem;font-weight:650;line-height:1.4}
 .equipment small{display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:.5625rem;font-weight:450;line-height:1.4;margin-top:3px}
@@ -113,18 +113,6 @@ a{color:inherit;text-underline-offset:3px}
 .camera-steps{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:16px}
 .camera-steps button{display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:999px;font-size:var(--caption)}
 .credits-link{display:inline-flex;align-items:center;min-height:44px;font-size:var(--caption);margin-top:10px}
-.teleport-panel{left:50%;top:var(--top);transform:translateX(-50%);width:420px;max-width:calc(100% - var(--left) - var(--right));padding:16px 18px 18px;border-radius:16px;max-height:calc(100dvh - var(--top) - var(--bottom));overflow-y:auto;overscroll-behavior:contain}
-.teleport-heading{display:flex;align-items:center;gap:9px}
-.teleport-heading strong{font-size:.8125rem;line-height:1.4;font-weight:600}
-.teleport-heading button{margin-left:auto;width:32px;min-height:32px}
-.teleport-panel p{font-size:var(--label);line-height:1.6;color:var(--success);margin:10px 0 16px}
-.teleport-panel.blocked p{color:var(--danger)}
-.teleport-shortcuts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 18px;padding-top:14px;border-top:1px solid var(--line)}
-.teleport-shortcut{display:flex;align-items:center;gap:8px;font-size:var(--caption);line-height:1.4;color:var(--muted)}
-.teleport-shortcut .keys{gap:3px}
-.teleport-movement kbd{min-width:20px;min-height:20px;padding:2px 4px}
-.teleport-shortcut kbd{flex-shrink:0}
-.selecting-teleport .location,.selecting-teleport .touch-pad,.selecting-teleport .touch-actions,.selecting-teleport .controls{visibility:hidden;pointer-events:none}
 [data-sonner-toaster]{font-family:inherit!important}
 [data-sonner-toast] [data-close-button]{min-height:20px}
 [data-sonner-toast] [data-close-button]:before{content:'';position:absolute;inset:-12px}
@@ -182,14 +170,13 @@ a{color:inherit;text-underline-offset:3px}
  .touch-pad.visible{position:relative;display:grid;flex:0 0 auto;grid-template-columns:repeat(3,48px);gap:6px;pointer-events:auto}
  .touch-pad button{width:48px;min-height:48px;display:grid;place-items:center;border:1px solid var(--edge);background:var(--glass);box-shadow:var(--shadow);border-radius:999px;touch-action:none;-webkit-touch-callout:none}
  .touch-pad .up{grid-column:2}.touch-pad .left{grid-column:1;grid-row:2}.touch-pad .down{grid-column:2;grid-row:2}.touch-pad .right{grid-column:3;grid-row:2}
- .teleport-panel{top:var(--top);bottom:auto;left:50%;transform:translateX(-50%);max-height:calc(100dvh - var(--top) - var(--bottom))}
 }
 @media(max-width:640px){
  #app{grid-template-columns:minmax(0,1fr) 120px}
  .brand{grid-column:1/-1;grid-row:1}.brand h1{max-width:calc(100% - 48px);min-height:32px}
  .brand{padding:14px}.brand-meta{gap:8px;max-width:100%;white-space:normal;flex-wrap:wrap;row-gap:8px}
  .view-actions{margin:8px}.theme-button{min-width:44px;width:44px;padding:6px}.theme-button>span{display:none}
- .toolbelt{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}.equipment{flex:1;justify-content:center;padding:6px 8px;gap:6px}
+ .toolbelt{width:100%;grid-template-columns:repeat(3,minmax(0,1fr))}.equipment{flex:1;justify-content:center;padding:6px 8px;gap:6px}
  .tools{width:100%;justify-content:space-between;padding:4px 6px;gap:0}.tools hr{display:none}
  .tools .icon-button{flex:1 0 44px;max-width:60px;padding-inline:4px}
  .footer>.mini-map{width:120px}
@@ -204,7 +191,6 @@ a{color:inherit;text-underline-offset:3px}
  .location-row{gap:10px}.location-row>.location{padding:10px 10px 10px 0;gap:6px}.location strong{font-size:var(--caption)}
  .location small{font-size:.4375rem;letter-spacing:.08em}.character-portrait{width:36px;height:44px}
  .equipment{padding:6px;gap:5px}.equipment>span{font-size:var(--caption)}
- .teleport-panel{padding:14px 16px 16px}.teleport-shortcuts{gap:10px 12px}.teleport-shortcut{gap:6px}
  .shortcut-row{gap:10px}.touch-action,.touch-actions>.use-tool{padding-inline:10px;font-size:.6875rem;gap:5px}
  .touch-pad.visible{grid-template-columns:repeat(3,44px);gap:4px}.touch-pad button{width:44px;min-height:44px}
  .touch-actions{gap:6px}
@@ -232,7 +218,6 @@ a{color:inherit;text-underline-offset:3px}
  .touch-pad button{width:44px;min-height:44px}
  .touch-pad .up,.touch-pad .left,.touch-pad .down,.touch-pad .right{grid-column:auto;grid-row:auto}
  .equipment{padding:4px 8px}.brand h1{font-size:1.25rem}.brand p{font-size:.75rem}.inspiration-link{font-size:.625rem}
- .teleport-panel{max-height:calc(100dvh - var(--top) - var(--bottom))}
 }
 /* Location selection aligns with the header's top edge on wide screens. */
 .world-switcher{top:var(--top);left:50%;transform:translateX(-50%);display:flex;padding:4px;gap:4px;border-radius:999px}

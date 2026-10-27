@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from 'three';
-import { pickSceneTeleport, createTeleportMarker } from '../src/teleport3d.ts';
+import { pickSceneTeleport } from '../src/teleport3d.ts';
 import { BRIDGES, GROUND, ROAD_HEIGHT, BRIDGE_HEIGHT, BRIDGE_LIFT, riverCenter } from '../src/layout.ts';
 
 test('3D picking selects the visible ground coordinates at different camera angles and zooms',()=>{
@@ -47,30 +47,4 @@ test('3D selection rejects water, occupied plots, and rays pointing away from th
   assert.equal(pickSceneTeleport(new T.Ray(new T.Vector3(-60,100,0),down),[{x:-60,z:0,w:4,d:4}]).destination.valid,false);
   const sky=pickSceneTeleport(new T.Ray(new T.Vector3(-60,100,0),new T.Vector3(0,1,0)),[]);
   assert.equal(sky.point,null);assert.equal(sky.destination.valid,false);
-});
-
-test('the translucent character ghost follows the selected surface without changing the live character',()=>{
-  const original=new T.Group(),body=new T.Mesh(new T.BoxGeometry(1,3,1),new T.MeshStandardMaterial({color:'#a97a40'}));
-  original.add(body);body.castShadow=true;
-  const marker=createTeleportMarker(original),point=new T.Vector3(-60,GROUND,0),mesh=marker.ghost.children[0] as typeof body;
-  marker.show({point,destination:{valid:true,position:{x:-60,y:GROUND+.13,z:0}}},1.2);
-  assert.equal(marker.root.visible,true);assert.deepEqual(marker.root.position.toArray(),[-60,GROUND+.13,0]);assert.equal(marker.ghost.rotation.y,1.2);
-  assert.equal(mesh.geometry,body.geometry);assert.notEqual(mesh.material,body.material);assert.equal(mesh.material.color.getHex(),body.material.color.getHex());
-  assert.equal(mesh.material.transparent,true);assert.equal(mesh.material.opacity,.38);assert.equal(mesh.castShadow,false);
-  assert.equal(body.material.opacity,1);assert.equal(body.castShadow,true);
-  marker.show({point,destination:{valid:false,reason:'Blocked'}});assert.equal(mesh.material.opacity,.16);
-  marker.show(null);assert.equal(marker.root.visible,false);
-});
-
-test('keyboard teleport moves in camera-relative directions and clamps to the city',async()=>{
- const {stepTeleportCursor,keyboardTeleportPick}=await import('../src/teleport3d.ts');
- const point={x:-60,z:30};
- assert.deepEqual(stepTeleportCursor(point,{x:0,z:-1},'ArrowUp'),{x:-60,z:28});
- assert.deepEqual(stepTeleportCursor(point,{x:0,z:-1},'ArrowRight'),{x:-58,z:30});
- assert.deepEqual(stepTeleportCursor(point,{x:1,z:0},'ArrowUp',8),{x:-52,z:30});
- assert.deepEqual(stepTeleportCursor({x:111,z:111},{x:1,z:0},'ArrowUp',8),{x:112,z:111});
- assert.equal(keyboardTeleportPick(point,[]).destination.valid,true);
- assert.equal(keyboardTeleportPick(point,[{...point,w:4,d:4}]).destination.valid,false);
- assert.equal(keyboardTeleportPick({x:riverCenter(0),z:0},[]).destination.valid,false);
- for(const z of BRIDGES)assert.equal(keyboardTeleportPick({x:riverCenter(z),z},[]).point!.y,BRIDGE_HEIGHT);
 });

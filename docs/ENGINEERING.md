@@ -14,7 +14,7 @@ flowchart LR
   Plan --> Map[2D map]
   Assets[Local textures and optional GLB] --> World
   Input[Keyboard / pointer / touch] --> Controller[Main controller]
-  Controller --> Travel[Walk / flight / teleport]
+  Controller --> Travel[Walk / flight]
   Collision --> Travel
   Controller --> Sandbox[Bombs / planting]
   Sandbox --> Objects[Interactable state]
@@ -36,7 +36,7 @@ flowchart LR
 | River detail | `boatWakes.ts`, `riverRailings.ts`, `reflections.ts` | Historical wake positions, bank safety rails, planar reflections |
 | Player | `character.ts`, `exploreFlight.ts`, `characterPortrait.ts` | Articulation, projectile-like travel and actual-model portrait |
 | Sandbox | `sandbox.ts`, `interactables.ts`, `effects.ts`, `blastProjection.ts`, `damageBars.ts` | Durability, moving targets, impacts, previews, reusable trees |
-| Camera | `arrivalZoom.ts`, `cameraGlide.ts`, `zoomInput.ts`, `teleport3d.ts` | Opening framing, destination picking, ghost and smooth controls |
+| Camera | `arrivalZoom.ts`, `cameraGlide.ts`, `zoomInput.ts`, `teleport3d.ts` | Opening framing, destination picking and smooth controls |
 | Lighting | `lighting.ts`, `windowLighting.ts`, `landmarkLamp.ts`, `liveClock.ts`, `moon.ts`, `moonMotion.ts` | Theme-aware emission, local-light pool, time and lunar motion |
 | Interface | `hud.ts`, `style.css`, `map.ts`, `icons.ts`, `notifications.ts` | Responsive controls, minimap, icons and themed notices |
 | Policy | `appearance.ts`, `motion.ts`, `inputFocus.ts`, `touchControls.ts` | Stored theme, reduced motion, scoped keys and independent contacts |
@@ -54,7 +54,7 @@ For London, only the buried portion of the **18-unit** slab tapers and rounds or
 
 Destruction changes live collision state. Movement, planting and teleport eligibility read that same state, so a demolished plot becomes useful immediately. A planted tree acquires its own collision and damage record. The minimap uses live object state too.
 
-## Flight, teleport and camera motion
+## Flight and camera motion
 
 Explore starts unarmed. A short click on eligible visible ground starts flight; drag and multi-touch gestures do not. The flight calculates clearance against the entire route, including thin obstacles between endpoints. For each intersected expanded rectangular footprint, the solver evaluates entry and exit parameters and chooses a sufficient arc rise.
 
@@ -70,7 +70,7 @@ The endpoint is copied exactly on completion. Pose blends into a forward flying 
 
 The opening camera holds for 450 ms, then zooms over four seconds. Sine easing plus interpolation in log magnification keeps the wide end from rushing. It settles at 6× on desktop or 8× in compact layouts. Camera input interrupts it. These are orthographic magnification factors, not browser zoom percentages.
 
-The separate `M` teleport mode shows a translucent duplicate of the explorer. Picking intersects actual ground and deck surfaces and rejects foreground occlusion, water and occupied space. A valid click moves the explorer immediately; a 2.4-second camera translation preserves zoom and angle. Keyboard arrows move the ghost relative to the camera, and Enter confirms. Birdview uses a wide straight-down camera with exponential follow panning.
+Explore uses the shared 3D destination picker to reject foreground occlusion, water and occupied space. Click or tap valid ground to fly there. The former separate Teleport tab, `M` shortcut and ghost selector are removed. Birdview uses a wide straight-down camera with exponential follow panning.
 
 ## Traffic, bridges and water
 

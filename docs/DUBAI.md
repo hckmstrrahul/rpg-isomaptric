@@ -31,7 +31,7 @@ Five piers connect to the promenade with landings, sloped gangways, handrails an
 
 **18 moving boats** include twelve motor yachts and six sailing yachts with masts, rigging and billowing mainsails/jibs. Sailboats remain within the open bay; motor boats circulate through the channel and outer sea. Their routes clear the berths, piers and all three bridge decks.
 
-The same explorer walks, runs, flies, teleports, bombs objects and plants trees. Shoreline and bridge functions serve all tools and the minimap. Boats remain destructible; destroyed palms release their collision records and reusable instance slots. Shrubs are traversable decoration. Six directed routes carry **36 vehicles** with right-hand lanes and eight signal junctions.
+The same explorer walks, runs, flies, bombs objects and plants trees. Shoreline and bridge functions serve all tools and the minimap. Boats remain destructible; destroyed palms release their collision records and reusable instance slots. Shrubs are traversable decoration. Six directed routes carry **36 vehicles** with right-hand lanes and eight signal junctions.
 
 ## Night and optimization
 

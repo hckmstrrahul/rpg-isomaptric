@@ -2,7 +2,13 @@
 
 Release date: 27 October 2026. Same Node.js 24 / Three.js / Vite toolchain as the first release. The lockfile remains authoritative.
 
-## Checks and measured scope
+## Explore toolbar update
+
+The toolbar now contains Explore, Bomb objects and Plant a Tree. The duplicate Teleport tab, panel, keyboard shortcut and unused ghost/glide runtime are removed. Explore retains validated click/tap flight and its smooth zoom return. The header link row has a 12px top gap, increased from 8px; the toolbar uses three columns on desktop and mobile.
+
+The active suite contains 136 passing tests after removing four cases specific to the retired teleport selector/glide. City/UI audits, TypeScript and the production build pass. The browser smoke workflow now exercises travel through ordinary Explore clicks instead of the removed selector.
+
+## Previous Dubai refinement checks and measured scope
 
 - **140 automated tests pass**, plus the existing city and UI audits, TypeScript and production build.
 - Dubai checks construct the actual scene: all nine destinations connect on foot, building footprints leave roads clear, routes avoid static obstacles, all three bridges clear swept boat bounds, and traffic circulates over ten simulated minutes with the explorer at the starting promenade.
