@@ -36,10 +36,24 @@ test('named Dubai landmarks survive placement and the museum has a genuine open 
  const height=(o:T.Object3D)=>new T.Box3().setFromObject(o).getSize(new T.Vector3()).y;
  assert.ok(world.towers.filter(t=>t!==burj).every(t=>height(burj)>height(t)*1.8));
  const shell=scene.getObjectByName('Continuous silver torus and elliptical void')!;scene.updateMatrixWorld(true);
- const origin=new T.Vector3(2,8.6,12).applyMatrix4(shell.matrixWorld),direction=new T.Vector3(0,0,-1).transformDirection(shell.matrixWorld);
+ const origin=new T.Vector3(4.2,10.1,12).applyAxisAngle(new T.Vector3(0,1,0),shell.userData.elevationYaw).applyMatrix4(shell.matrixWorld),direction=new T.Vector3(0,0,-1).applyAxisAngle(new T.Vector3(0,1,0),shell.userData.elevationYaw).transformDirection(shell.matrixWorld);
  assert.equal(new T.Raycaster(origin,direction).intersectObject(shell,true).length,0,'The elliptical void is filled');
  const shellBounds=new T.Box3().setFromObject(shell);assert.ok(shellBounds.min.y<GROUND+1.8,'The shell floats above its mound');
- assert.ok(shellBounds.max.y-shellBounds.min.y>16.5,'The museum needs its enlarged silhouette');
+ assert.ok(shellBounds.max.y-shellBounds.min.y>19,'The museum needs its enlarged silhouette');
+});
+test('Dubai tower finishes and night profiles vary within a bounded material palette',()=>{
+ const finishes=new Set<string>(),profiles=new Set<string>(),maps=new Set<T.Texture>();
+ for(const tower of world.towers)tower.traverse(child=>{
+  if(!(child instanceof T.Mesh))return;
+  for(const mat of (Array.isArray(child.material)?child.material:[child.material])){
+   if(!mat.userData.dubaiFinish)continue;
+   const facade=mat as T.MeshStandardMaterial;finishes.add(mat.userData.dubaiFinish);profiles.add(JSON.stringify(mat.userData.nightProfile));
+   assert.ok(mat.userData.nightProfile.strength<=.58,'Window emission exceeds the restrained night palette');
+   for(const map of [facade.map,facade.emissiveMap])if(map)maps.add(map);
+  }
+ });
+ assert.equal(finishes.size,7);assert.ok(profiles.size>=10);assert.ok(maps.size<=28,`${maps.size} maps exceeds the shared texture budget`);
+ console.log(`Dubai facade palette: ${finishes.size} finishes, ${profiles.size} profiles, ${maps.size} maps`);
 });
 test('marina shoreline, circular road and connected promenade share one centre',()=>{
  for(const p of BAY_OUTLINE)assert.ok(Math.abs(Math.hypot(p.x-BAY.x,p.z-BAY.z)-BAY.rx)<1e-8);

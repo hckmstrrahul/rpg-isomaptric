@@ -1,12 +1,12 @@
 # London + Dubai release validation
 
-Release date: 27 October 2026. Same Node.js 24 / Three.js / Vite toolchain as the first release. The lockfile remains authoritative.
+Updated: 28 October 2026. Same Node.js 24 / Three.js / Vite toolchain as the first release. The lockfile remains authoritative.
 
 ## Explore toolbar update
 
-The toolbar now contains Explore, Bomb objects and Plant a Tree. The duplicate Teleport tab, panel, keyboard shortcut and unused ghost/glide runtime are removed. Explore retains validated click/tap flight and its smooth zoom return. The header link row has a 12px top gap, increased from 8px; the toolbar uses three columns on desktop and mobile.
+The toolbar now contains Explore, Grenade Gun and Plant a Tree. The duplicate Teleport tab, panel, keyboard shortcut and unused ghost/glide runtime are removed. Explore retains validated click/tap flight and its smooth zoom return. The header link row has a 12px top gap, increased from 8px; the toolbar uses three columns on desktop and mobile. Visible labels are “Explore,” “Grenade Gun” and “Plant a Tree,” with “Space to plant” for the tree action. The north compass straddles the minimap’s upper-right corner with reserved mobile clearance.
 
-The active suite contains 136 passing tests after removing four cases specific to the retired teleport selector/glide. City/UI audits, TypeScript and the production build pass. The browser smoke workflow now exercises travel through ordinary Explore clicks instead of the removed selector.
+The active suite contains 137 passing tests, including facade variation and bounded night emission, after removing four cases specific to the retired teleport selector/glide. City/UI audits, TypeScript and the production build pass. The browser smoke workflow now exercises travel through ordinary Explore clicks instead of the removed selector.
 
 ## Previous Dubai refinement checks and measured scope
 
@@ -19,6 +19,12 @@ The active suite contains 136 passing tests after removing four cases specific t
 
 These browser runs are simulations, not physical-device certification. Geometry inventories and tests are not universal frame-rate guarantees.
 
+## Facade and museum refinement
+
+The museum now has a larger, heavier left shoulder and an offset elliptical opening, with dense, upright calligraphic courses and subdued silver reflections. Tower finishes and window occupancy differ by building: smooth blue and dark glass, silver/bronze fins, teal/pale bands and punched limestone windows. No extra dynamic lights or global bloom increase are used.
+
+A fixed-time Chrome comparison at 1600 × 1000, DPR 1, counted all shadow/reflection/composer passes: the night overview changed from **4,443 to 4,460 draw calls** (+0.4%) and **5,215,498 to 5,176,986 triangles** (−0.7%). Day skyline draw calls changed from 3,651 to 3,676 (+0.7%). These are workload measurements, not a frame-rate promise. All scene and lighting budgets still pass.
+
 ## Marina and architecture refinement
 
 The harbour boundary and road now share a circular centre; the promenade is continuous, junction anchors use mitered joins and butt ends, and bridge roads widen along sampled ramps. Regression checks cover these joins, walking clearance and bridge deck elevations.
@@ -27,7 +33,7 @@ The skyline adds recognizable Burj Khalifa, Cayan, Emirates and Index forms. Bur
 
 ## Dubai budget
 
-The completed world has 28 skyline towers, the coastal Burj Al Arab, 27 residences, three sculptural waterfront landmarks, 1,100 trees/palms, 1,800 low shrubs, 149 lamps, 36 vehicles, 18 moving yachts and 20 moored yachts. It measures **1,387 meshes / 506,515 unique triangles**, below the measured London baseline of **1,629 / 819,256**. Instance copies and additional render passes are excluded from that CPU inventory.
+The completed world has 28 skyline towers, the coastal Burj Al Arab, 27 residences, three sculptural waterfront landmarks, 1,100 trees/palms, 1,800 low shrubs, 147 lamps, 36 vehicles, 18 moving yachts and 20 moored yachts. It measures **1,394 meshes / 493,547 unique triangles**, below the measured London baseline of **1,629 / 819,256**. Instance copies and additional render passes are excluded from that CPU inventory.
 
 Both chapters retain the 12-point-light pool, one batched ground-wash draw, bounded reflection resolution/frequency and reusable effects. Dubai adds one 111 kB self-hosted Arabic font, with its bundled OFL license, and no downloaded model/texture pack and skips approximately 835 kB of London-specific optional assets. Only one chapter scene is constructed at a time.
 

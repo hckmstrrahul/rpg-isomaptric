@@ -86,9 +86,9 @@ a{color:inherit;text-underline-offset:3px}
 .equipment small{display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:.5625rem;font-weight:450;line-height:1.4;margin-top:3px}
 .equipment-title{display:flex;align-items:center;gap:7px}
 .equipment kbd{flex-shrink:0;font-size:.5rem;line-height:1;min-width:16px;min-height:16px;padding:2px 3px;border-radius:4px;box-shadow:inset 0 1px 0 var(--edge),0 2px 0 var(--line),0 3px 3px #203e3814}
-.mini-map{border-radius:19px;padding:4px;position:relative}
+.mini-map{border-radius:19px;padding:4px;position:relative;margin-inline-end:max(0px,calc(18px - var(--right)))}
 .mini-map canvas{width:100%;height:auto;aspect-ratio:1;display:block;border-radius:15px}
-.north-mini{position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:50%;background:#252e35;color:#e0e5e7;display:grid;place-items:center;box-shadow:0 2px 6px #10202a30;pointer-events:none}
+.north-mini{position:absolute;top:0;right:0;transform:translate(50%,-50%);width:36px;height:36px;border-radius:50%;background:#252e35;color:#e0e5e7;display:grid;place-items:center;box-shadow:0 2px 6px #10202a30;pointer-events:none}
 .north-mini b{font-size:13px;font-weight:600;line-height:1;z-index:1}
 .compass-ticks{position:absolute;inset:4px;border-radius:50%;background:repeating-conic-gradient(#8d999e 0deg 3deg,transparent 3deg 30deg);mask:radial-gradient(transparent 0 58%,#000 61%);-webkit-mask:radial-gradient(transparent 0 58%,#000 61%)}
 .north-tip{position:absolute;top:2px;width:0;height:0;border-inline:2.5px solid transparent;border-bottom:5px solid #e16c55}
@@ -156,7 +156,7 @@ a{color:inherit;text-underline-offset:3px}
  .camera-dock{grid-column:1;grid-row:3;width:100%;min-width:0;max-width:100%;align-self:start}
  .tools{width:max-content;max-width:100%;margin-inline:auto}
  .equipment{padding:6px 12px}.equipment>svg{width:18px;height:18px}.equipment small,.equipment-title kbd{display:none}
- .footer>.mini-map{grid-column:2;grid-row:3;width:144px;justify-self:end;align-self:start}
+ .footer>.mini-map{grid-column:2;grid-row:3;width:144px;margin-top:18px;justify-self:end;align-self:start}
  .location-row{grid-column:1/-1;grid-row:5;display:flex;align-items:center;gap:12px;width:100%;min-width:0}
  .location-row>.location{flex:0 1 auto;min-width:0;max-width:320px;padding:12px 12px 12px 0}
  .shortcuts-dock{grid-column:1/-1;grid-row:6;width:100%;max-width:none;align-self:end}

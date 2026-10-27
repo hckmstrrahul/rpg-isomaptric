@@ -22,7 +22,9 @@ try {
     report.checks.push({name:`${saved} first paint overrides ${system} system`,...boot});release();await ready(page);
     assert.equal((await state(page)).night,saved==='night');
     assert.equal(await page.locator('#explore-tool').getAttribute('aria-pressed'),'true');
-    assert.match(await page.locator('#bomb-tool').innerText(),/Bomb objects/);
+    assert.match(await page.locator('#bomb-tool').innerText(),/Grenade Gun/);
+    assert.equal((await page.locator('#explore-tool .equipment-title').innerText()).replace(/\s+/g,' '),'Explore E');
+    assert.equal(await page.locator('#tree-tool small').innerText(),'Space to plant');
     assert.equal(await page.locator('.brand a').last().getAttribute('href'),'https://github.com/hckmstrrahul/rpg-isomaptric');
     if(production)assert.equal(await page.evaluate(()=>typeof window.__capture),'undefined');
     if(saved==='day') {
@@ -58,8 +60,10 @@ try {
   for(const viewport of [{width:390,height:844},{width:820,height:1180},{width:320,height:740}]) {
     const context=await browser.newContext({viewport,deviceScaleFactor:1,hasTouch:true,isMobile:true,reducedMotion:'reduce'});const p=await context.newPage();p.on('pageerror',error=>report.errors.push(error.message));await p.goto(url);await ready(p);
     assert.ok(await p.locator('#touch-pad').isVisible());assert.ok(await p.locator('#run-tool').isVisible());assert.ok(!(await p.locator('.controls').isVisible()));
-    const layout=await p.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,controls:[...document.querySelectorAll('#toolbelt,.mini-map,.touch-pad,.touch-actions,.brand,.world-switcher')].map(e=>{const r=e.getBoundingClientRect();return {name:e.className,left:r.left,right:r.right,top:r.top,bottom:r.bottom};})}));
+    const layout=await p.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,controls:[...document.querySelectorAll('#toolbelt,.mini-map,.north-mini,.touch-pad,.touch-actions,.brand,.world-switcher')].map(e=>{const r=e.getBoundingClientRect();return {name:e.className,left:r.left,right:r.right,top:r.top,bottom:r.bottom};})}));
     assert.ok(layout.scroll<=layout.width+1);for(const box of layout.controls){assert.ok(box.left>=-1&&box.right<=viewport.width+1,`${box.name} stays in viewport`);assert.ok(box.bottom<=viewport.height+1);}
+    const mapBox=layout.controls.find(b=>b.name.includes('mini-map')),compassBox=layout.controls.find(b=>b.name==='north-mini');
+    assert.ok(Math.abs((compassBox.left+compassBox.right)/2-mapBox.right)<2&&Math.abs((compassBox.top+compassBox.bottom)/2-mapBox.top)<2,'Compass straddles the upper-right map corner');
     assert.equal((await state(p)).zoom,8);await p.screenshot({path:`artifacts/browser-${viewport.width}.png`});report.checks.push({name:`${viewport.width}px touch layout`,...layout});await context.close();
   }
   assert.deepEqual(report.errors,[]);

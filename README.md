@@ -29,8 +29,8 @@ https://github.com/user-attachments/assets/3212fd84-550a-4bce-9fa4-1f4871d053b8
 - **A miniature London.** Westminster, a live four-face clock tower, Tower Bridge, the London Eye, the Gherkin, an abbey, gardens, and a curved Thames. Most geometry and materials are generated in code.
 - **A waterfront Dubai.** 28 skyline towers, the coastal Burj Al Arab, three sculptural waterfront landmarks and 27 limestone residences, a sheltered marina and three shipping bridges. 1,100 palms and broadleaf trees plus 1,800 low shrubs bring the landscape into the streets. [Dubai construction notes](docs/DUBAI.md).
 - **Cities in motion.** London has 44 vehicles across cars, buses, cabs, vans, trucks, bicycles and motorcycles; left-hand traffic, timed signals and player avoidance. 22 boats leave fading world-space wakes and pass beneath three bridges. Dubai uses 36 vehicles with right-hand traffic, eight signal junctions, 18 moving motor/sailing yachts, and 20 moored yachts across five connected piers.
-- **Day and night.** Warm clock rings, softly blue Eye capsules, occupied windows, 205 street lanterns, red rooftop beacons, and a world-space moon with a critically damped entrance. Dubai adds illuminated tower suites, softly lit glass shells and 149 waterfront street lights. Appearance persists through loading and location changes.
-- **A playful sandbox.** “Bomb objects” fires straight, fiery shells up to 50 m, with projected blast previews and water splashes. Plant trees within 50 m, including on cleared plots. Reload restores the city.
+- **Day and night.** Warm clock rings, softly blue Eye capsules, occupied windows, 205 street lanterns, red rooftop beacons, and a world-space moon with a critically damped entrance. Dubai adds illuminated tower suites, softly lit glass shells and 147 waterfront street lights. Appearance persists through loading and location changes.
+- **A playful sandbox.** “Grenade Gun” fires straight, fiery shells up to 50 m, with projected blast previews and water splashes. Plant trees within 50 m, including on cleared plots. Reload restores the city.
 - **Camera and touch controls.** Slow arrival zoom, smooth follow, Birdview, free orbit and pinch. Separate pointer tracking supports simultaneous touch movement, running and tool use.
 - **Small details that hold up close.** Tiled roofs on every face, modeled goggles and armor, British railings and hydrant markers, glazed telephone boxes, bridge ramps and flush road paint.
 
@@ -88,8 +88,8 @@ There is no backend, account, API key, paid service, or external runtime asset r
 | --- | --- |
 | Explore / fly to clear ground | `E`, then click or tap |
 | Walk / run | `WASD` or arrows / hold `Shift` |
-| Bomb objects | `B`, then click or hold `Space` |
-| Plant a tree | `T` equips and plants; click / `Space` repeats |
+| Grenade Gun | `B`, then click or hold `Space` |
+| Plant a Tree | `T` equips and plants; click / `Space` to plant again |
 | Orbit / pan / zoom | Left drag / right drag or two fingers / wheel or pinch |
 | Follow / city / character | `F` / `R` / `C` |
 | Straight-down follow | Birdview button |
@@ -97,7 +97,7 @@ There is no backend, account, API key, paid service, or external runtime asset r
 | Change world | London / Dubai at the top; arrow keys then Enter or Space when focused |
 | Help / cancel | `?` / `Escape` |
 
-The location URL is shareable (`?world=london` or `?world=dubai`), and the last selected location is remembered. Changing worlds rebuilds the scene and resets its temporary sandbox edits. Focus the canvas to use gameplay keys. Mobile and tablet offer a directional pad and independent Run and tool buttons. Explore has no weapon or red marker. Invalid water and occupied destinations cannot be used for travel. Click or tap a valid destination in Explore to fly there; the gentle zoom returns to its previous level on arrival.
+The location URL is shareable (`?world=london` or `?world=dubai`), and the last selected location is remembered. Changing worlds rebuilds the scene and resets its temporary sandbox edits. Focus the canvas to use gameplay keys. Mobile and tablet offer a directional pad and independent Run and tool buttons. The toolbelt has three modes: **Explore**, **Grenade Gun** and **Plant a Tree**. Explore is selected on load and has no weapon or red marker. Travel is part of Explore; there is no separate Teleport tab or `M` shortcut. Invalid water and occupied destinations cannot be used for travel. Click or tap a valid destination in Explore to fly there; the gentle zoom returns to its previous level on arrival.
 
 ## How it works
 

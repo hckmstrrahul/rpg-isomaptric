@@ -1,29 +1,27 @@
 import * as T from 'three';
-import { Builder, facadeTexture, material, vec } from '../../geometry.ts';
+import { Builder, material, vec } from '../../geometry.ts';
 import { glowMaterial, registerGlow } from '../../lighting.ts';
 import { surfaceMaterial } from '../../nature.ts';
 import { burjKhalifa,cayanTower,emiratesTower,indexTower } from './landmarks.ts';
+import {dubaiFacade,type DubaiFinish} from './facades.ts';
 import type { TowerPlot } from './plan.ts';
 
-let facades:T.MeshStandardMaterial[]|undefined;
-function glass(index:number) {
-  facades??=['#335967','#63828d','#b8b8a8','#7c969b'].map((color,i)=>facadeTexture(i===2?'stone':'glass',color));
-  return facades[index%facades.length];
-}
+const finishes:DubaiFinish[]=['blue','teal','stone','bronze','pearl','slate'];
+const glass=(index:number,variant=0)=>dubaiFacade(finishes[index%finishes.length],variant);
 const ivory='#e6e0ca',silver='#bbc7c6',bronze='#9a886c';
 export function marinaTower(plot:TowerPlot) {
-  const {w,d,h,style}=plot;
+  const {w,d,h}=plot,style=plot.style===0&&plot.x>0?2:plot.style;
   if(plot.design==='burj')return burjKhalifa(w,h);
   if(plot.design==='cayan')return cayanTower(w,d,h);
   if(plot.design==='emirates')return emiratesTower(w,d,h);
   if(plot.design==='index')return indexTower(w,d,h);
-  const b=new Builder(),facade=glass(style),dark=glass(0);
+  const b=new Builder(),facade=glass(style,Math.abs(Math.round(plot.x*3+plot.z))),dark=dubaiFacade('slate');
   b.box(0,.4,0,w+1.4,.8,d+1.4,'#bdb7a3');
   b.box(0,1.5,0,w+1,2,d+1,dark);
   b.box(0,2.6,0,w+1.3,.18,d+1.3,ivory);
   if(style===1) {
     const g=new T.CylinderGeometry(1,1,h-3,40);b.add(g,facade,0,(h+3)/2,0,w*.5,1,d*.5);g.dispose();
-    for(let y=4;y<h;y+=1.35){const ring=new T.CylinderGeometry(1,1,.09,40);b.add(ring,material(silver),0,y,0,w*.505,1,d*.505);ring.dispose();}
+    for(let y=4;y<h;y+=6){const ring=new T.CylinderGeometry(1,1,.09,40);b.add(ring,material(silver),0,y,0,w*.505,1,d*.505);ring.dispose();}
     const roof=new T.CylinderGeometry(1,1,.45,40);b.add(roof,material(ivory),0,h,0,w*.53,1,d*.53);roof.dispose();
     b.box(0,h+.8,0,w*.5,1.2,d*.5,'#8c9c9e');
   } else if(style===4) {
@@ -41,9 +39,9 @@ export function marinaTower(plot:TowerPlot) {
     const body=new T.BoxGeometry(w,h-3,d),p=body.getAttribute('position');
     for(let i=0;i<p.count;i++)if(p.getY(i)>0){p.setX(i,p.getX(i)*taper);p.setZ(i,p.getZ(i)*taper);}
     body.computeVertexNormals();b.add(body,facade,0,(h+3)/2,0);body.dispose();
-    for(let y=4;y<h;y+=1.5){const k=1-(1-taper)*(y-3)/(h-3);b.box(0,y,0,w*k+.10,.095,d*k+.10,style===3?ivory:silver);}
-    for(const side of [-1,1])for(const along of [-.38,0,.38]){
-      if(taper===1){b.box(side*(w/2+.06),(h+3)/2,along*d,.13,h-3,.18,style===3?ivory:silver);b.box(along*w,(h+3)/2,side*(d/2+.06),.18,h-3,.13,style===3?ivory:silver);}
+    if(style===2||style===3)for(let y=4;y<h;y+=style===2?4.5:7.5){const k=1-(1-taper)*(y-3)/(h-3);b.box(0,y,0,w*k+.10,.10,d*k+.10,style===2?ivory:bronze);}
+    for(const side of [-1,1])for(const along of (style===3?[-.45,-.3,-.15,0,.15,.3,.45]:style===2?[-.38,0,.38]:[-.49,.49])){
+      if(taper===1){b.box(side*(w/2+.06),(h+3)/2,along*d,.13,h-3,.18,style===3?bronze:style===2?ivory:silver);b.box(along*w,(h+3)/2,side*(d/2+.06),.18,h-3,.13,style===3?bronze:style===2?ivory:silver);}
     }
     b.box(0,h+.15,0,w*taper+.35,.3,d*taper+.35,ivory);
     b.box(0,h+.8,0,w*.5,1.1,d*.48,'#778b8f');
@@ -54,7 +52,7 @@ export function marinaTower(plot:TowerPlot) {
     b.box(0,2.53,side*(d/2+.52),w+1,.055,.06,glowMaterial('#ffdcaa',2.5));
     b.box(side*(w/2+.52),2.53,0,.06,.055,d+1,glowMaterial('#ffdcaa',2.5));
   }
-  const root=b.finish();root.name=plot.landmark==='spire'?'Skyline Spire':'Marina skyline tower';return root;
+  const root=b.finish();root.name='Marina skyline tower';root.userData.facadeFinish=finishes[style%finishes.length];root.userData.beaconOffset=[0,h+(style===1?1.4:style===4?.4:style===3?5.3:1.625),0];return root;
 }
 function surface(gridU:number,gridV:number,point:(u:number,v:number)=>T.Vector3) {
   const p:number[]=[],uv:number[]=[],indices:number[]=[];

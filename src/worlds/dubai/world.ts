@@ -98,7 +98,7 @@ export function createDubaiWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
   for(const plot of TOWER_PLOTS){
     if(blocked(plot.x,plot.z,plot.w+1.4,plot.d+1.4,.35)||!dryFootprint(plot.x,plot.z,plot.w+1.4,plot.d+1.4)||plotTouchesRoad({...plot,w:plot.w+1.4,d:plot.d+1.4},roads,.2))continue;
     const {root}=place(marinaTower(plot),plot.x,plot.z,plot.name??'Marina tower','building',plot.landmark);
-    const beacon=createRooftopBeacon(towers.length*.37);beacon.position.y=plot.h+(plot.design==='burj'?.05:plot.design==='emirates'?3.6:plot.design?0:plot.style===3?5.5:2.2);root.add(beacon);beacons.push(beacon);towers.push(root);buildingLight(root,plot.w,plot.d);
+    const beacon=createRooftopBeacon(towers.length*.37);beacon.position.y=plot.h+(plot.design==='burj'?.05:plot.design==='emirates'?3.6:plot.design?0:plot.style===3?5.5:2.2);if(root.userData.beaconOffset)beacon.position.fromArray(root.userData.beaconOffset);root.add(beacon);beacons.push(beacon);towers.push(root);buildingLight(root,plot.w,plot.d);
   }
   const petalModel=pearlPavilion();petalModel.scale.setScalar(1.35);
   const petal=place(petalModel,-72,59,'Pearl Pavilion','building','petal');buildingLight(petal.root,17,17,'#c9e2ee');

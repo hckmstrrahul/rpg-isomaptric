@@ -176,7 +176,7 @@ async function init() {
     for(const [id,selected]of [['explore-tool',tool==='explore'],['bomb-tool',tool==='bomb'],['tree-tool',tool==='tree']] as const){$(id).classList.toggle('active',selected);$(id).setAttribute('aria-pressed',String(selected));}
     character.setTool(tool);
     $('use-tool').classList.toggle('hidden',tool==='explore');
-    $('use-tool').setAttribute('aria-label',tool==='bomb'?'Fire bomb':'Plant a tree');
+    $('use-tool').setAttribute('aria-label',tool==='bomb'?'Fire grenade':'Plant a tree');
     $('use-tool').innerHTML=`${icon(tool==='bomb'?'bomb':'tree',20)} ${tool==='bomb'?'Fire':'Plant'}`;
   }
   function selectTool(value:'explore'|'bomb'|'tree') {

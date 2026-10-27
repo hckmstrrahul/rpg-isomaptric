@@ -14,7 +14,7 @@ try{
   ['waterfront',{night:true,zoom:2.6,focus:[-40,5,60]}],
   ['explorer',{night:false,zoom:16,focus:[20,2,0],character:{x:20,z:0,yaw:Math.PI/3}}],
   ['marina',{night:false,zoom:5.5,focus:[-32,0,-13]}],
-  ['museum-night',{night:true,zoom:7.5,focus:[52,9,62]}],
+  ['museum-night',{night:true,zoom:6.8,focus:[52,10,62],offset:[160,90,277]}],
   ['burj-al-arab',{night:false,zoom:4.5,focus:[-78,22,25],offset:[250,110,160]}],
   ['skyline',{night:false,zoom:1.5,focus:[0,42,-56],offset:[170,110,250]}],
  ]){

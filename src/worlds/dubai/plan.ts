@@ -89,7 +89,7 @@ export const DUBAI_LANDMARKS:Landmark[]=[
   {id:'spire',name:'Burj Khalifa',short:'Burj Khalifa',x:-23,z:-77,height:108,visitX:-23,visitZ:-67,description:'Dubai’s tallest landmark, with three wings, spiralling setbacks and a telescoping spire.'},
   {id:'petal',name:'Pearl Pavilion',short:'Pearl Pavilion',x:-72,z:59,height:18,visitX:-72,visitZ:76.5,description:'White petal roofs open toward the water above a circular waterfront gallery.'},
   {id:'conservatory',name:'Harbour Conservatory',short:'Harbour Conservatory',x:9,z:68,height:18,visitX:33,visitZ:70,description:'An oval glass garden beneath sweeping ivory ribs.'},
-  {id:'sails',name:'Museum of the Future',short:'Museum of the Future',x:52,z:62,height:19,visitX:52,visitZ:75,description:'A silver oval, calligraphic glazing and an open central void rising from a planted mound.'},
+  {id:'sails',name:'Museum of the Future',short:'Museum of the Future',x:52,z:62,height:22,visitX:52,visitZ:75,description:'A silver oval, calligraphic glazing and an open central void rising from a planted mound.'},
   {id:'crescent',name:'Cayan Tower',short:'Cayan Tower',x:-50,z:-35.5,height:43,visitX:-50,visitZ:-20,description:'A sculptural residential tower turning through a full quarter rotation above the marina.'},
   {id:'burj-al-arab',name:'Burj Al Arab',short:'Burj Al Arab',x:-78,z:25,height:46,visitX:-78,visitZ:40,description:'A white sail above the coast, with blue glazing, an exposed frame and a cantilevered helipad.'},
   {id:'gardens',name:'Coastal Palm Gardens',short:'Palm Gardens',x:-57,z:80,height:5,visitX:-57,visitZ:80,description:'Layered shrubs, planted borders, palms and paths overlooking the sea.'},
