@@ -28,13 +28,14 @@ https://github.com/user-attachments/assets/3212fd84-550a-4bce-9fa4-1f4871d053b8
 - **Explore by default.** Walk, run, or click open ground to fly there along a smooth obstacle-clearing arc. A gentle zoom breathes out and back in, with no landing impact or camera shake.
 - **A miniature London.** Westminster, a live four-face clock tower, Tower Bridge, the London Eye, the Gherkin, an abbey, gardens, and a curved Thames. Most geometry and materials are generated in code.
 - **A waterfront Dubai.** 28 skyline towers, the coastal Burj Al Arab, three sculptural waterfront landmarks and 27 limestone residences, a sheltered marina and three shipping bridges. 1,100 palms and broadleaf trees plus 1,800 low shrubs bring the landscape into the streets. [Dubai construction notes](docs/DUBAI.md).
-- **Three researched city districts.** Bengaluru’s enlarged granite legislature, grounded red civic buildings, office towers and Cubbon Park fountain; Agra’s grand Taj, charbagh, Yamuna and dense Taj Ganj housing; Lisbon’s limestone monuments, varied tiled-roof neighborhoods, hills and Tagus suspension bridge. A wooded corner contains the requested **Pena Palace · Sintra** excursion.
+- **Three researched city districts.** Bengaluru’s enlarged granite legislature, grounded red civic buildings, office towers and Cubbon Park fountain; Agra’s grand Taj, charbagh, Yamuna and dense Taj Ganj housing; Lisbon’s limestone monuments, varied tiled-roof neighborhoods, hills and Tagus suspension bridge. A wooded corner contains the **Pena Palace · Sintra** excursion.
 - **A lunar world.** Cratered terrain, pressure habitats, landing pads, gold-foil satellites, a solar farm and a crater-relief minimap. Planting creates a tree in a sealed greenhouse.
 - **Only the selected world loads.** Chapter plans and geometry are separate dynamic imports. London’s asset pack and Dubai’s lettering load only in their own chapters; a location change releases the previous scene. Dry worlds skip river reflections.
 - **Cities in motion.** London has 44 vehicles across cars, buses, cabs, vans, trucks, bicycles and motorcycles; left-hand traffic, timed signals and player avoidance. 22 boats leave fading world-space wakes and pass beneath three bridges. Dubai uses 36 vehicles with right-hand traffic, eight signal junctions, 18 moving motor/sailing yachts, and 20 moored yachts across five connected piers.
 - **Day and night.** Warm clock rings, softly blue Eye capsules, occupied windows, 205 street lanterns, red rooftop beacons, and a world-space moon with a critically damped entrance. Dubai adds illuminated tower suites, softly lit glass shells and 147 waterfront street lights. Appearance persists through loading and location changes.
 - **A playful sandbox.** “Grenade Gun” fires straight, fiery shells up to 50 m, with projected blast previews and water splashes. Plant trees within 50 m, including on cleared plots. Reload restores the city.
 - **Camera and touch controls.** Slow arrival zoom, smooth follow, Birdview, free orbit and pinch. Separate pointer tracking supports simultaneous touch movement, running and tool use.
+- **Continuous backgrounds.** The backdrop fills the screen in every world, by day and night, including low camera angles and wide zooms. Cast shadows keep the miniature grounded without exposing a rectangular background-plane edge.
 - **Connected and grounded.** City roads meet at joined junctions and continue to the miniature's cut edges. Signals face their approaches; traffic runs on tested circulating routes. Every world starts the explorer near its center on accessible ground. Discoveries update the counter silently.
 - **Small details that hold up close.** Tiled roofs on every face, modeled goggles and armor, British railings and hydrant markers, glazed telephone boxes, bridge ramps and flush road paint.
 
@@ -102,7 +103,7 @@ A **fictional settlement** on cratered lunar terrain, with pressure habitats, go
 | --- | --- |
 | ![Fictional Moon base with crater bowls and pressure habitats](docs/media/moon-day.jpg) | ![Fictional Moon base with restrained cyan habitat lighting](docs/media/moon-night.jpg) |
 
-These gallery images are captures from the playable renderer. [Research and geographic scope](docs/WORLD-EXPANSION.md) · [Visual review](docs/WORLD-VISUAL-REVIEW.md).
+These gallery images are captures from the playable renderer. [Research and geographic scope](docs/WORLD-EXPANSION.md) · [Latest visual review](docs/refinement-review.md).
 
 ## Run it
 
