@@ -2,11 +2,11 @@
 
 **Tiny playable isometric worlds**
 
-[Play London](https://rpg-isomaptric.vercel.app) · [Engineering guide](docs/ENGINEERING.md) · [Build another world](docs/WORLD-AUTHORING.md) · [MIT license](LICENSE)
+[Play London](https://rpg-isomaptric.vercel.app/?world=london) · [Play Dubai](https://rpg-isomaptric.vercel.app/?world=dubai) · [Engineering guide](docs/ENGINEERING.md) · [Build another world](docs/WORLD-AUTHORING.md) · [MIT license](LICENSE)
 
-A series of miniature, location-inspired RPG worlds for the browser. **Chapter 001 is London:** a living Three.js diorama with an explorer, traffic, river launches, day and night, and a playful destructible sandbox. More locations are the direction of the project; London is the one available world today.
+A series of miniature, location-inspired RPG worlds for the browser. **Chapter 001: London** and **Chapter 002: Dubai** share one explorer, traffic simulation, day and night, and a playful destructible sandbox. Switch locations with the pill selector at the top of the game. Dubai follows an artistic marina-island reference, with a dense skyline, sculptural waterfront architecture and planted neighbourhoods.
 
-[Map composition inspiration](https://x.com/hckmstrrahul/status/1729860085982040454). This is an artistic London-inspired world, not a geographically accurate map. Interiors, multiplayer and saved-world persistence are not implemented.
+[Map composition inspiration](https://x.com/hckmstrrahul/status/1729860085982040454). These are artistic location-inspired worlds, not geographically accurate maps. Interiors, multiplayer and saved-world persistence are not implemented.
 
 <table>
   <tr>
@@ -23,12 +23,13 @@ https://github.com/user-attachments/assets/3212fd84-550a-4bce-9fa4-1f4871d053b8
 
 [▶ Watch the gameplay video on YouTube](https://youtu.be/l_WwsOZ4Jgw)
 
-## One city, many little systems
+## Two worlds, shared little systems
 
 - **Explore by default.** Walk, run, or click open ground to fly there along a smooth obstacle-clearing arc. A gentle zoom breathes out and back in, with no landing impact or camera shake.
 - **A miniature London.** Westminster, a live four-face clock tower, Tower Bridge, the London Eye, the Gherkin, an abbey, gardens, and a curved Thames. Most geometry and materials are generated in code.
-- **A city in motion.** 44 vehicles across cars, buses, cabs, vans, trucks, bicycles and motorcycles; left-hand traffic, timed signals and player avoidance. 22 boats leave fading world-space wakes and pass beneath three bridges.
-- **Day and night.** Warm clock rings, softly blue Eye capsules, occupied windows, 205 street lanterns, red rooftop beacons, and a world-space moon with a critically damped entrance. Appearance persists through the loading screen.
+- **A waterfront Dubai.** 27 towers, three sculptural pavilions, 31 limestone residences, a sheltered marina and three shipping bridges. 1,100 palms and broadleaf trees plus 1,800 low shrubs bring the landscape into the streets. [Dubai construction notes](docs/DUBAI.md).
+- **Cities in motion.** London has 44 vehicles across cars, buses, cabs, vans, trucks, bicycles and motorcycles; left-hand traffic, timed signals and player avoidance. 22 boats leave fading world-space wakes and pass beneath three bridges. Dubai uses 36 vehicles with right-hand traffic, eight signal junctions, and 18 marina and coastal boats.
+- **Day and night.** Warm clock rings, softly blue Eye capsules, occupied windows, 205 street lanterns, red rooftop beacons, and a world-space moon with a critically damped entrance. Dubai adds illuminated tower suites, softly lit glass shells and 151 waterfront street lights. Appearance persists through loading and location changes.
 - **A playful sandbox.** “Bomb objects” fires straight, fiery shells up to 50 m, with projected blast previews and water splashes. Plant trees within 50 m, including on cleared plots. Reload restores the city.
 - **Camera and touch controls.** Slow arrival zoom, smooth follow, Birdview, free orbit, pinch, and a ghost-preview teleport. Separate pointer tracking supports simultaneous touch movement, running and tool use.
 - **Small details that hold up close.** Tiled roofs on every face, modeled goggles and armor, British railings and hydrant markers, glazed telephone boxes, bridge ramps and flush road paint.
@@ -44,6 +45,16 @@ https://github.com/user-attachments/assets/3212fd84-550a-4bce-9fa4-1f4871d053b8
 | Glass skyline | The explorer |
 | --- | --- |
 | ![Gherkin and neighboring towers at night](docs/media/gherkin-night.jpg) | ![The modeled RPG explorer beside the river](docs/media/explorer.jpg) |
+
+## Chapter 002 · Dubai
+
+| Marina island by day | Skyline at night |
+| --- | --- |
+| ![Dubai marina island by day](docs/media/dubai-day.jpg) | ![Dubai skyline and harbour at night](docs/media/dubai-night.jpg) |
+
+| Sculptural waterfront | The same explorer in Dubai |
+| --- | --- |
+| ![Pearl Pavilion, villas and the ribbed conservatory](docs/media/dubai-waterfront.jpg) | ![Explorer among the palms beside the marina](docs/media/dubai-explorer.jpg) |
 
 ## Run it
 
@@ -76,9 +87,10 @@ There is no backend, account, API key, paid service, or external runtime asset r
 | Follow / city / character | `F` / `R` / `C` |
 | Straight-down follow | Birdview button |
 | Day / night | Sun or moon button |
+| Change world | London / Dubai at the top; arrow keys then Enter or Space when focused |
 | Help / cancel | `?` / `Escape` |
 
-Focus the canvas to use gameplay keys. Mobile and tablet offer a directional pad and independent Run and tool buttons. Explore has no weapon or red marker. Invalid water and occupied destinations cannot be used for travel. The separate teleport tool moves the character immediately and glides the camera while preserving zoom.
+The location URL is shareable (`?world=london` or `?world=dubai`), and the last selected location is remembered. Changing worlds rebuilds the scene and resets its temporary sandbox edits. Focus the canvas to use gameplay keys. Mobile and tablet offer a directional pad and independent Run and tool buttons. Explore has no weapon or red marker. Invalid water and occupied destinations cannot be used for travel. The separate teleport tool moves the character immediately and glides the camera while preserving zoom.
 
 ## How it works
 
@@ -87,13 +99,13 @@ The interesting work is in the constraints between systems, not just the landmar
 | Technique | What it achieves |
 | --- | --- |
 | One shared street and river plan | Rendering, collision, traffic, planting, teleporting and the minimap agree about usable space. |
-| Instanced vegetation and merged geometry | 950 trees share bark and foliage layers; static surfaces are batched while destructible objects retain their identity. |
+| Instanced vegetation and merged geometry | 950 London trees or 1,100 Dubai trees share species-specific bark and foliage layers; static surfaces are batched while destructible objects retain their identity. |
 | Bounded local lighting | A pool of 12 nearby point lights and one batched ground-wash layer support hundreds of visible fixtures without one dynamic light per bulb. |
 | Projected targeting shaders | Circular bomb and planting previews follow roofs, hulls and terrain rather than disappearing below them. |
 | Analytic camera and travel curves | Frame-rate-independent arrival, moon damping, teleport glides and smooth flight with reduced-motion alternatives. |
 | Geometry-level regression checks | Tests inspect the built city, including street corners, bridge triangles, traffic separation and reachable landmarks. |
 
-Read [the engineering guide](docs/ENGINEERING.md) for architecture, algorithms, rendering tradeoffs and module ownership. [World authoring](docs/WORLD-AUTHORING.md) explains how to approach the next location without pretending the current London code is already a generic world engine. [Contributing](CONTRIBUTING.md) includes asset and media workflows. [Release validation](docs/RELEASE.md) records checks and measured budgets.
+Read [the engineering guide](docs/ENGINEERING.md) for architecture, algorithms, rendering tradeoffs and module ownership. [World authoring](docs/WORLD-AUTHORING.md) explains how to approach the next location using the implemented location boundary while keeping the character and game systems shared. [Contributing](CONTRIBUTING.md) includes asset and media workflows. [Release validation](docs/RELEASE.md) records checks and measured budgets.
 
 ## License and credits
 

@@ -1,4 +1,4 @@
-import { HALF, RIVER_END, riverCenter, riverWidth, isOnBridge, type Obstacle } from './layout.ts';
+import { HALF, isWater, isOnBridge, type Obstacle } from './layout.ts';
 
 export const BOMB_DAMAGE = 34;
 export const FIRE_INTERVAL = 0.65;
@@ -77,7 +77,7 @@ export function plantingIssue(p: Point, player: Point, obstacles: Obstacle[], ob
   if(isOnBridge(p.x,p.z))return 'Choose ground beside the bridge';
   // Check the full planting footprint against both banks, including the rounded end.
   for(const z of [p.z-TREE_CLEARANCE,p.z,p.z+TREE_CLEARANCE])
-    if(z<RIVER_END&&Math.abs(p.x-riverCenter(z))<riverWidth(z)/2+TREE_CLEARANCE)return 'Trees need dry ground';
+    if(isWater(p.x,z,TREE_CLEARANCE))return 'Trees need dry ground';
   if([...obstacles,...extraBlocked].some(o=>footprintDistance(p,o)<TREE_CLEARANCE))return 'This space is occupied';
   if(objects.some(o=>!o.destroyed&&o.kind==='tree'&&footprintDistance(p,o)<TREE_CLEARANCE))return 'Give nearby trees room to grow';
   return null;

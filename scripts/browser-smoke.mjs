@@ -48,7 +48,14 @@ try {
   desktop.on('pageerror',error=>report.errors.push(error.message));await desktop.goto(url);await ready(desktop);await desktop.waitForFunction(()=>Math.abs(window.__littleLondon.getState().zoom-6)<.01,{timeout:20000});
   const initialZoom=(await state(desktop)).zoom;assert.ok(Math.abs(initialZoom-6)<.1);
   let flightStart;
-  for(const [x,y]of [[790,470],[700,490],[650,450],[800,400],[720,540],[580,450],[900,450]]) {
+  const candidates=[[790,470],[700,490],[650,450],[800,400],[720,540],[580,450],[900,450],...Array.from({length:7},(_,row)=>Array.from({length:9},(_,col)=>[400+col*80,220+row*60])).flat()];
+  for(const [x,y]of candidates) {
+    // The chapters have different shorelines. Pick visible valid ground before
+    // checking the flight instead of assuming London screen coordinates apply.
+    await desktop.locator('#scene').focus();await desktop.keyboard.press('KeyM');await desktop.mouse.move(x,y);await desktop.waitForTimeout(80);
+    const pick=(await state(desktop)).teleportDestination;await desktop.keyboard.press('Escape');
+    if(!pick?.valid)continue;
+    const from=(await state(desktop)).position;if(Math.hypot(pick.position.x-from.x,pick.position.z-from.z)<2)continue;
     await desktop.mouse.click(x,y);await desktop.waitForTimeout(50);const value=await state(desktop);if(value.flying){flightStart=value;break;}
   }
   assert.ok(flightStart,'A visible ground click should start Explore flight');
@@ -59,7 +66,7 @@ try {
   for(const viewport of [{width:390,height:844},{width:820,height:1180},{width:320,height:740}]) {
     const context=await browser.newContext({viewport,deviceScaleFactor:1,hasTouch:true,isMobile:true,reducedMotion:'reduce'});const p=await context.newPage();p.on('pageerror',error=>report.errors.push(error.message));await p.goto(url);await ready(p);
     assert.ok(await p.locator('#touch-pad').isVisible());assert.ok(await p.locator('#run-tool').isVisible());assert.ok(!(await p.locator('.controls').isVisible()));
-    const layout=await p.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,controls:[...document.querySelectorAll('#toolbelt,.mini-map,.touch-pad,.touch-actions,.brand')].map(e=>{const r=e.getBoundingClientRect();return {name:e.className,left:r.left,right:r.right,top:r.top,bottom:r.bottom};})}));
+    const layout=await p.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,controls:[...document.querySelectorAll('#toolbelt,.mini-map,.touch-pad,.touch-actions,.brand,.world-switcher')].map(e=>{const r=e.getBoundingClientRect();return {name:e.className,left:r.left,right:r.right,top:r.top,bottom:r.bottom};})}));
     assert.ok(layout.scroll<=layout.width+1);for(const box of layout.controls){assert.ok(box.left>=-1&&box.right<=viewport.width+1,`${box.name} stays in viewport`);assert.ok(box.bottom<=viewport.height+1);}
     assert.equal((await state(p)).zoom,8);await p.screenshot({path:`artifacts/browser-${viewport.width}.png`});report.checks.push({name:`${viewport.width}px touch layout`,...layout});await context.close();
   }

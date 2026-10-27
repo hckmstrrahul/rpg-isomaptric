@@ -5,7 +5,7 @@ import { GROUND, type Obstacle } from './layout.ts';
 import { SandboxState, plantingIssue, footprintDistance, BOMB_DAMAGE, BLAST_RADIUS, type Destructible, type ObjectKind, type Point } from './sandbox.ts';
 
 type Binding = { model:T.Object3D; position:T.Vector3; scale:T.Vector3; localBounds:T.Box3; obstacles:Obstacle[]; hitAt:number; deadAt:number };
-type Tree = { object:Destructible; index:number; scale:T.Vector3; yaw:number; plantedAt:number; obstacles:Obstacle[] };
+type Tree = { species:string; object:Destructible; index:number; scale:T.Vector3; yaw:number; plantedAt:number; obstacles:Obstacle[] };
 export class WorldObjects {
   state=new SandboxState();
   models=new Map<number,Binding>();
@@ -14,8 +14,7 @@ export class WorldObjects {
   forest:T.InstancedMesh;
   foliage:T.InstancedMesh;
   treePreviewGeometry:T.BufferGeometry;
-  private nextTree=0;
-  private treeSlots:number[]=[];
+  private species=new Map<string,{trunk:T.InstancedMesh;leaves:T.InstancedMesh;next:number;slots:number[];height:number;spread:number;name:string}>();
   private matrix=new T.Matrix4();
   private quaternion=new T.Quaternion();
   private axis=vec(0,1,0);
@@ -36,6 +35,12 @@ export class WorldObjects {
       // Covers all legal planting positions, avoiding stale instance bounds after edits.
       layer.boundingSphere=new T.Sphere(vec(0,3,0),160);scene.add(layer);
     }
+  }
+  registerTreeSpecies(id:string,trunk:T.BufferGeometry,foliage:T.BufferGeometry,bark:T.Material,leaves:T.Material,name:string,height=4,spread=2.8) {
+    const a=new T.InstancedMesh(trunk,bark,4096),b=new T.InstancedMesh(foliage,leaves,4096);
+    for(const mesh of [a,b]){mesh.count=0;mesh.castShadow=true;mesh.receiveShadow=true;mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);mesh.boundingSphere=new T.Sphere(vec(0,4,0),165);this.scene.add(mesh);}
+    a.name=`${name} · trunks`;b.name=`${name} · crowns`;
+    this.species.set(id,{trunk:a,leaves:b,next:0,slots:[],height,spread,name});
   }
   registerModel(model:T.Object3D,name:string,kind:ObjectKind,ownedObstacles:Obstacle[]=[],landmarkId?:string) {
     model.updateMatrixWorld(true);const bounds=new T.Box3(),localBounds=new T.Box3(),inverse=model.matrixWorld.clone().invert(),relative=new T.Matrix4();
@@ -70,23 +75,26 @@ export class WorldObjects {
     object.d=Math.abs(Math.sin(yaw))*width+Math.abs(Math.cos(yaw))*length;
     for(const obstacle of binding.obstacles)Object.assign(obstacle,{x,z,w:object.w,d:object.d});
   }
-  addTree(x:number,z:number,scale=1,planted=false,time=0) {
-    const slot=this.treeSlots.pop()??this.nextTree++;
-    if(slot>=4096){this.nextTree=4096;return null;}
-    const object=this.state.register({name:planted?'Planted oak':'Garden tree',kind:'tree',x,z,w:2.8*scale,d:2.8*scale,height:3.9*scale,planted});
+  addTree(x:number,z:number,scale=1,planted=false,time=0,species='default') {
+    if(!this.species.has('default'))this.species.set('default',{trunk:this.forest,leaves:this.foliage,next:0,slots:[],height:3.9,spread:2.8,name:'Garden tree'});
+    const bank=this.species.get(species);if(!bank)throw new Error(`Unknown tree species: ${species}`);
+    const slot=bank.slots.pop()??bank.next++;
+    if(slot>=4096){bank.next=4096;return null;}
+    const object=this.state.register({name:planted?'Planted oak':bank.name,kind:'tree',x,z,w:bank.spread*scale,d:bank.spread*scale,height:bank.height*scale,planted});
     const obstacle={x,z,w:.28*scale,d:.28*scale};this.obstacles.push(obstacle);
-    const tree:Tree={object,index:slot,scale:vec(scale,scale,scale),yaw:(object.id*2.399)%6.28,plantedAt:planted?time:-100,obstacles:[obstacle]};
+    const tree:Tree={species,object,index:slot,scale:vec(scale,scale,scale),yaw:(object.id*2.399)%6.28,plantedAt:planted?time:-100,obstacles:[obstacle]};
     this.trees.set(object.id,tree);this.setTreeMatrix(tree,planted?.04:1);
-    this.foliage.setColorAt(slot,new T.Color().setHSL(.16+(object.id%7)*.014,.16,.78+(object.id%5)*.045));
-    this.foliage.instanceColor!.needsUpdate=true;
-    for(const layer of [this.forest,this.foliage])layer.count=Math.max(layer.count,slot+1);
+    bank.leaves.setColorAt(slot,new T.Color().setHSL(.16+(object.id%7)*.014,.16,.78+(object.id%5)*.045));
+    bank.leaves.instanceColor!.needsUpdate=true;
+    for(const layer of [bank.trunk,bank.leaves])layer.count=Math.max(layer.count,slot+1);
     return object;
   }
   private setTreeMatrix(tree:Tree,growth:number) {
     const object=tree.object;
     this.quaternion.setFromAxisAngle(this.axis,tree.yaw);
     this.matrix.compose(vec(object.x,GROUND+.08,object.z),this.quaternion,tree.scale.clone().multiplyScalar(growth));
-    for(const layer of [this.forest,this.foliage]){layer.setMatrixAt(tree.index,this.matrix);layer.instanceMatrix.needsUpdate=true;}
+    const bank=this.species.get(tree.species)!;
+    for(const layer of [bank.trunk,bank.leaves]){layer.setMatrixAt(tree.index,this.matrix);layer.instanceMatrix.needsUpdate=true;}
   }
   updateWind(time:number) { treeResources().time.value=time; }
   plantingIssue(p:Point,player:Point) { return plantingIssue(p,player,this.obstacles,this.state.objects,this.plantingBlockers); }
@@ -101,7 +109,7 @@ export class WorldObjects {
     if(model)model.hitAt=time;
     if(result.destroyed) {
       if(model){model.deadAt=time;model.model.userData.lightsDisabled=true;}
-      if(tree){this.setTreeMatrix(tree,0);this.treeSlots.push(tree.index);}
+      if(tree){this.setTreeMatrix(tree,0);this.species.get(tree.species)!.slots.push(tree.index);}
       const owned=model?.obstacles??tree?.obstacles??[];
       // Mutate the shared array in place so navigation and both maps update together.
       for(const obstacle of owned){const index=this.obstacles.indexOf(obstacle);if(index!==-1)this.obstacles.splice(index,1);}

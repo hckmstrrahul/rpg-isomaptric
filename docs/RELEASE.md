@@ -1,4 +1,41 @@
-# London release validation
+# London + Dubai release validation
+
+Release date: 27 October 2026. Same Node.js 24 / Three.js / Vite toolchain as the first release. The lockfile remains authoritative.
+
+## Checks and measured scope
+
+- **136 automated tests pass**, plus the existing city and UI audits, TypeScript and production build.
+- Dubai checks construct the actual scene: all eight destinations connect on foot, building footprints leave roads clear, routes avoid static obstacles, all three bridges clear swept boat bounds, and traffic circulates over ten simulated minutes with the explorer at the starting promenade.
+- Geometry is finite; palms release collision and reuse their own instance slots. Three road widths remain 3.2, 4 and 4.7 metres. Outer-sea targeting uses water height.
+- Real Chrome checks passed for **both chapters**: saved-theme first paint, walking, ghost teleport, preserved zoom, Birdview, smooth Explore flight, and touch layouts at 320, 390 and 820 pixels.
+- Chapter switching was checked in both directions, including arrow-key/Space activation, selected-state semantics, desktop header alignment and persisted night mode. Dubai's ordinary bomb/plant controls cleared four objects and planted a tree. No browser page errors were reported.
+- `npm audit` reported **zero known vulnerabilities** during validation.
+
+These browser runs are simulations, not physical-device certification. Geometry inventories and tests are not universal frame-rate guarantees.
+
+## Dubai budget
+
+The completed world has 27 towers, 31 residences, three sculptural waterfront landmarks, 1,100 trees/palms, 1,800 low shrubs, 151 lamps, 36 vehicles and 18 boats. It measures **1,278 meshes / 449,219 unique triangles**, below the measured London baseline of **1,629 / 819,256**. Instance copies and additional render passes are excluded from that CPU inventory.
+
+Both chapters retain the 12-point-light pool, one batched ground-wash draw, bounded reflection resolution/frequency and reusable effects. Dubai adds no downloaded asset pack and skips approximately 835 kB of London-specific optional assets. Only one chapter scene is constructed at a time.
+
+Production chunks are approximately 855 kB (255 kB gzip) for the shared main engine, 18 kB (8 kB gzip) for Dubai, 38 kB (17 kB gzip) for London, and 43 kB (17 kB gzip) for shared world helpers. Notifications remain a separate 257 kB / 79 kB gzip chunk. The shared engine still exceeds Vite's 500 kB advisory threshold.
+
+Four Dubai images in `docs/media/` are actual renderer captures. Reproduce them with `node scripts/capture-dubai.mjs HTTPS_CAPTURE_PREVIEW`; capture builds require `VITE_CAPTURE=1`. Production omits the writable capture API. The runtime inspection name `__littleLondon` remains compatible with existing tooling and now reports the active world.
+
+```sh
+npm run check
+npm audit
+npm run check:browser -- 'https://rpg-isomaptric.vercel.app/?world=london' --production
+npm run check:browser -- 'https://rpg-isomaptric.vercel.app/?world=dubai' --production
+node scripts/check-world-switching.mjs https://rpg-isomaptric.vercel.app
+```
+
+The earlier release record follows for historical measurements.
+
+---
+
+# London release · 26 October 2026
 
 Release date: 26 October 2026. Node.js 24.13.0; Vite 7.3.7; Three.js 0.180.0. The repository lockfile is the authoritative dependency snapshot.
 

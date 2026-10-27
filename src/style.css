@@ -234,3 +234,15 @@ a{color:inherit;text-underline-offset:3px}
  .equipment{padding:4px 8px}.brand h1{font-size:1.25rem}.brand p{font-size:.75rem}.inspiration-link{font-size:.625rem}
  .teleport-panel{max-height:calc(100dvh - var(--top) - var(--bottom))}
 }
+/* Location selection aligns with the header's top edge on wide screens. */
+.world-switcher{top:var(--top);left:50%;transform:translateX(-50%);display:flex;padding:4px;gap:4px;border-radius:999px}
+.world-switcher a{display:flex;align-items:center;justify-content:center;min-height:40px;min-width:104px;padding:8px 22px;border-radius:999px;text-decoration:none;font-size:.8125rem;font-weight:600;color:var(--muted)}
+.world-switcher [aria-selected=true]{background:var(--accent);color:var(--on-accent);box-shadow:0 2px 6px #142d2618}
+@media(hover:hover){.world-switcher a[aria-selected=false]:hover{background:var(--subtle);color:var(--ink)}}
+@media(prefers-reduced-motion:no-preference){.world-switcher a{transition:background .18s ease,color .18s ease}.world-changing #scene{opacity:.55;transition:opacity .22s ease}}
+@media(max-width:1100px),(max-width:1366px) and (pointer:coarse){
+ .world-switcher{position:relative;grid-row:2;grid-column:1/-1;top:auto;left:auto;transform:none;justify-self:center;align-self:start}
+ #app{grid-template-rows:max-content max-content max-content max-content minmax(0,1fr) max-content max-content}
+ .toolbelt{grid-row:3}.camera-dock,.footer>.mini-map{grid-row:4}.location-row{grid-row:6}.shortcuts-dock{grid-row:7}
+ .world-switcher a{min-height:36px;min-width:104px;padding:6px 20px}
+}

@@ -9,7 +9,7 @@ export function mountNotifications() {
   const root=createRoot(host);
   const render=(night:boolean)=>root.render(createElement(Toaster,{
     theme:night?'dark':'light',position:'top-center',closeButton:true,visibleToasts:3,gap:10,
-    offset:{top:'var(--top)'},mobileOffset:{top:'var(--top)'},
+    offset:{top:'calc(var(--top) + 64px)'},mobileOffset:{top:'calc(var(--top) + 64px)'},
     containerAriaLabel:'City notifications',
     style:{'--normal-bg':'var(--surface)','--normal-text':'var(--ink)','--normal-border':'var(--line)','--border-radius':'12px'} as CSSProperties,
     toastOptions:{closeButtonAriaLabel:'Dismiss notification',style:{fontFamily:'inherit',fontSize:'12px',boxShadow:'var(--shadow)'}},

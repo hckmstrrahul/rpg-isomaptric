@@ -30,7 +30,7 @@
     "typescript": "^5.9.3",
     "vite": "^7.1.12"
   },
-  "description": "Tiny playable isometric worlds. Chapter 001: London.",
+  "description": "Tiny playable isometric worlds. London and Dubai.",
   "license": "MIT",
   "author": "Rahul Chakraborty <17765524+hckmstrrahul@users.noreply.github.com>",
   "homepage": "https://rpg-isomaptric.vercel.app",

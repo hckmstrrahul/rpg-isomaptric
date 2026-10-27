@@ -1,11 +1,13 @@
 import { insideTerrain } from './boundary.ts';
+import { WORLD_ID } from './worldLocation.ts';
+import { DUBAI_SPAWN, DUBAI_LANDMARKS, dubaiLand, dubaiBridge, dubaiBridgeLift } from './worlds/dubai/plan.ts';
 
 // Coordinates are composed from the supplied illustration, not a geographic map.
 export const SIZE = 216;
 export const HALF = SIZE / 2;
 export const GROUND = 1.35;
 export const WATER_HEIGHT = -1.2;
-export const PLAYER_SPAWN = {x:0,z:8};
+export const PLAYER_SPAWN = WORLD_ID === 'dubai' ? DUBAI_SPAWN : {x:0,z:8};
 export const ROAD_HEIGHT = GROUND + .07;
 export const BRIDGE_LIFT = .4;
 export const BRIDGE_HEIGHT = ROAD_HEIGHT + BRIDGE_LIFT;
@@ -19,7 +21,7 @@ export const riverWidth = (z: number) => 28 + 3.5 * Math.sin(z / 28);
 export const bank = (z: number, side: number, margin = 0) => riverCenter(z) + side * (riverWidth(z) / 2 + margin);
 export type Obstacle = { x: number; z: number; w: number; d: number };
 export type Landmark = { id: string; name: string; short: string; x: number; z: number; height: number; visitX: number; visitZ: number; description: string };
-export const LANDMARKS: Landmark[] = [
+const LONDON_LANDMARKS: Landmark[] = [
   { id: 'westminster', name: 'Palace of Westminster', short: 'Westminster', x: -44, z: 16, height: 22, visitX: -20, visitZ: 9, description: 'Honey-coloured stone, Gothic spires, and a clock that watches over the river.' },
   { id: 'eye', name: 'The London Eye', short: 'London Eye', x: -55, z: -68, height: 44, visitX: -46, visitZ: -60, description: 'A slow-turning wheel above the gardens. Take a little time to watch the city go by.' },
   { id: 'tower', name: 'Tower Bridge', short: 'Tower Bridge', x: riverCenter(48), z: 48, height: 23, visitX: riverCenter(48), visitZ: 48, description: 'Twin stone towers and blue suspension cables, with the whole river beneath your feet.' },
@@ -30,15 +32,23 @@ export const LANDMARKS: Landmark[] = [
   { id: 'spire', name: 'The Garden Spire', short: 'Garden Spire', x: -85, z: -37, height: 28, visitX: -80, visitZ: -32, description: 'A slender copper-coloured tower tucked among the western gardens.' },
 ];
 
+export const LANDMARKS = WORLD_ID === 'dubai' ? DUBAI_LANDMARKS : LONDON_LANDMARKS;
+export function isWater(x:number,z:number,margin=0) {
+  if(WORLD_ID==='dubai')return !dubaiLand(x,z,margin);
+  return z<RIVER_END && Math.abs(x-riverCenter(z))<riverWidth(z)/2+margin;
+}
+
 export function isOnBridge(x: number, z: number): boolean {
+  if(WORLD_ID==='dubai')return dubaiBridge(x,z);
   return BRIDGES.some(bz => Math.abs(z - bz) < 3.4 && Math.abs(x - riverCenter(bz)) < riverWidth(bz) / 2 + 4.2);
 }
 
 export function surfaceHeight(x:number,z:number) {
-  return Math.abs(z)<=HALF&&Math.abs(x-riverCenter(z))<riverWidth(z)/2&&!isOnBridge(x,z)?WATER_HEIGHT:GROUND+bridgeLiftAt(x,z);
+  return (WORLD_ID==='dubai'||Math.abs(z)<=HALF)&&isWater(x,z)&&!isOnBridge(x,z)?WATER_HEIGHT:GROUND+bridgeLiftAt(x,z);
 }
 
 export function bridgeLiftAt(x:number,z:number) {
+  if(WORLD_ID==='dubai')return dubaiBridgeLift(x,z);
   const bz=BRIDGES.find(b=>Math.abs(z-b)<3.4);if(bz===undefined)return 0;
   return BRIDGE_LIFT*Math.max(0,Math.min(1,(riverWidth(bz)/2+4.2-Math.abs(x-riverCenter(bz)))/4.2));
 }
@@ -46,7 +56,7 @@ export function bridgeLiftAt(x:number,z:number) {
 export function canWalk(x: number, z: number, obstacles: Obstacle[], radius = 0.46): boolean {
   if (!Number.isFinite(x) || !Number.isFinite(z)) return false;
   if (Math.abs(x) > HALF - 2 || Math.abs(z) > HALF - 2 || !insideTerrain(x,z,radius)) return false;
-  if (z < RIVER_END && Math.abs(x - riverCenter(z)) < riverWidth(z) / 2 + 0.5 && !isOnBridge(x, z)) return false;
+  if (isWater(x,z,.5) && !isOnBridge(x,z)) return false;
   return !obstacles.some(b => Math.abs(x - b.x) < b.w / 2 + radius && Math.abs(z - b.z) < b.d / 2 + radius);
 }
 
@@ -56,7 +66,7 @@ export type TeleportDestination = { valid: true; position: { x: number; y: numbe
 export function resolveTeleport(x: number, z: number, obstacles: Obstacle[]): TeleportDestination {
   if (!Number.isFinite(x) || !Number.isFinite(z) || Math.abs(x) > HALF - 2 || Math.abs(z) > HALF - 2)
     return { valid: false, reason: 'Choose a destination inside the city.' };
-  if (z < RIVER_END && Math.abs(x - riverCenter(z)) < riverWidth(z) / 2 + .5 && !isOnBridge(x, z))
+  if (isWater(x,z,.5) && !isOnBridge(x,z))
     return { valid: false, reason: 'Water is blocked. Choose land or a bridge.' };
   if (!canWalk(x, z, obstacles))
     return { valid: false, reason: 'That spot is occupied. Choose open ground.' };

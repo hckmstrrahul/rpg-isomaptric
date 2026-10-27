@@ -1,10 +1,10 @@
 # Engineering guide
 
-This is the implementation guide for **rpg isomaptric**, a series of location-inspired playable dioramas. London is the first world. The application is a static TypeScript/WebGL 2 client: Vite builds it, Three.js renders it, a semantic HTML/CSS HUD handles controls, and Sonner runs in a small separate React root for notifications.
+This is the implementation guide for **rpg isomaptric**, a series of location-inspired playable dioramas. London is Chapter 001; Dubai is Chapter 002. The application is a static TypeScript/WebGL 2 client: Vite builds it, Three.js renders it, a semantic HTML/CSS HUD handles controls, and Sonner runs in a small separate React root for notifications.
 
 ## Runtime and ownership
 
-`main.ts` coordinates initialization, input, camera modes and the frame loop. Local assets and lunar maps load concurrently, then world construction creates geometry, collision records and simulation objects. Once ready, the loader disappears and an interruptible arrival zoom begins around the explorer on the central road.
+`main.ts` coordinates initialization, input, camera modes and the frame loop. Local assets and lunar maps load concurrently, then world construction creates geometry, collision records and simulation objects. The selected world constructor is loaded dynamically; Dubai skips the London-specific optional material/bin assets. Once ready, the loader disappears and an interruptible arrival zoom begins around the explorer on the central road.
 
 ```mermaid
 flowchart LR
@@ -26,6 +26,8 @@ flowchart LR
 
 | Area | Main modules | Responsibility |
 | --- | --- | --- |
+| Location | `worldLocation.ts`, `worlds/dubai/plan.ts` | URL/storage selection, chapter metadata, Dubai coastline and route data |
+| Dubai geometry | `worlds/dubai/world.ts`, `worlds/dubai/architecture.ts` | Marina terrain, procedural towers, sculptural shells, villas, palms and shared simulation assembly |
 | City data | `cityPlan.ts`, `layout.ts`, `boundary.ts` | Street widths, landmarks, river profile, arrivals, footprint rules |
 | Geometry | `world.ts`, `architecture.ts`, `geometry.ts` | Scene assembly, procedural architecture, material batching |
 | Terrain and roads | `terrainBase.ts`, `roadSurfaces.ts`, `bridgeRamp.ts`, `embankment.ts` | Thick cutout, street corners, continuous deck ramps and bank joins |
@@ -46,7 +48,9 @@ The world uses X/Z for the ground plane and Y for height. Gameplay calls one wor
 
 Roads have exactly three asphalt widths: **4.7 m** for bridges and their immediate approaches, **4 m** for main roads, and **3.2 m** for smaller streets. Land borders add **0.75 m** on either side. Junctions reserve full corner quadrants, so grass and furniture cannot cover pavement. Bridge deck polygons split at ramp creases rather than interpolating a single plane through the bank. Painted markings sit flush and do not cast shadows. The 2D map deliberately omits road borders.
 
-The upper terrain perimeter stays square. Only the buried portion of the **18-unit** slab tapers and rounds organically. There is no outer perimeter footpath. River railings join parapets outside the drivable width; clear bridge approaches remain usable. Placement checks include conservative full footprints and tree crowns, not just object origins.
+London’s upper terrain perimeter stays square. Dubai has a rounded island coastline inside a wider square sea slab; its bay and open channel share one concave coastline polygon. The same dry-ground query drives collision, teleporting, planting and clipped lighting.
+
+For London, only the buried portion of the **18-unit** slab tapers and rounds organically. There is no outer perimeter footpath. River railings join parapets outside the drivable width; clear bridge approaches remain usable. Placement checks include conservative full footprints and tree crowns, not just object origins.
 
 Destruction changes live collision state. Movement, planting and teleport eligibility read that same state, so a demolished plot becomes useful immediately. A planted tree acquires its own collision and damage record. The minimap uses live object state too.
 
@@ -70,7 +74,7 @@ The separate `M` teleport mode shows a translucent duplicate of the explorer. Pi
 
 ## Traffic, bridges and water
 
-The 44-vehicle fleet follows eight routes with distance-based sampling. Left-hand lane offsets, route tangents and collision footprints use the same pose. Headway checks, junction reservations and coordinated avoidance of the stationary explorer prevent vehicles stacking in the starting area. Six signal junctions use green, amber, clearance, and red-and-amber phases; conflicting directions cannot receive green together. Signal backs are separate surfaces rather than coplanar overlays.
+London’s 44-vehicle fleet follows eight routes with distance-based sampling. Left-hand lane offsets, route tangents and collision footprints use the same pose. Headway checks, junction reservations and coordinated avoidance of the stationary explorer prevent vehicles stacking in the starting area. Six signal junctions use green, amber, clearance, and red-and-amber phases; conflicting directions cannot receive green together. Signal backs are separate surfaces rather than coplanar overlays.
 
 Boats use lower water and guided bridge channels. Tests sweep the actual boat bounds against bridge deck, arch and pier triangles; a centerline-only clearance test would miss the mast and hull edges. Boats remain moving water-level damage targets, then stop and sink on destruction.
 
@@ -80,7 +84,7 @@ Wake history stores **world-space** samples rather than attaching rings to a mov
 
 The night palette is cool charcoal with distinct slate road colors, restrained green vegetation and warm architectural accents. Day and night change shared material uniforms and registered emission/opacity, rather than reconstructing the scene.
 
-There are 205 visible street lanterns. Their soft ground washes use 7.2 m radii, low opacity, and geometry clipped to the banks, decks and slab edge. Street and occupied-window washes share **one batched draw call**. A pool of **12 local point lights** eases between nearby fixtures around the camera target. Destroying a lamp or building removes its contribution. This makes local light believable while bounding dynamic lighting cost.
+London has 205 visible street lanterns; Dubai has 151. Their soft ground washes use 7.2 m radii, low opacity, and geometry clipped to the banks, decks and slab edge. Street and occupied-window washes share **one batched draw call**. A pool of **12 local point lights** eases between nearby fixtures around the camera target. Destroying a lamp or building removes its contribution. This makes local light believable while bounding dynamic lighting cost.
 
 House-window colors and occupancy are stable and deterministic. Spill samples actual occupied lower windows on wall faces, not arbitrary points or roofs. Glass towers use suites and darker unoccupied areas. Six rooftop rods carry softened red pulses. The clock's four faces use browser-local time and warm annular illumination. Eye capsules keep their glass transparency while seats, floors, ceiling strips and glazing emit soft blue light. The wheel completes a diorama rotation in 45 seconds by day and 120 seconds by night without resetting its angle on a theme change.
 
@@ -119,3 +123,11 @@ Vercel serves the static build. Fingerprinted JS/CSS/font assets receive long im
 Run `npm run check`: unit and geometry tests, city audit, UI source audit, TypeScript, and production build. Tests construct the real city without a WebGL renderer and cover reachable landmarks, street-corner paving, clear bridge approaches, actual ship/bridge geometry, continuous traffic, foliage budgets, shader hooks, dynamic destruction and input/motion policy.
 
 CPU geometry tests cannot prove rendered appearance or GPU frame rate. Public-preview screenshots and interaction checks complement them. The renderer remains a detailed WebGL scene with a substantial main bundle; low-end-device performance needs real hardware profiling. World edits are session-only. The code is still London-specific in several modules; the next location should extract shared boundaries deliberately rather than duplicate `world.ts` wholesale.
+
+## Location switching and Dubai
+
+The top-centre pill uses keyboard-operable tabs with explicit `?world=` links. The URL takes precedence over the stored location. A chapter change navigates through the themed loader and constructs one fresh scene; it does not keep two renderers or cities alive. Shared engine and texture files remain browser-cacheable. Appearance persists; sandbox edits and discoveries currently reset.
+
+Dubai contributes data and geometry without duplicating the character, input, camera, bomb/plant tools, wake simulation, reflection pipeline or postprocessing. `layout.ts` dispatches coastline and bridge queries; `cityPlan.ts` selects the road plan. Traffic accepts route loops, junctions, lane direction and vehicle count. `WorldObjects` supports separate reusable instance banks for palms and broadleaf trees. The minimap uses the same coastline and road data.
+
+See [Dubai construction notes](DUBAI.md) for architectural and performance decisions, and [world authoring](WORLD-AUTHORING.md) for the current extension boundary.

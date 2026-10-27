@@ -11,7 +11,9 @@ export class RoadRoute {
   private laneDistances:number[]=[0];
   private divisions=1;
   length=0;
-  constructor(points:T.Vector3[]) {
+  readonly laneSign:number;
+  constructor(points:T.Vector3[],laneSign=1) {
+    this.laneSign=laneSign;
     const corners=points.slice(0,-1);
     const turns=corners.map((p,i)=>{
       const before=corners[(i+corners.length-1)%corners.length],after=corners[(i+1)%corners.length];
@@ -44,7 +46,7 @@ export class RoadRoute {
     const direction=curve instanceof T.QuadraticBezierCurve3
       ?curve.v1.clone().sub(curve.v0).multiplyScalar(1-local).addScaledVector(curve.v2.clone().sub(curve.v1),local).normalize()
       :(curve as T.LineCurve3).v2.clone().sub((curve as T.LineCurve3).v1).normalize();
-    point.x-=direction.z*lane;point.z+=direction.x*lane;
+    point.x-=direction.z*lane*this.laneSign;point.z+=direction.x*lane*this.laneSign;
     return {point,yaw:Math.atan2(direction.x,direction.z)};
   }
   sample(distance:number,lane=.85) {
@@ -77,15 +79,16 @@ function bridgeLoop(north:number,south:number) {
   for(let z=south-8;z>north+7;z-=2)points.push(new T.Vector3(bank(z,1,4.2),0,z));
   points.push(new T.Vector3(bank(north,1,4.2),0,north),points[0].clone());return points;
 }
-export function createTraffic(scene:T.Scene,objects:WorldObjects) {
-  const routes=[-1,1].flatMap(side=>{const p=bankLoop(side);return [new RoadRoute(p),new RoadRoute([...p].reverse())];});
-  for(const [north,south] of [[-51,8],[8,48]]){const p=bridgeLoop(north,south);routes.push(new RoadRoute(p),new RoadRoute([...p].reverse()));}
-  const signals=createTrafficSignals(scene);
+export function createTraffic(scene:T.Scene,objects:WorldObjects,options?:{loops:{x:number;z:number}[][];junctions:{x:number;z:number}[];laneSign?:number;carsPerRoute?:number;city?:string}) {
+  const routes=options?options.loops.flatMap(loop=>{const p=loop.map(p=>new T.Vector3(p.x,0,p.z));return [new RoadRoute(p,options.laneSign),new RoadRoute([...p].reverse(),options.laneSign)];}):[-1,1].flatMap(side=>{const p=bankLoop(side);return [new RoadRoute(p),new RoadRoute([...p].reverse())];});
+  if(!options)for(const [north,south] of [[-51,8],[8,48]]){const p=bridgeLoop(north,south);routes.push(new RoadRoute(p),new RoadRoute([...p].reverse()));}
+  const signals=createTrafficSignals(scene,options?.junctions);
   const parked:{x:number;z:number;length:number}[]=[{...PLAYER_SPAWN,length:4},...LANDMARKS.map(l=>({x:l.visitX,z:l.visitZ,length:3}))];
-  const cars=routes.flatMap((route,index)=>Array.from({length:index<4?8:3},(_,i)=>{
-    const kind=VEHICLE_TYPES[(i+index*2)%VEHICLE_TYPES.length];
+  const cars=routes.flatMap((route,index)=>Array.from({length:options?.carsPerRoute??(index<4?8:3)},(_,i)=>{
+    let kind=VEHICLE_TYPES[(i+index*2)%VEHICLE_TYPES.length];
+    if(options?.city==='Dubai'&&kind==='bus')kind='van';
     const model=createRoadVehicle(kind,['#ebe4cd','#263c42','#aa5941','#526f7b','#d3d7cd','#927d5e'][i%6]);
-    let distance=route.length*(i+.31+index*.09)/(index<4?8:3);
+    let distance=route.length*(i+.31+index*.09)/(options?.carsPerRoute??(index<4?8:3));
     for(let n=0;n<200;n++) {
       const pose=route.sample(distance),p=pose.point;
       if(!signals.junctions.some(j=>Math.hypot(p.x-j.x,p.z-j.z)<10)&&!parked.some(o=>Math.hypot(p.x-o.x,p.z-o.z)<(model.length+o.length)/2+2.5))break;
@@ -93,7 +96,7 @@ export function createTraffic(scene:T.Scene,objects:WorldObjects) {
     }
     const {point,yaw}=route.sample(distance);model.root.position.set(point.x,GROUND+.08+bridgeLiftAt(point.x,point.z),point.z);model.root.rotation.y=yaw;scene.add(model.root);parked.push({x:point.x,z:point.z,length:model.length});
     const obstacle={x:point.x,z:point.z,w:model.width,d:model.length};objects.obstacles.push(obstacle);
-    const name=kind==='bus'?'London bus':kind==='car'?'City car':model.root.name;
+    const name=options?.city==='Dubai'?(kind==='taxi'?'Marina taxi':`Marina ${kind}`):kind==='bus'?'London bus':kind==='car'?'City car':model.root.name;
     const object=objects.registerModel(model.root,name,'prop',[obstacle]);
     objects.moveModel(object,point.x,point.z,yaw,model.width,model.length);
     const speed=kind==='bus'?2.3:kind==='bike'?2.5:kind==='truck'?2.4:2.8+i*.035;
@@ -107,10 +110,10 @@ export function createTraffic(scene:T.Scene,objects:WorldObjects) {
       if(!player||owner.object.destroyed||Math.hypot(p.x-player.x,p.z-player.z)>12)bypassOwner=null;
     }
     if(player&&bypassOwner===null) {
-      const approaching=cars.filter(car=>{if(car.object.destroyed)return false;const pose=car.route.sample(car.distance),dx=player.x-pose.point.x,dz=player.z-pose.point.z,along=dx*Math.sin(pose.yaw)+dz*Math.cos(pose.yaw),across=Math.abs(dx*Math.cos(pose.yaw)-dz*Math.sin(pose.yaw));const center=car.route.sample(car.distance,0),lateral=-(player.x-center.point.x)*Math.cos(center.yaw)+(player.z-center.point.z)*Math.sin(center.yaw);return along>0&&along<10&&across<car.model.width/2+.65&&lateral+car.model.width/2+.72>2.1;});
+      const approaching=cars.filter(car=>{if(car.object.destroyed)return false;const pose=car.route.sample(car.distance),dx=player.x-pose.point.x,dz=player.z-pose.point.z,along=dx*Math.sin(pose.yaw)+dz*Math.cos(pose.yaw),across=Math.abs(dx*Math.cos(pose.yaw)-dz*Math.sin(pose.yaw));const center=car.route.sample(car.distance,0),lateral=(-(player.x-center.point.x)*Math.cos(center.yaw)+(player.z-center.point.z)*Math.sin(center.yaw))*car.route.laneSign;return along>0&&along<10&&across<car.model.width/2+.65&&lateral+car.model.width/2+.72>2.1;});
       approaching.sort((a,b)=>a.model.root.position.distanceToSquared(new T.Vector3(player.x,a.model.root.position.y,player.z))-b.model.root.position.distanceToSquared(new T.Vector3(player.x,b.model.root.position.y,player.z)));
       if(approaching.length){const candidate=approaching[0],yaw=candidate.model.root.rotation.y;
-        const center=candidate.route.sample(candidate.distance,0),across=-(player.x-center.point.x)*Math.cos(center.yaw)+(player.z-center.point.z)*Math.sin(center.yaw);
+        const center=candidate.route.sample(candidate.distance,0),across=(-(player.x-center.point.x)*Math.cos(center.yaw)+(player.z-center.point.z)*Math.sin(center.yaw))*candidate.route.laneSign;
         const oncoming=across+candidate.model.width/2+.72>2.1&&cars.some(other=>other!==candidate&&!other.object.destroyed&&Math.cos(other.model.root.rotation.y-yaw)<-.4&&Math.hypot(other.object.x-player.x,other.object.z-player.z)<14);
         if(!oncoming)bypassOwner=candidate.object.id;
       }
@@ -122,7 +125,7 @@ export function createTraffic(scene:T.Scene,objects:WorldObjects) {
       let targetSpeed=car.speed*(1-.45*Math.min(1,bend/.9)),targetLane=.85;
       if(player) {
         const center=car.route.sample(car.distance,0),dx=player.x-center.point.x,dz=player.z-center.point.z;
-        const along=dx*Math.sin(center.yaw)+dz*Math.cos(center.yaw),across=-dx*Math.cos(center.yaw)+dz*Math.sin(center.yaw);
+        const along=dx*Math.sin(center.yaw)+dz*Math.cos(center.yaw),across=(-dx*Math.cos(center.yaw)+dz*Math.sin(center.yaw))*car.route.laneSign;
         const passing=1-T.MathUtils.smoothstep(Math.abs(along),3.5,10);
         const outward=Math.max(1.35,across+car.model.width/2+.72);
         if(Math.abs(across)<2&&(outward<=2.1||bypassOwner===car.object.id)){const clearLane=outward<=2.1?outward:-1.35;targetLane=T.MathUtils.lerp(.85,clearLane,passing);}

@@ -15,14 +15,14 @@ function signalGlow() {
   for(let y=0;y<size;y++)for(let x=0;x<size;x++){const r=Math.hypot((x+.5)/size*2-1,(y+.5)/size*2-1);data.set([255,255,255,Math.max(0,1-r)**2*255],(y*size+x)*4);}
   glowMap=new T.DataTexture(data,size,size);glowMap.needsUpdate=true;glowMap.magFilter=T.LinearFilter;return glowMap;
 }
-export function createTrafficSignals(scene:T.Scene) {
+export function createTrafficSignals(scene:T.Scene,locations?:{x:number;z:number}[]) {
   let night=false,lastTime=0;
-  const signals=BRIDGES.flatMap(z=>[-1,1].map(side=>({x:bank(z,side,4.2),z,side})));
+  const signals=locations?.map(p=>({...p,side:1}))??BRIDGES.flatMap(z=>[-1,1].map(side=>({x:bank(z,side,4.2),z,side})));
   const junctions=signals.map((point,index)=>{
-    const root=new T.Group();root.name='London traffic signals';const lights:{axis:TrafficAxis;materials:T.MeshStandardMaterial[];glows:T.Sprite[]}[]=[];
+    const root=new T.Group();root.name=locations?'Marina traffic signals':'London traffic signals';const lights:{axis:TrafficAxis;materials:T.MeshStandardMaterial[];glows:T.Sprite[]}[]=[];
     const poles:{x:number;z:number}[]=[];
     for(const axis of ['along','across'] as const)for(const direction of [-1,1]) {
-      const z=point.z-direction*4.25,x=bank(z,point.side,4.2)+(axis==='along'?direction:-direction)*3.1;
+      const z=locations?point.z+(axis==='along'?-direction*5:direction*3.6):point.z-direction*4.25,x=locations?point.x+(axis==='along'?direction*3.6:-direction*5):bank(z,point.side,4.2)+(axis==='along'?direction:-direction)*3.1;
       poles.push({x,z});const fixture=new T.Group(),b=new Builder();fixture.position.set(x,GROUND,z);
       // Every head faces its approaching lane. A pale backing board and deep
       // black hoods keep the three round lenses legible in bright daylight.

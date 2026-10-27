@@ -7,3 +7,7 @@ artifacts
 node_modules
 README.md
 CONTRIBUTING.md
+media-exports
+coverage
+test-results
+playwright-report

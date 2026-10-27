@@ -5,13 +5,13 @@ import type { World, createCharacter } from './world.ts';
 import { surfaceHeight } from './layout.ts';
 
 type CaptureOptions={time?:number;night?:boolean;zoom?:number;focus?:[number,number,number];offset?:[number,number,number];character?:{x:number;z:number;yaw?:number;running?:boolean};ui?:'all'|'brand'|'none'};
-type Context={scene:T.Scene;renderer:T.WebGLRenderer;composer:EffectComposer;camera:T.OrthographicCamera;controls:OrbitControls;world:World;character:ReturnType<typeof createCharacter>;pause:()=>void;setNight:(night:boolean)=>void;settleMoon:()=>void;reflect:()=>void;refreshHud:()=>void};
+type Context={scene:T.Scene;renderer:T.WebGLRenderer;composer:EffectComposer;camera:T.OrthographicCamera;controls:OrbitControls;world:Pick<World,'objects'|'update'|'updateClock'|'updateLights'>;character:ReturnType<typeof createCharacter>;pause:()=>void;setNight:(night:boolean)=>void;settleMoon:()=>void;reflect:()=>void;refreshHud:()=>void};
 
 /** Only included in an explicitly enabled capture build; absent from production bundles. */
 export function installCaptureControls(ctx:Context) {
   const {scene,renderer,composer,camera,controls,world,character}=ctx;
   const style=document.createElement('style');
-  style.textContent='html[data-capture-ui="none"] .ui,html[data-capture-ui="none"] .skip-link,html[data-capture-ui="brand"] .ui:not(.brand),html[data-capture-ui="brand"] .skip-link{visibility:hidden!important}';document.head.append(style);
+  style.textContent='html[data-capture-ui="none"] .ui,html[data-capture-ui="none"] .skip-link,html[data-capture-ui="brand"] .ui:not(.brand),html[data-capture-ui="brand"] .skip-link,html[data-capture-ui="none"] [data-sonner-toaster],html[data-capture-ui="brand"] [data-sonner-toaster]{visibility:hidden!important}';document.head.append(style);
   let night=false;
   const render=(options:CaptureOptions={})=>{
     ctx.pause();night=options.night??night;ctx.setNight(night);ctx.settleMoon();
@@ -24,7 +24,7 @@ export function installCaptureControls(ctx:Context) {
     controls.maxZoom=Math.max(controls.maxZoom,options.zoom??0);camera.zoom=options.zoom??camera.zoom;camera.updateProjectionMatrix();controls.update();camera.updateMatrixWorld();
     world.update(time,character.root.position,night);world.objects.update(time);world.updateClock(new Date('2026-10-26T10:10:00Z'));
     for(let i=0;i<30;i++)world.updateLights(1/30,controls.target,time,night,false);
-    ctx.refreshHud();ctx.reflect();composer.render();
+    ctx.refreshHud();renderer.info.reset();ctx.reflect();composer.render();
     return {zoom:camera.zoom,night,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles};
   };
   const head=(size=256)=>{

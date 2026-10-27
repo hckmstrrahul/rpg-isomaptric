@@ -112,7 +112,7 @@ export function foliageTexture() {
   return leafMap;
 }
 
-export function riverMaterial() {
+export function riverMaterial(marina=false) {
   const time={value:0};
   const night={value:0};
   const reflectionTexture:{value:T.Texture|null}={value:null},reflectionMatrix={value:new T.Matrix4()};
@@ -135,7 +135,7 @@ export function riverMaterial() {
       }
     `);
     shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
-      float shallow=pow(abs(vRiverUV.x*2.0-1.0),5.0);
+      float shallow=${marina?`pow(1.0-clamp(min(abs(length((vRiverPosition.xz-vec2(-24.0,10.0))/vec2(36.0,34.0))-1.0)*40.0,min(abs(max(abs(vRiverPosition.x)-99.0,abs(vRiverPosition.z)-97.0)),vRiverPosition.x>0.0?abs(abs(vRiverPosition.z-32.0)-8.0):1000.0))/8.0,0.0,1.0),1.8)`:'pow(abs(vRiverUV.x*2.0-1.0),5.0)'};
       vec3 bankColor=mix(vec3(.075,.48,.40),vec3(.045,.065,.075),uRiverNight);
       diffuseColor.rgb=mix(diffuseColor.rgb,bankColor,shallow*.65);
       diffuseColor.rgb*=.94+riverNoise(vRiverPosition.xz*.24+vec2(0.0,uRiverTime*.04))*.12;
@@ -157,6 +157,6 @@ export function riverMaterial() {
       #include <opaque_fragment>
     `);
   };
-  mat.customProgramCacheKey=()=> 'river-reflections-v5';
+  mat.customProgramCacheKey=()=> marina?'marina-reflections-v1':'river-reflections-v5';
   return {material:mat,time,night,reflectionTexture,reflectionMatrix};
 }

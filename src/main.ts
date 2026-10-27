@@ -7,7 +7,7 @@ import { icon } from './icons.ts';
 import { setNightMaterials } from './lighting.ts';
 import { createRiverReflections } from './reflections.ts';
 import { installResponsivePinch } from './zoomInput.ts';
-import { createWorld, createCharacter } from './world.ts';
+import { createCharacter } from './character.ts';
 import { CityMap } from './map.ts';
 import { DamageBars } from './damageBars.ts';
 import { LANDMARKS, GROUND, WATER_HEIGHT, PLAYER_SPAWN, surfaceHeight, walkStep, resolveTeleport } from './layout.ts';
@@ -15,6 +15,7 @@ import { GameEffects } from './effects.ts';
 import { BOMB_RANGE, FIRE_INTERVAL, type Destructible } from './sandbox.ts';
 import { pickSceneTeleport, keyboardTeleportPick, stepTeleportCursor, createTeleportMarker, type SceneTeleportPick } from './teleport3d.ts';
 import { SOIL_DEPTH, insideTerrain } from './boundary.ts';
+import { WORLD_ID, WORLD_NAME, WORLD_DISTRICT, worldUrl, type WorldId } from './worldLocation.ts';
 import './style.css';
 
 import { createCityMotion } from './motion.ts';
@@ -30,6 +31,26 @@ import { createExploreFlight, type ExploreFlightFrame } from './exploreFlight.ts
 
 document.querySelector<HTMLElement>('#app')!.innerHTML=hud;
 installInputFocus();
+document.title=`rpg isomaptric · ${WORLD_NAME}`;
+document.querySelector('#scene')!.setAttribute('aria-label',`Interactive three-dimensional ${WORLD_NAME}. Use WASD or arrow keys to walk. Click open ground to fly, drag to orbit and scroll to zoom.`);
+const worldTabs=[...document.querySelectorAll<HTMLAnchorElement>('[data-world]')];
+for(const tab of worldTabs){
+  const id=tab.dataset.world as WorldId,selected=id===WORLD_ID;
+  tab.href=worldUrl(id,location.href);tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;
+  tab.addEventListener('click',event=>{
+    if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+    if(selected){event.preventDefault();return;}
+    try{localStorage.setItem('rpg-isomaptric-world',id);}catch{/* URL remains the source of truth. */}
+    document.documentElement.classList.add('world-changing');
+  });
+  tab.addEventListener('keydown',event=>{
+    if(event.code==='Space'){event.preventDefault();tab.click();return;}
+    if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+    event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?1:(worldTabs.indexOf(tab)+1)%2;
+    worldTabs[next].focus();
+  });
+}
+try{localStorage.setItem('rpg-isomaptric-world',WORLD_ID);}catch{/* Private mode is supported. */}
 for(const node of document.querySelectorAll<HTMLElement>('.ui, #scene, .skip-link'))node.inert=true;
 
 const $=<E extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as E;
@@ -86,13 +107,14 @@ async function init() {
     renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);
   };
   resize();addEventListener('resize',resize);compactViewport.addEventListener('change',resize);
-  const [assets,moonTextures]=await Promise.all([loadCityAssets(),loadMoonTextures()]);
-  const world=createWorld(scene,assets),character=createCharacter();scene.add(character.root);
+  const [assets,moonTextures]=await Promise.all([WORLD_ID==='dubai'?Promise.resolve({loaded:[]}):loadCityAssets(),loadMoonTextures()]);
+  const world=WORLD_ID==='dubai'?(await import('./worlds/dubai/world.ts')).createDubaiWorld(scene,assets):(await import('./world.ts')).createWorld(scene,assets),character=createCharacter();scene.add(character.root);
   character.root.position.set(PLAYER_SPAWN.x,surfaceHeight(PLAYER_SPAWN.x,PLAYER_SPAWN.z)+.13,PLAYER_SPAWN.z);
   controls.target.copy(character.root.position);camera.position.copy(character.root.position).add(initialOffset);controls.update();
   character.animate(0,false,false,false);
   renderCharacterPortrait(renderer,character.body,$<HTMLCanvasElement>('character-portrait'),scene.environment);
   const reflections=createRiverReflections(scene,world.water,camera,world.river);
+  $('visited-count').textContent=`0 of ${LANDMARKS.length} places discovered`;
   const miniMap=new CityMap($<HTMLCanvasElement>('mini-map'),world.obstacles,world.roads,false,world.objects.state.objects);
   const motionPreference=matchMedia('(prefers-reduced-motion: reduce)');
   const moon=createMoon(scene,sun,moonTextures,motionPreference.matches);
@@ -109,7 +131,7 @@ async function init() {
     scene.background=new T.Color(night?'#171c22':'#a8c8bd');scene.environmentIntensity=night?.19:.28;
     skyLight.intensity=night?.72:1.25;skyLight.color.set(night?'#a3afbd':'#d6ecf3');skyLight.groundColor.set(night?'#3b4846':'#667349');
     fill.intensity=night?.22:.4;fill.color.set(night?'#9baab8':'#c9e8f1');
-    ground.material.color.set(night?'#252c31':'#a9c9b9');world.river.material.color.set(night?'#344854':'#087e8c');world.river.night.value=night?1:0;
+    ground.material.color.set(night?'#252c31':'#a9c9b9');world.river.material.color.set(night?'#344854':WORLD_ID==='dubai'?'#159eaa':'#087e8c');world.river.night.value=night?1:0;
     miniMap.night=night;
     renderer.toneMappingExposure=night?1.14:1.04;
     void document.documentElement.offsetHeight;
@@ -420,8 +442,8 @@ async function init() {
     requestAnimationFrame(animate);
     if(capturePaused)return;
     if(document.hidden)return;
-    const dt=Math.min((now-lastTime)/1000,.05);lastTime=now;time+=dt;
-    frameCount++;frameMs+=dt*1000;
+    const elapsed=Math.max(0,now-lastTime),dt=Math.min(elapsed/1000,.05);lastTime=now;time+=dt;
+    if(elapsed>0){frameCount++;frameMs+=elapsed;}
     const up=Number(keyHeld('KeyW')||keyHeld('ArrowUp'))-Number(keyHeld('KeyS')||keyHeld('ArrowDown'));
     const sideways=Number(keyHeld('KeyD')||keyHeld('ArrowRight'))-Number(keyHeld('KeyA')||keyHeld('ArrowLeft'));
     const running=keyHeld('ShiftLeft')||keyHeld('ShiftRight');
@@ -488,10 +510,10 @@ async function init() {
     if(now-lastDiscovery>250) {
       let nearest=LANDMARKS[0],distance=Infinity;
       for(const l of LANDMARKS) {const d=Math.hypot(p.x-l.visitX,p.z-l.visitZ);if(d<distance){nearest=l;distance=d;}}
-      $('location-name').textContent=distance<24?nearest.short:'The Thames embankment';
+      $('location-name').textContent=distance<24?nearest.short:WORLD_DISTRICT;
       if(exploring&&!flightFrame?.airborne&&distance<11&&!visited.has(nearest.id)) {
-        visited.add(nearest.id);toast(`${nearest.short} discovered · ${visited.size} of 8`);
-        $('visited-count').textContent=`${visited.size} of 8 places discovered`;
+        visited.add(nearest.id);toast(`${nearest.short} discovered · ${visited.size} of ${LANDMARKS.length}`);
+        $('visited-count').textContent=`${visited.size} of ${LANDMARKS.length} places discovered`;
       }
       lastDiscovery=now;
     }
@@ -504,7 +526,7 @@ async function init() {
   requestAnimationFrame(animate);
   // A small read-only inspection surface supports repeatable browser verification.
   Object.defineProperty(window,'__littleLondon',{value:{
-    getState:()=>({position:{x:character.root.position.x,y:character.root.position.y,z:character.root.position.z},zoom:camera.zoom,night,ambientMotion:motion.playing,assets:assets.loaded,exploring,following,helpOpen,teleportOpen,teleportDestination:teleportPick?.destination??null,visited:[...visited],drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,averageFps:Math.round(frameCount/(frameMs/1000)),obstacles:world.obstacles.length,landmarks:LANDMARKS.length,tool,flying:!!exploreFlight,shots:world.objects.state.shots,cleared:world.objects.state.demolished,planted:world.objects.state.treesPlanted,projectiles:effects.projectiles.length,target:aimedObject?{name:aimedObject.name,hp:aimedObject.hp,maxHp:aimedObject.maxHp}:null}),
+    getState:()=>({world:WORLD_ID,position:{x:character.root.position.x,y:character.root.position.y,z:character.root.position.z},zoom:camera.zoom,night,ambientMotion:motion.playing,assets:assets.loaded,exploring,following,helpOpen,teleportOpen,teleportDestination:teleportPick?.destination??null,visited:[...visited],drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,averageFps:frameMs>0?Math.round(frameCount/(frameMs/1000)):0,obstacles:world.obstacles.length,landmarks:LANDMARKS.length,tool,flying:!!exploreFlight,shots:world.objects.state.shots,cleared:world.objects.state.demolished,planted:world.objects.state.treesPlanted,projectiles:effects.projectiles.length,target:aimedObject?{name:aimedObject.name,hp:aimedObject.hp,maxHp:aimedObject.maxHp}:null}),
   }});
   if(import.meta.env.VITE_CAPTURE==='1') {
     const {installCaptureControls}=await import('./capture.ts');

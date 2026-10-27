@@ -1,3 +1,5 @@
+import { WORLD_ID } from './worldLocation.ts';
+import { dubaiRoads } from './worlds/dubai/plan.ts';
 import { bank, BRIDGES, type Obstacle } from './layout.ts';
 export type PlanPoint={x:number;z:number};
 export const ROAD_WIDTHS={bridge:4.7,main:4,small:3.2} as const;
@@ -27,6 +29,7 @@ export function streetSurfacePath(points:PlanPoint[],width:number):PlanPoint[] {
 }
 /** All street ends meet another street; bridges join the two bank centerlines. */
 export function cityRoads():Road[] {
+  if(WORLD_ID==='dubai')return dubaiRoads();
   const roads:Road[]=[];
   const add=(id:string,points:PlanPoint[],size:RoadSize,bridge=false)=>roads.push({id,points,size,width:ROAD_WIDTHS[size],bridge});
   for(const side of [-1,1]) {
