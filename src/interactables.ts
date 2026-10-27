@@ -1,7 +1,7 @@
 import * as T from 'three';
 import { vec, varyFacadeLighting } from './geometry.ts';
 import { treeResources } from './trees.ts';
-import { GROUND, type Obstacle } from './layout.ts';
+import { GROUND, surfaceHeight, type Obstacle } from './layout.ts';
 import { SandboxState, plantingIssue, footprintDistance, BOMB_DAMAGE, BLAST_RADIUS, type Destructible, type ObjectKind, type Point } from './sandbox.ts';
 
 type Binding = { model:T.Object3D; position:T.Vector3; scale:T.Vector3; localBounds:T.Box3; obstacles:Obstacle[]; hitAt:number; deadAt:number };
@@ -80,7 +80,7 @@ export class WorldObjects {
     const bank=this.species.get(species);if(!bank)throw new Error(`Unknown tree species: ${species}`);
     const slot=bank.slots.pop()??bank.next++;
     if(slot>=4096){bank.next=4096;return null;}
-    const object=this.state.register({name:planted?'Planted oak':bank.name,kind:'tree',x,z,w:bank.spread*scale,d:bank.spread*scale,height:bank.height*scale,planted});
+    const object=this.state.register({name:planted?'Planted oak':bank.name,kind:'tree',x,z,w:bank.spread*scale,d:bank.spread*scale,height:bank.height*scale,baseY:surfaceHeight(x,z)+.08,planted});
     const obstacle={x,z,w:.28*scale,d:.28*scale};this.obstacles.push(obstacle);
     const tree:Tree={species,object,index:slot,scale:vec(scale,scale,scale),yaw:(object.id*2.399)%6.28,plantedAt:planted?time:-100,obstacles:[obstacle]};
     this.trees.set(object.id,tree);this.setTreeMatrix(tree,planted?.04:1);
@@ -92,7 +92,7 @@ export class WorldObjects {
   private setTreeMatrix(tree:Tree,growth:number) {
     const object=tree.object;
     this.quaternion.setFromAxisAngle(this.axis,tree.yaw);
-    this.matrix.compose(vec(object.x,GROUND+.08,object.z),this.quaternion,tree.scale.clone().multiplyScalar(growth));
+    this.matrix.compose(vec(object.x,object.baseY??surfaceHeight(object.x,object.z)+.08,object.z),this.quaternion,tree.scale.clone().multiplyScalar(growth));
     const bank=this.species.get(tree.species)!;
     for(const layer of [bank.trunk,bank.leaves]){layer.setMatrixAt(tree.index,this.matrix);layer.instanceMatrix.needsUpdate=true;}
   }

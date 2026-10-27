@@ -1,19 +1,14 @@
-import { WORLD_ID } from './worldLocation.ts';
-import { dubaiRoads } from './worlds/dubai/plan.ts';
-import { bank, BRIDGES, type Obstacle } from './layout.ts';
+import {ACTIVE_PLAN} from './worldPlan.ts';
+import type {Obstacle} from './layout.ts';
 export type PlanPoint={x:number;z:number};
 export const ROAD_WIDTHS={bridge:4.7,main:4,small:3.2} as const;
 export const ROAD_BORDER_WIDTH=.75;
 export type RoadSize=keyof typeof ROAD_WIDTHS;
 export type Road={id:string;points:PlanPoint[];size:RoadSize;width:number;bridge?:boolean};
 export const ROAD_NORTH=-96,ROAD_SOUTH=100,TRAFFIC_NORTH=-51;
-export const GARDENS=[{id:'gardens',x:55,z:78,r:14.5},{id:'west-garden',x:-53,z:-29,r:9.5}];
-export const CIRCULAR_SITES=[
-  {id:'arena',x:-31,z:-68,r:11.6},{id:'dome',x:-24,z:-28,r:18.2},
-  {id:'hall',x:50,z:-21,r:10.2},{id:'gherkin',x:76,z:-34,r:8.7},
-  {id:'pool',x:64,z:-12,r:4.2},
-];
-export const FLOWER_BEDS=[{x:-61,z:-38},{x:-43,z:-40},{x:70,z:-20},{x:47,z:4}];
+export const GARDENS=ACTIVE_PLAN.map.gardens;
+export const CIRCULAR_SITES=ACTIVE_PLAN.circularSites??[];
+export const FLOWER_BEDS=ACTIVE_PLAN.flowerBeds??[];
 export function line(x1:number,z1:number,x2:number,z2:number) {
   const count=Math.ceil(Math.hypot(x2-x1,z2-z1)/2);
   return Array.from({length:count+1},(_,i)=>({x:x1+(x2-x1)*i/count,z:z1+(z2-z1)*i/count}));
@@ -28,25 +23,7 @@ export function streetSurfacePath(points:PlanPoint[],width:number):PlanPoint[] {
   return [extend(points[0],points[1]),...points,extend(points.at(-1)!,points.at(-2)!)];
 }
 /** All street ends meet another street; bridges join the two bank centerlines. */
-export function cityRoads():Road[] {
-  if(WORLD_ID==='dubai')return dubaiRoads();
-  const roads:Road[]=[];
-  const add=(id:string,points:PlanPoint[],size:RoadSize,bridge=false)=>roads.push({id,points,size,width:ROAD_WIDTHS[size],bridge});
-  for(const side of [-1,1]) {
-    add(`bank-${side}`,Array.from({length:197},(_,i)=>({x:bank(ROAD_NORTH+i,side,4.2),z:ROAD_NORTH+i})),'main');
-    add(`perimeter-${side}`,line(side*102,ROAD_NORTH,side*102,ROAD_SOUTH),'main');
-    for(const z of [ROAD_NORTH,ROAD_SOUTH])add(`edge-${side}-${z}`,line(side*102,z,bank(z,side,4.2),z),'main');
-    for(const z of side===-1?[-51,-5,48,88]:[-69,-51,-4,48])
-      add(`cross-${side}-${z}`,line(side*102,z,bank(z,side,4.2),z),BRIDGES.includes(z)?'bridge':'small');
-  }
-  add('west-avenue',line(-72,ROAD_NORTH,-72,ROAD_SOUTH),'small');
-  add('west-mews',line(-102,31,-72,31),'small');
-  add('west-south',line(-72,65,bank(65,-1,4.2),65),'small');
-  add('east-avenue',line(90,ROAD_NORTH,90,ROAD_SOUTH),'small');
-  add('garden-avenue',line(74,48,74,ROAD_SOUTH),'small');
-  for(const z of BRIDGES)add(`bridge-${z}`,line(bank(z,-1,4.2),z,bank(z,1,4.2),z),'bridge',true);
-  return roads;
-}
+export function cityRoads():Road[]{return ACTIVE_PLAN.roads();}
 export function pointSegmentDistance(p:PlanPoint,a:PlanPoint,b:PlanPoint) {
   const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.z-a.z)*dz)/(dx*dx+dz*dz||1)));
   return Math.hypot(p.x-a.x-dx*t,p.z-a.z-dz*t);

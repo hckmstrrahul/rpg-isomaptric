@@ -126,3 +126,10 @@ const upperAngle=Math.asin((CHANNEL.z-CHANNEL.halfWidth-BAY.z)/BAY.rz);
 const lowerAngle=Math.asin((CHANNEL.z+CHANNEL.halfWidth-BAY.z)/BAY.rz)-Math.PI*2;
 export const LAND_OUTLINE:PlanPoint[]=[{x:99,z:40},...outerWalk,{x:99,z:24},
   ...Array.from({length:161},(_,i)=>{const a=upperAngle+(lowerAngle-upperAngle)*i/160;return bayPoint(a);}),{x:99,z:40}];
+
+/** Selected lazily by the shared engine; no other chapter imports this data. */
+export const PLAN:import('../types.ts').WorldPlan={
+ spawn:DUBAI_SPAWN,landmarks:DUBAI_LANDMARKS,roads:dubaiRoads,landAt:dubaiLand,bridgeAt:dubaiBridge,
+ heightAt:(x,z)=>1.35+dubaiBridgeLift(x,z),map:{extent:252,land:[LAND_OUTLINE],gardens:DUBAI_GARDENS},
+ camera:{focus:[0,22,0],zoom:.95},waterColor:'#159eaa',
+};

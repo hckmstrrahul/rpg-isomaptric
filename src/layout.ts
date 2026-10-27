@@ -1,56 +1,24 @@
-import { insideTerrain } from './boundary.ts';
-import { WORLD_ID } from './worldLocation.ts';
-import { DUBAI_SPAWN, DUBAI_LANDMARKS, dubaiLand, dubaiBridge, dubaiBridgeLift } from './worlds/dubai/plan.ts';
-
-// Coordinates are composed from the supplied illustration, not a geographic map.
-export const SIZE = 216;
-export const HALF = SIZE / 2;
-export const GROUND = 1.35;
-export const WATER_HEIGHT = -1.2;
-export const PLAYER_SPAWN = WORLD_ID === 'dubai' ? DUBAI_SPAWN : {x:0,z:8};
-export const ROAD_HEIGHT = GROUND + .07;
-export const BRIDGE_LIFT = .4;
-export const BRIDGE_HEIGHT = ROAD_HEIGHT + BRIDGE_LIFT;
-export const BRIDGES = [-51, 8, 48];
-export const RIVER_END = HALF;
-export const riverCenter = (z: number) => {
-  const t = Math.max(0, Math.min(1, (z - 35) / 70));
-  return 4 + 13 * Math.sin((z + 55) / 32) - 6 * Math.sin(z / 67) + 40 * t * t * (3 - 2 * t);
-};
-export const riverWidth = (z: number) => 28 + 3.5 * Math.sin(z / 28);
-export const bank = (z: number, side: number, margin = 0) => riverCenter(z) + side * (riverWidth(z) / 2 + margin);
-export type Obstacle = { x: number; z: number; w: number; d: number };
-export type Landmark = { id: string; name: string; short: string; x: number; z: number; height: number; visitX: number; visitZ: number; description: string };
-const LONDON_LANDMARKS: Landmark[] = [
-  { id: 'westminster', name: 'Palace of Westminster', short: 'Westminster', x: -44, z: 16, height: 22, visitX: -20, visitZ: 9, description: 'Honey-coloured stone, Gothic spires, and a clock that watches over the river.' },
-  { id: 'eye', name: 'The London Eye', short: 'London Eye', x: -55, z: -68, height: 44, visitX: -46, visitZ: -60, description: 'A slow-turning wheel above the gardens. Take a little time to watch the city go by.' },
-  { id: 'tower', name: 'Tower Bridge', short: 'Tower Bridge', x: riverCenter(48), z: 48, height: 23, visitX: riverCenter(48), visitZ: 48, description: 'Twin stone towers and blue suspension cables, with the whole river beneath your feet.' },
-  { id: 'gherkin', name: 'The Gherkin', short: 'The Gherkin', x: 76, z: -34, height: 44, visitX: 66, visitZ: -26, description: 'A glass landmark wrapped in a spiralling lattice, rising above the eastern bank.' },
-  { id: 'gardens', name: 'Riverside Gardens', short: 'Riverside Gardens', x: 55, z: 78, height: 2, visitX: 55, visitZ: 83, description: 'Concentric paths, clipped lawns, and a quiet pocket of green at the river’s edge.' },
-  { id: 'abbey', name: 'Riverside Abbey', short: 'Riverside Abbey', x: 61, z: 26, height: 26, visitX: 44, visitZ: 26, description: 'Warm brick towers, pointed windows, and peaceful courtyards inspired by the reference.' },
-  { id: 'dome', name: 'The Green Dome', short: 'Green Dome', x: -24, z: -28, height: 10, visitX: -27, visitZ: -8, description: 'A broad green dome with fine silver ribs, nestled in the curve of the river.' },
-  { id: 'spire', name: 'The Garden Spire', short: 'Garden Spire', x: -85, z: -37, height: 28, visitX: -80, visitZ: -32, description: 'A slender copper-coloured tower tucked among the western gardens.' },
-];
-
-export const LANDMARKS = WORLD_ID === 'dubai' ? DUBAI_LANDMARKS : LONDON_LANDMARKS;
-export function isWater(x:number,z:number,margin=0) {
-  if(WORLD_ID==='dubai')return !dubaiLand(x,z,margin);
-  return z<RIVER_END && Math.abs(x-riverCenter(z))<riverWidth(z)/2+margin;
-}
-
-export function isOnBridge(x: number, z: number): boolean {
-  if(WORLD_ID==='dubai')return dubaiBridge(x,z);
-  return BRIDGES.some(bz => Math.abs(z - bz) < 3.4 && Math.abs(x - riverCenter(bz)) < riverWidth(bz) / 2 + 4.2);
-}
-
-export function surfaceHeight(x:number,z:number) {
-  return (WORLD_ID==='dubai'||Math.abs(z)<=HALF)&&isWater(x,z)&&!isOnBridge(x,z)?WATER_HEIGHT:GROUND+bridgeLiftAt(x,z);
-}
-
-export function bridgeLiftAt(x:number,z:number) {
-  if(WORLD_ID==='dubai')return dubaiBridgeLift(x,z);
-  const bz=BRIDGES.find(b=>Math.abs(z-b)<3.4);if(bz===undefined)return 0;
-  return BRIDGE_LIFT*Math.max(0,Math.min(1,(riverWidth(bz)/2+4.2-Math.abs(x-riverCenter(bz)))/4.2));
+import {insideTerrain} from './boundary.ts';
+import {ACTIVE_PLAN} from './worldPlan.ts';
+export const SIZE=216,HALF=SIZE/2,GROUND=1.35,WATER_HEIGHT=-1.2;
+export const PLAYER_SPAWN=ACTIVE_PLAN.spawn;
+export const ROAD_HEIGHT=GROUND+.07,BRIDGE_LIFT=.4,BRIDGE_HEIGHT=ROAD_HEIGHT+BRIDGE_LIFT;
+export type Obstacle={x:number;z:number;w:number;d:number};
+export type Landmark={id:string;name:string;short:string;x:number;z:number;height:number;visitX:number;visitZ:number;description:string};
+export const LANDMARKS=ACTIVE_PLAN.landmarks;
+// London compatibility helpers carry no London data in another world's bundle.
+export const BRIDGES=ACTIVE_PLAN.londonRiver?.bridges??[];
+export const RIVER_END=ACTIVE_PLAN.londonRiver?.end??HALF;
+export const riverCenter=(z:number)=>ACTIVE_PLAN.londonRiver?.center(z)??0;
+export const riverWidth=(z:number)=>ACTIVE_PLAN.londonRiver?.width(z)??0;
+export const bank=(z:number,side:number,margin=0)=>riverCenter(z)+side*(riverWidth(z)/2+margin);
+export const isWater=(x:number,z:number,margin=0)=>!ACTIVE_PLAN.landAt(x,z,margin);
+export const isOnBridge=(x:number,z:number)=>ACTIVE_PLAN.bridgeAt(x,z);
+/** Legacy name: elevation above the datum includes hill terrain and bridge ramps. */
+export const bridgeLiftAt=(x:number,z:number)=>ACTIVE_PLAN.heightAt(x,z)-GROUND;
+export function surfaceHeight(x:number,z:number){
+ const inWaterRange=!ACTIVE_PLAN.londonRiver||Math.abs(z)<=HALF;
+ return inWaterRange&&isWater(x,z)&&!isOnBridge(x,z)?WATER_HEIGHT:ACTIVE_PLAN.heightAt(x,z);
 }
 
 export function canWalk(x: number, z: number, obstacles: Obstacle[], radius = 0.46): boolean {
@@ -70,7 +38,7 @@ export function resolveTeleport(x: number, z: number, obstacles: Obstacle[]): Te
     return { valid: false, reason: 'Water is blocked. Choose land or a bridge.' };
   if (!canWalk(x, z, obstacles))
     return { valid: false, reason: 'That spot is occupied. Choose open ground.' };
-  return { valid: true, position: { x, y: GROUND + bridgeLiftAt(x,z) + .13, z } };
+  return { valid: true, position: { x, y: surfaceHeight(x,z) + .13, z } };
 }
 
 export function walkStep(x: number, z: number, dx: number, dz: number, obstacles: Obstacle[]) {

@@ -1,8 +1,5 @@
-import { WORLD_ID } from './worldLocation.ts';
-import { LAND_OUTLINE, DUBAI_GARDENS } from './worlds/dubai/plan.ts';
-import { HALF, RIVER_END, riverCenter, riverWidth, LANDMARKS, resolveTeleport, type Obstacle } from './layout.ts';
-import { TERRAIN_OUTLINE } from './boundary.ts';
-import { GARDENS } from './cityPlan.ts';
+import {ACTIVE_PLAN} from './worldPlan.ts';
+import { LANDMARKS, resolveTeleport, type Obstacle } from './layout.ts';
 import type { Destructible } from './sandbox.ts';
 import { ROAD_COLOR, ROAD_NIGHT_COLOR } from './roadSurfaces.ts';
 
@@ -21,7 +18,7 @@ export class CityMap {
   }
   toWorld(clientX:number,clientY:number) {
     const r=this.canvas.getBoundingClientRect();
-    const extent=WORLD_ID==='dubai'?252:this.full?236:HALF*2;
+    const extent=ACTIVE_PLAN.londonRiver&&this.full?236:ACTIVE_PLAN.map.extent;
     return {x:((clientX-r.left)/r.width-.5)*extent,z:((clientY-r.top)/r.height-.5)*extent};
   }
   draw(px:number,pz:number,heading:number,visited:Set<string>) {
@@ -30,26 +27,18 @@ export class CityMap {
     const size=rect.width;
     if(this.canvas.width!==Math.round(size*dpr)){this.canvas.width=Math.round(size*dpr);this.canvas.height=Math.round(size*dpr);}
     const ctx=this.context;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,size,size);
-    const extent=WORLD_ID==='dubai'?252:this.full?236:HALF*2,k=size/extent,map=(v:number)=>(v+extent/2)*k;
+    const extent=ACTIVE_PLAN.londonRiver&&this.full?236:ACTIVE_PLAN.map.extent,k=size/extent,map=(v:number)=>(v+extent/2)*k;
     const palette=this.night?{
       background:'#222a30',land:'#394541',water:'#354852',bank:'#65716f',road:ROAD_NIGHT_COLOR,building:'#879195',tree:'#465a4b',path:'#778070',
     }:{background:this.full?'#e7eadc':'#e6e9d9',land:'#c4d0a6',water:'#56aeb1',bank:'#f2e9cf',road:ROAD_COLOR,building:'#a6ac98',tree:'#95ad7c',path:'#eae3c5'};
+    if(ACTIVE_PLAN.moonVisible===false){palette.land=this.night?'#414a53':'#babfc2';palette.background=this.night?'#202a32':'#d2d5d6';palette.bank=palette.land;palette.tree=this.night?'#647870':'#9eaaa3';}
     if(this.full){ctx.fillStyle=palette.background;ctx.fillRect(0,0,size,size);}
-    if(WORLD_ID==='dubai'){
-      ctx.fillStyle=palette.water;ctx.fillRect(0,0,size,size);ctx.beginPath();LAND_OUTLINE.forEach((p,i)=>i?ctx.lineTo(map(p.x),map(p.z)):ctx.moveTo(map(p.x),map(p.z)));ctx.closePath();ctx.fillStyle=palette.land;ctx.fill();ctx.strokeStyle=palette.bank;ctx.lineWidth=k;ctx.stroke();
-    }else{
-    ctx.fillStyle=palette.land;ctx.beginPath();TERRAIN_OUTLINE.forEach((p,i)=>i?ctx.lineTo(map(p.x),map(p.z)):ctx.moveTo(map(p.x),map(p.z)));ctx.closePath();ctx.fill();
-    ctx.beginPath();
-    for(let z=-HALF;z<=RIVER_END;z++){const x=riverCenter(z)-riverWidth(z)/2;z===-HALF?ctx.moveTo(map(x),map(z)):ctx.lineTo(map(x),map(z));}
-    for(let z=RIVER_END;z>=-HALF;z--)ctx.lineTo(map(riverCenter(z)+riverWidth(z)/2),map(z));
-    ctx.closePath();ctx.fillStyle=palette.water;ctx.fill();
-    // Stroke only the banks; the water is cut flush at both outer slab edges.
-    for(const side of [-1,1]) {
-      ctx.beginPath();
-      for(let z=-HALF;z<=RIVER_END;z++){const x=riverCenter(z)+side*riverWidth(z)/2;z===-HALF?ctx.moveTo(map(x),map(z)):ctx.lineTo(map(x),map(z));}
-      ctx.strokeStyle=palette.bank;ctx.lineWidth=2*k;ctx.stroke();
-    }
-    }
+    const polygon=(points:{x:number;z:number}[],color:string)=>{
+      ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(map(p.x),map(p.z)):ctx.moveTo(map(p.x),map(p.z)));ctx.closePath();ctx.fillStyle=color;ctx.fill();
+    };
+    ctx.fillStyle=ACTIVE_PLAN.waterVisible===false||ACTIVE_PLAN.londonRiver?palette.background:palette.water;ctx.fillRect(0,0,size,size);
+    for(const land of ACTIVE_PLAN.map.land)polygon(land,palette.land);
+    for(const water of ACTIVE_PLAN.map.water??[])polygon(water,palette.water);
     // Road fills only: borders belong to the 3D scene. Square caps retain the
     // continuous corner joins without outlining each block on this small map.
     ctx.save();ctx.lineCap='square';
@@ -65,7 +54,7 @@ export class CityMap {
       ctx.fillStyle=tree.planted?'#4c8051':palette.tree;ctx.beginPath();ctx.arc(map(tree.x),map(tree.z),tree.planted?Math.max(2,1.2*k):Math.max(.5,.9*k),0,Math.PI*2);ctx.fill();
     }
     ctx.strokeStyle=palette.path;ctx.lineWidth=k;
-    for(const p of WORLD_ID==='dubai'?DUBAI_GARDENS:GARDENS)for(const scale of [.33,.66,.95]){ctx.beginPath();ctx.arc(map(p.x),map(p.z),p.r*scale*k,0,Math.PI*2);ctx.stroke();}
+    for(const p of ACTIVE_PLAN.map.gardens)for(const scale of [.33,.66,.95]){ctx.beginPath();ctx.arc(map(p.x),map(p.z),p.r*scale*k,0,Math.PI*2);ctx.stroke();}
     if(this.full) {
       LANDMARKS.forEach((l,i)=>{
         const x=map(l.x),z=map(l.z);

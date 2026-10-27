@@ -26,6 +26,23 @@ try{
  assert.equal((await state(page)).world,'london');assert.equal((await state(page)).night,true);assert.equal((await state(page)).tool,'explore');
  assert.equal(await page.evaluate(()=>localStorage.getItem('rpg-isomaptric-world')),'london');
  report.checks.push({name:'keyboard chapter navigation preserves night and resets sandbox'});
+ const chapterIds=['bengaluru','agra','hyderabad','lisbon','moon'];
+ for(const id of chapterIds){
+  await page.locator(`[data-world="${id}"]`).click();await ready(page);await page.waitForFunction(id=>window.__littleLondon.getState().world===id,id);
+  assert.equal((await state(page)).night,true);assert.equal((await state(page)).tool,'explore');
+  await page.locator('#scene').focus();const before=(await state(page)).position;
+  for(const key of ['KeyD','KeyS','KeyA','KeyW']){await page.keyboard.down(key);await page.waitForTimeout(220);await page.keyboard.up(key);const now=(await state(page)).position;if(Math.hypot(now.x-before.x,now.z-before.z)>.2)break;}
+  const moved=(await state(page)).position;assert.ok(Math.hypot(moved.x-before.x,moved.z-before.z)>.2,`${id} walking`);
+  await page.keyboard.press('KeyB');await page.keyboard.down('Space');await page.waitForTimeout(1100);await page.keyboard.up('Space');assert.ok((await state(page)).shots>=2,`${id} firing`);
+  await page.keyboard.press('KeyT');await page.waitForTimeout(150);
+  for(const key of ['KeyD','KeyS','KeyA','KeyW','KeyD','KeyS','KeyA','KeyW']){
+   if((await state(page)).planted>0)break;await page.keyboard.down(key);await page.waitForTimeout(350);await page.keyboard.up(key);await page.keyboard.press('Space');await page.waitForTimeout(120);
+  }
+  assert.ok((await state(page)).planted>0,`${id} planting`);
+  report.checks.push({name:`${id}: persisted theme, fresh sandbox, walking, firing and planting`,state:await state(page)});
+ }
+ await page.goBack();await ready(page);await page.waitForFunction(()=>window.__littleLondon.getState().world==='lisbon');
+ assert.equal((await state(page)).night,true);report.checks.push({name:'history return reloads a usable scene after GPU teardown'});
  assert.deepEqual(report.errors,[]);
  await mkdir('artifacts',{recursive:true});await writeFile('artifacts/world-switching.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
 }finally{await browser.close();}

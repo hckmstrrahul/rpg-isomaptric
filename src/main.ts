@@ -2,6 +2,7 @@ import * as T from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { createCityComposer } from './rendering.ts';
+import {disposeWorld} from './disposeWorld.ts';
 import { createAppearance } from './appearance.ts';
 import { icon } from './icons.ts';
 import { setNightMaterials } from './lighting.ts';
@@ -13,13 +14,14 @@ import { DamageBars } from './damageBars.ts';
 import { LANDMARKS, GROUND, WATER_HEIGHT, PLAYER_SPAWN, surfaceHeight, walkStep } from './layout.ts';
 import { GameEffects } from './effects.ts';
 import { BOMB_RANGE, FIRE_INTERVAL, type Destructible } from './sandbox.ts';
-import { pickSceneTeleport } from './teleport3d.ts';
+import { pickSceneTeleport, projectTerrainRay } from './teleport3d.ts';
 import { SOIL_DEPTH, insideTerrain } from './boundary.ts';
 import { WORLD_ID, WORLD_NAME, WORLD_DISTRICT, worldUrl, type WorldId } from './worldLocation.ts';
+import {ACTIVE_PLAN} from './worldPlan.ts';
 import './style.css';
 
 import { createCityMotion } from './motion.ts';
-import { loadCityAssets } from './importedAssets.ts';
+import type { CityAssets } from './importedAssets.ts';
 import { hud } from './hud.ts';
 import { renderCharacterPortrait } from './characterPortrait.ts';
 import { installInputFocus } from './inputFocus.ts';
@@ -31,12 +33,19 @@ import { createExploreFlight, type ExploreFlightFrame } from './exploreFlight.ts
 
 document.querySelector<HTMLElement>('#app')!.innerHTML=hud;
 installInputFocus();
-document.title=`rpg isomaptric · ${WORLD_NAME}`;
+document.title=`rpg isomaptric · ${WORLD_NAME}${WORLD_ID==='moon'?' · Fictional bonus':''}`;
+if(WORLD_ID==='moon'){
+  document.querySelector('.help-intro')!.textContent='This is a fictional lunar outpost. In Explore, click or tap open ground to fly there. Trees grow inside sealed greenhouses.';
+  document.querySelector('#tree-tool')!.setAttribute('title','Plant a tree in a sealed greenhouse');
+  document.querySelector('#world-moon')!.setAttribute('aria-label','Moon Base — fictional bonus world');
+  document.querySelector('.brand p')!.textContent='A fictional lunar outpost';
+}
 document.querySelector('#scene')!.setAttribute('aria-label',`Interactive three-dimensional ${WORLD_NAME}. Use WASD or arrow keys to walk. Click open ground to fly, drag to orbit and scroll to zoom.`);
 const worldTabs=[...document.querySelectorAll<HTMLAnchorElement>('[data-world]')];
 for(const tab of worldTabs){
   const id=tab.dataset.world as WorldId,selected=id===WORLD_ID;
   tab.href=worldUrl(id,location.href);tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;
+  if(selected)requestAnimationFrame(()=>tab.parentElement!.scrollLeft=Math.max(0,tab.offsetLeft-(tab.parentElement!.clientWidth-tab.clientWidth)/2));
   tab.addEventListener('click',event=>{
     if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
     if(selected){event.preventDefault();return;}
@@ -46,7 +55,7 @@ for(const tab of worldTabs){
   tab.addEventListener('keydown',event=>{
     if(event.code==='Space'){event.preventDefault();tab.click();return;}
     if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
-    event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?1:(worldTabs.indexOf(tab)+1)%2;
+    event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?worldTabs.length-1:(worldTabs.indexOf(tab)+(event.key==='ArrowRight'?1:-1)+worldTabs.length)%worldTabs.length;
     worldTabs[next].focus();
   });
 }
@@ -82,15 +91,15 @@ async function init() {
   const ground=new T.Mesh(new T.PlaneGeometry(2400,2400),new T.MeshStandardMaterial({color:'#a9c9b9',roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-SOIL_DEPTH-.1;ground.receiveShadow=true;scene.add(ground);
   const camera=new T.OrthographicCamera(-140,140,126,-126,.1,1800);
   const compactViewport=matchMedia('(max-width: 1100px), (max-width: 1366px) and (pointer: coarse)');
-  const overviewZoom=()=>compactViewport.matches?1.8:WORLD_ID==='dubai'?.95:1;
+  const overviewZoom=()=>compactViewport.matches?1.8:ACTIVE_PLAN.camera.zoom;
   const characterZoom=()=>compactViewport.matches?8:6;
   let arrivalZoom:ReturnType<typeof createArrivalZoom>|null=null;
   let exploreFlight:ReturnType<typeof createExploreFlight>|null=null,flightFrame:ExploreFlightFrame|null=null;
   const flightViewOffset=new T.Vector3();
   let flightZoomBase:number|null=null;
-  let capturePaused=false;
+  let capturePaused=false,resourcesReleased=false,animationId=0;
   let previousOverviewZoom=overviewZoom();camera.zoom=previousOverviewZoom;
-  const initialOffset=new T.Vector3(215,185,235);
+  const initialOffset=new T.Vector3(...(ACTIVE_PLAN.camera.offset??[215,185,235]));
   camera.position.copy(initialOffset);camera.lookAt(0,0,0);
   const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.dampingFactor=.085;
   controls.minPolarAngle=0;controls.maxPolarAngle=1.3;controls.minZoom=.6;controls.maxZoom=12;controls.zoomSpeed=.85;controls.rotateSpeed=.65;controls.panSpeed=.7;
@@ -106,18 +115,31 @@ async function init() {
     renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);
   };
   resize();addEventListener('resize',resize);compactViewport.addEventListener('change',resize);
-  const [assets,moonTextures]=await Promise.all([WORLD_ID==='dubai'?Promise.resolve({loaded:[]}):loadCityAssets(),loadMoonTextures()]);
+  const [assets,moonTextures]=await Promise.all([WORLD_ID==='london'?(await import('./importedAssets.ts')).loadCityAssets():Promise.resolve({loaded:[]} as CityAssets),ACTIVE_PLAN.moonVisible===false?Promise.resolve(null):loadMoonTextures()]);
   if(WORLD_ID==='dubai')await (await import('./worlds/dubai/landmarks.ts')).loadDubaiLettering();
-  const world=WORLD_ID==='dubai'?(await import('./worlds/dubai/world.ts')).createDubaiWorld(scene,assets):(await import('./world.ts')).createWorld(scene,assets),character=createCharacter();scene.add(character.root);
+  const builders={
+    london:async()=> (await import('./world.ts')).createWorld(scene,assets),
+    dubai:async()=> (await import('./worlds/dubai/world.ts')).createDubaiWorld(scene,assets),
+    agra:async()=> (await import('./worlds/agra/world.ts')).createAgraWorld(scene,assets),
+    bengaluru:async()=> (await import('./worlds/bengaluru/world.ts')).createBengaluruWorld(scene,assets),
+    hyderabad:async()=> (await import('./worlds/hyderabad/world.ts')).createHyderabadWorld(scene,assets),
+    moon:async()=> (await import('./worlds/moon/world.ts')).createMoonWorld(scene,assets),
+    lisbon:async()=> (await import('./worlds/lisbon/world.ts')).createLisbonWorld(scene,assets),
+  };
+  const world=await builders[WORLD_ID](),character=createCharacter();scene.add(character.root);
   character.root.position.set(PLAYER_SPAWN.x,surfaceHeight(PLAYER_SPAWN.x,PLAYER_SPAWN.z)+.13,PLAYER_SPAWN.z);
   controls.target.copy(character.root.position);camera.position.copy(character.root.position).add(initialOffset);controls.update();
   character.animate(0,false,false,false);
   renderCharacterPortrait(renderer,character.body,$<HTMLCanvasElement>('character-portrait'),scene.environment);
-  const reflections=createRiverReflections(scene,world.water,camera,world.river);
+  const reflections=ACTIVE_PLAN.waterVisible===false?{update:(_renderer:T.WebGLRenderer,_now:number)=>{},dispose:()=>{}}:createRiverReflections(scene,world.water,camera,world.river);
   $('visited-count').textContent=`0 of ${LANDMARKS.length} places discovered`;
   const miniMap=new CityMap($<HTMLCanvasElement>('mini-map'),world.obstacles,world.roads,false,world.objects.state.objects);
   const motionPreference=matchMedia('(prefers-reduced-motion: reduce)');
-  const moon=createMoon(scene,sun,moonTextures,motionPreference.matches);
+  const lunar=ACTIVE_PLAN.moonVisible===false;
+  const moon=moonTextures?createMoon(scene,sun,moonTextures,motionPreference.matches):{
+    setNight:(night:boolean)=>{sun.intensity=night?.6:3.2;sun.color.set(night?'#b8c7d6':'#fff7e8');sun.position.set(-140,100,70);},
+    setReduced:(_value:boolean)=>{},update:(_dt:number)=>{},
+  };
   const theme=matchMedia('(prefers-color-scheme: dark)');
   let storage:Storage|undefined;try{storage=window.localStorage;}catch{ /* Preferences still work for this session. */ }
   const appearance=createAppearance(storage);let night=appearance.isNight(theme.matches);
@@ -128,10 +150,10 @@ async function init() {
     const toggle=$('theme-button');toggle.innerHTML=`${icon(night?'moon':'sun',16)} <span>${night?'Night':'Day'}</span>`;
     toggle.setAttribute('aria-label',`${night?'Night':'Day'} mode. Switch to ${night?'day':'night'} mode.`);toggle.title=`Switch to ${night?'day':'night'} mode`;
     setNightMaterials(night);world.traffic.signals.setNight(night);character.setNight(night);bloom.enabled=night;moon.setNight(night);
-    scene.background=new T.Color(night?'#171c22':'#a8c8bd');scene.environmentIntensity=night?.19:.28;
-    skyLight.intensity=night?.72:1.25;skyLight.color.set(night?'#a3afbd':'#d6ecf3');skyLight.groundColor.set(night?'#3b4846':'#667349');
+    scene.background=new T.Color(lunar?'#07121c':night?'#171c22':'#a8c8bd');scene.environmentIntensity=night?.19:.28;
+    skyLight.intensity=lunar?(night?.28:.65):night?.72:1.25;skyLight.color.set(night?'#a3afbd':'#d6ecf3');skyLight.groundColor.set(lunar?'#555b64':night?'#3b4846':'#667349');
     fill.intensity=night?.22:.4;fill.color.set(night?'#9baab8':'#c9e8f1');
-    ground.material.color.set(night?'#252c31':'#a9c9b9');world.river.material.color.set(night?'#344854':WORLD_ID==='dubai'?'#159eaa':'#087e8c');world.river.night.value=night?1:0;
+    ground.material.color.set(lunar?'#07121c':night?'#252c31':'#a9c9b9');world.river.material.color.set(night?'#344854':ACTIVE_PLAN.waterColor);world.river.night.value=night?1:0;
     miniMap.night=night;
     renderer.toneMappingExposure=night?1.14:1.04;
     void document.documentElement.offsetHeight;
@@ -163,9 +185,8 @@ async function init() {
   };
   motionPreference.addEventListener('change',syncMotion);syncMotion();
   let tool:'explore'|'bomb'|'tree'='explore',heldFire=false,mouseAim=false,lastPlant=-100;
-  const pointer=new T.Vector2(),aimRay=new T.Raycaster(),flightRay=new T.Ray(),flightDirection=new T.Vector3(),groundPlane=new T.Plane(new T.Vector3(0,1,0),-GROUND);
+  const pointer=new T.Vector2(),aimRay=new T.Raycaster(),flightRay=new T.Ray(),flightDirection=new T.Vector3();
   const aimPoint=new T.Vector3(),muzzlePoint=new T.Vector3();
-  const waterPlane=new T.Plane(new T.Vector3(0,1,0),-WATER_HEIGHT);
   let aimedObject:Destructible|null=null,aimValid=true,aimIssue:string|null=null;
   let pointerDown:{x:number;y:number;time:number;id:number;moved:boolean}|null=null;
   const scenePointers=new Set<number>();
@@ -194,9 +215,9 @@ async function init() {
       const hit=tool==='bomb'?world.objects.pick(aimRay.ray):null;
       if(hit){aimedObject=hit.object;aimPoint.copy(hit.point);}
       else {
-        if(!aimRay.ray.intersectPlane(groundPlane,aimPoint))aimPoint.set(p.x+Math.sin(heading)*4,GROUND+.1,p.z+Math.cos(heading)*4);
-        if(tool==='bomb'&&surfaceHeight(aimPoint.x,aimPoint.z)===WATER_HEIGHT)aimRay.ray.intersectPlane(waterPlane,aimPoint);
-        else if(tool==='bomb')for(let i=0;i<4;i++)aimRay.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-surfaceHeight(aimPoint.x,aimPoint.z)-.07),aimPoint);
+        const terrain=projectTerrainRay(aimRay.ray);
+        if(terrain)aimPoint.copy(terrain);
+        else {aimPoint.set(p.x+Math.sin(heading)*4,p.y,p.z+Math.cos(heading)*4);aimPoint.y=surfaceHeight(aimPoint.x,aimPoint.z)+.04;}
       }
     } else {
       if(tool==='bomb')aimedObject=world.objects.state.targetAhead(p,heading);
@@ -205,7 +226,7 @@ async function init() {
       } else {
         const range=tool==='tree'?3.4:BOMB_RANGE;
         aimPoint.set(p.x+Math.sin(heading)*range,GROUND+.15,p.z+Math.cos(heading)*range);
-        if(tool==='bomb')aimPoint.y=surfaceHeight(aimPoint.x,aimPoint.z)+.04;
+        aimPoint.y=surfaceHeight(aimPoint.x,aimPoint.z)+.04;
       }
     }
     aimIssue=tool==='tree'?world.objects.plantingIssue(aimPoint,p):Math.hypot(aimPoint.x-p.x,aimPoint.z-p.z)>BOMB_RANGE+1e-6?`Move closer · launcher range ${BOMB_RANGE} m`:null;
@@ -269,7 +290,7 @@ async function init() {
     arrivalZoom?.cancel();clearOrbitInertia();setFollowing(true);
     canvas.focus({preventScroll:true});
   }
-  const overview=()=>{setBirdview(false);setFollowing(compactViewport.matches);zoomTarget=overviewZoom();cameraGoal=compactViewport.matches?character.root.position.clone():new T.Vector3(0,WORLD_ID==='dubai'?22:2,0);orientationGoal=initialOffset.clone();};
+  const overview=()=>{setBirdview(false);setFollowing(compactViewport.matches);zoomTarget=overviewZoom();cameraGoal=compactViewport.matches?character.root.position.clone():new T.Vector3(...ACTIVE_PLAN.camera.focus);orientationGoal=initialOffset.clone();};
   $('help-button').onclick=()=>setHelp(!helpOpen);$('help-close').onclick=()=>setHelp(false);
   $('touch-help').onclick=()=>setHelp(!helpOpen);
   $('zoom-in').onclick=()=>zoomTarget=Math.min(12,(zoomTarget??camera.zoom)*1.35);
@@ -367,7 +388,8 @@ async function init() {
   }
   let frameCount=0,frameMs=0;
   const animate=(now:number)=>{
-    requestAnimationFrame(animate);
+    if(resourcesReleased)return;
+    animationId=requestAnimationFrame(animate);
     if(capturePaused)return;
     if(document.hidden)return;
     const elapsed=Math.max(0,now-lastTime),dt=Math.min(elapsed/1000,.05);lastTime=now;time+=dt;
@@ -449,7 +471,14 @@ async function init() {
     $('compass').querySelector('svg')!.style.transform=`rotate(${angle-.74}rad)`;
     renderer.info.reset();reflections.update(renderer,now);composer.render();
   };
-  requestAnimationFrame(animate);
+  animationId=requestAnimationFrame(animate);
+  addEventListener('pagehide',()=>{
+    resourcesReleased=true;cancelAnimationFrame(animationId);controls.dispose();reflections.dispose();
+    for(const pass of composer.passes)pass.dispose();composer.dispose();disposeWorld(scene);
+    world.objects.models.clear();world.objects.trees.clear();world.objects.state.objects.length=0;world.obstacles.length=0;
+    renderer.dispose();renderer.forceContextLoss();
+  },{once:true});
+  addEventListener('pageshow',event=>{if(event.persisted)location.reload();});
   // A small read-only inspection surface supports repeatable browser verification.
   Object.defineProperty(window,'__littleLondon',{value:{
     getState:()=>({world:WORLD_ID,position:{x:character.root.position.x,y:character.root.position.y,z:character.root.position.z},zoom:camera.zoom,night,ambientMotion:motion.playing,assets:assets.loaded,exploring,following,helpOpen,visited:[...visited],drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,averageFps:frameMs>0?Math.round(frameCount/(frameMs/1000)):0,obstacles:world.obstacles.length,landmarks:LANDMARKS.length,tool,flying:!!exploreFlight,shots:world.objects.state.shots,cleared:world.objects.state.demolished,planted:world.objects.state.treesPlanted,projectiles:effects.projectiles.length,target:aimedObject?{name:aimedObject.name,hp:aimedObject.hp,maxHp:aimedObject.maxHp}:null}),
@@ -467,7 +496,7 @@ async function init() {
   for(const node of document.querySelectorAll<HTMLElement>('.ui, #scene, .skip-link'))node.inert=node.id==='help-panel';
   arrivalZoom=createArrivalZoom(camera.zoom,characterZoom(),motion.reduced);lastTime=performance.now();
   $('loading').classList.add('hidden');setTimeout(()=>$('loading').remove(),700);
-  canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();toast('Graphics paused. Reload the page to restore the city.',true);});
+  canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();if(resourcesReleased)return;toast('Graphics paused. Reload the page to restore the city.',true);});
 }
 
 init().catch(error=>{

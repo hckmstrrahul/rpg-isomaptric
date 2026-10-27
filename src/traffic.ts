@@ -86,7 +86,7 @@ export function createTraffic(scene:T.Scene,objects:WorldObjects,options?:{loops
   const parked:{x:number;z:number;length:number}[]=[{...PLAYER_SPAWN,length:4},...LANDMARKS.map(l=>({x:l.visitX,z:l.visitZ,length:3}))];
   const cars=routes.flatMap((route,index)=>Array.from({length:options?.carsPerRoute??(index<4?8:3)},(_,i)=>{
     let kind=VEHICLE_TYPES[(i+index*2)%VEHICLE_TYPES.length];
-    if(options?.city==='Dubai'&&kind==='bus')kind='van';
+    if(options?.city&&options.city!=='London'){if(kind==='bus')kind='van';else if(kind==='taxi')kind='car';}
     const model=createRoadVehicle(kind,['#ebe4cd','#263c42','#aa5941','#526f7b','#d3d7cd','#927d5e'][i%6]);
     let distance=route.length*(i+.31+index*.09)/(options?.carsPerRoute??(index<4?8:3));
     for(let n=0;n<200;n++) {
@@ -96,7 +96,7 @@ export function createTraffic(scene:T.Scene,objects:WorldObjects,options?:{loops
     }
     const {point,yaw}=route.sample(distance);model.root.position.set(point.x,GROUND+.08+bridgeLiftAt(point.x,point.z),point.z);model.root.rotation.y=yaw;scene.add(model.root);parked.push({x:point.x,z:point.z,length:model.length});
     const obstacle={x:point.x,z:point.z,w:model.width,d:model.length};objects.obstacles.push(obstacle);
-    const name=options?.city==='Dubai'?(kind==='taxi'?'Marina taxi':`Marina ${kind}`):kind==='bus'?'London bus':kind==='car'?'City car':model.root.name;
+    const name=options?.city&&options.city!=='London'?`${options.city} ${kind}`:kind==='bus'?'London bus':kind==='car'?'City car':model.root.name;
     const object=objects.registerModel(model.root,name,'prop',[obstacle]);
     objects.moveModel(object,point.x,point.z,yaw,model.width,model.length);
     const speed=kind==='bus'?2.3:kind==='bike'?2.5:kind==='truck'?2.4:2.8+i*.035;

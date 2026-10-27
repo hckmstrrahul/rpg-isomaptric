@@ -10,7 +10,8 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "audit": "node --experimental-strip-types scripts/audit-city.ts",
     "audit:ui": "node --experimental-strip-types scripts/audit-interface.ts",
-    "check": "npm test && npm run audit && npm run audit:ui && npm run build",
+    "check": "npm test && npm run audit && npm run audit:ui && npm run build && npm run audit:loading",
+    "audit:loading": "node scripts/audit-world-loading.mjs",
     "check:browser": "node scripts/browser-smoke.mjs",
     "capture:media": "node scripts/capture-media.mjs"
   },
@@ -30,7 +31,7 @@
     "typescript": "^5.9.3",
     "vite": "^7.1.12"
   },
-  "description": "Tiny playable isometric worlds. London and Dubai.",
+  "description": "Seven tiny playable isometric worlds, from London to a fictional Moon base.",
   "license": "MIT",
   "author": "Rahul Chakraborty <17765524+hckmstrrahul@users.noreply.github.com>",
   "homepage": "https://rpg-isomaptric.vercel.app",

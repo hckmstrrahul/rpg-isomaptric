@@ -1,12 +1,12 @@
 import * as T from 'three';
-import { GROUND } from './layout.ts';
+import { GROUND, surfaceHeight } from './layout.ts';
 
 export type FlightObstacle={x:number;z:number;w:number;d:number;height:number;baseY?:number;destroyed?:boolean;active?:boolean};
 export type ExploreFlightFrame={position:T.Vector3;lean:number;impact:number;airborne:boolean;landed:boolean;progress:number;heading:number;zoomFactor:number};
 const easeInOutSine=(t:number)=>(1-Math.cos(Math.PI*T.MathUtils.clamp(t,0,1)))/2;
 
 /** Clearance is computed along the entire route, including narrow/tall buildings between endpoints. */
-export function flightClearance(start:T.Vector3,end:T.Vector3,obstacles:FlightObstacle[]) {
+export function flightClearance(start:T.Vector3,end:T.Vector3,obstacles:FlightObstacle[],heightAt=surfaceHeight) {
   const distance=Math.hypot(end.x-start.x,end.z-start.z);
   let rise=Math.max(0,Math.min(14,Math.max(3,distance*.12))-Math.max(0,start.y-end.y)*.45);
   const dx=end.x-start.x,dz=end.z-start.z;
@@ -22,6 +22,12 @@ export function flightClearance(start:T.Vector3,end:T.Vector3,obstacles:FlightOb
       const baseline=T.MathUtils.lerp(start.y,end.y,u),roof=(object.baseY??GROUND)+object.height+2.5;
       rise=Math.max(rise,(roof-baseline)/(4*u*(1-u)));
     }
+  }
+  // Sampling the height field also clears hills that are not building obstacles.
+  const samples=Math.max(8,Math.ceil(distance));
+  for(let i=1;i<samples;i++){
+    const u=i/samples,ground=heightAt(start.x+dx*u,start.z+dz*u)+.18;
+    rise=Math.max(rise,(ground-T.MathUtils.lerp(start.y,end.y,u))/(4*u*(1-u)));
   }
   return rise;
 }

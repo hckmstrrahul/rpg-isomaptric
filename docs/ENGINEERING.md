@@ -122,12 +122,18 @@ Vercel serves the static build. Fingerprinted JS/CSS/font assets receive long im
 
 Run `npm run check`: unit and geometry tests, city audit, UI source audit, TypeScript, and production build. Tests construct the real city without a WebGL renderer and cover reachable landmarks, street-corner paving, clear bridge approaches, actual ship/bridge geometry, continuous traffic, foliage budgets, shader hooks, dynamic destruction and input/motion policy.
 
-CPU geometry tests cannot prove rendered appearance or GPU frame rate. Public-preview screenshots and interaction checks complement them. The renderer remains a detailed WebGL scene with a substantial main bundle; low-end-device performance needs real hardware profiling. World edits are session-only. The code is still London-specific in several modules; the next location should extract shared boundaries deliberately rather than duplicate `world.ts` wholesale.
+CPU geometry tests cannot prove rendered appearance or GPU frame rate. Public-preview screenshots and interaction checks complement them. The renderer remains a detailed WebGL scene with a substantial main bundle; low-end-device performance needs real hardware profiling. World edits are session-only. London geometry remains in its original module, while all chapter plans are isolated behind the selected dynamic import. No inactive chapter is constructed.
 
-## Location switching and Dubai
+## Location switching and isolated chapter data
 
 The top-centre pill uses keyboard-operable tabs with explicit `?world=` links. The URL takes precedence over the stored location. A chapter change navigates through the themed loader and constructs one fresh scene; it does not keep two renderers or cities alive. Shared engine and texture files remain browser-cacheable. Appearance persists; sandbox edits and discoveries currently reset.
 
 Dubai contributes data and geometry without duplicating the character, input, camera, bomb/plant tools, wake simulation, reflection pipeline or postprocessing. `layout.ts` dispatches coastline and bridge queries; `cityPlan.ts` selects the road plan. Traffic accepts route loops, junctions, lane direction and vehicle count. `WorldObjects` supports separate reusable instance banks for palms and broadleaf trees. The minimap uses the same coastline and road data.
 
 See [Dubai construction notes](DUBAI.md) for architectural and performance decisions, and [world authoring](WORLD-AUTHORING.md) for the current extension boundary.
+
+`worldPlan.ts` uses a selected dynamic plan import before the shared layout initializes. This keeps inactive city spatial data out of the initial static dependency graph. The constructor dispatch separately imports the selected geometry. `scripts/audit-world-loading.mjs` audits built static dependencies and, with an HTTPS deployment, verifies cold network requests for every chapter.
+
+The absolute terrain height field feeds tree matrices and targeting bounds, traffic signals, walking, click picking, projected tool aim and flight clearance. Flight clearance samples terrain between endpoints in addition to testing building footprints, so hilly Lisbon and lunar crater rims are respected. Dry chapters do not allocate or update the reflection target; Moon Base also omits the Earth-view Moon textures and sky object.
+
+See [expansion process and geographic scope](WORLD-EXPANSION.md), plus per-chapter source notes under `src/worlds/`, for the four new real-world districts and explicitly fictional lunar bonus.

@@ -1,12 +1,36 @@
-# London + Dubai release validation
+# World release validation
 
 Updated: 28 October 2026. Same Node.js 24 / Three.js / Vite toolchain as the first release. The lockfile remains authoritative.
+
+## Seven-world expansion
+
+Five selected-only chapters add Bengaluru’s civic/Cubbon Park district, Agra’s Taj riverfront, Hyderabad’s Old City, Lisbon’s Belém–Alcântara/Almada district and the explicitly fictional Moon Base. [Production plan and primary sources](WORLD-EXPANSION.md); [independent visual review ledger](WORLD-VISUAL-REVIEW.md).
+
+The shared engine uses one active `WorldPlan` for terrain, roads, collision, maps, tree placement, aim and flight clearance. Cold-network checks cover all seven locations and reject inactive plan/geometry requests. London’s optional imported asset loader and Dubai lettering remain chapter-specific. Dry worlds skip reflections, and the lunar bonus skips Earth-view Moon textures. Page-hide teardown releases GPU resources, CPU vertex/instance arrays and texture image references; browser history returns rebuild a usable scene.
+
+**173 automated tests pass**, along with city/UI audits, TypeScript, the production build and all seven static loading graphs. Checks cover geometry budgets, actual river banks and land, reachable arrivals, road and traffic clearance, bridge/boat clearance, open heritage arches, lunar crater picking, tree placement on hills and resource disposal. Ordinary browser controls passed walking, firing, planting, persisted appearance, keyboard chapter selection and history return across all locations. Independent day/night, landmark front/side/rear and overview review is recorded in the linked ledger. The final automated suite retains the original celestial-Moon regressions separately from the fictional-world tests. `npm audit` reports zero known dependency vulnerabilities.
+
+Serial animated samples on Apple M5 Max / Chrome ANGLE Metal, 1440 × 900, DPR 1, six seconds per world/theme after settling, on the final reviewed preview:
+
+| World | Day fps | Night fps | Worst p95 frame |
+| --- | ---: | ---: | ---: |
+| london | 60.0 | 60.0 | 16.7 ms |
+| dubai | 60.0 | 60.0 | 16.8 ms |
+| bengaluru | 60.0 | 60.0 | 16.7 ms |
+| agra | 60.0 | 60.0 | 16.8 ms |
+| hyderabad | 60.0 | 60.0 | 16.8 ms |
+| lisbon | 60.0 | 60.0 | 16.7 ms |
+| moon | 60.0 | 60.0 | 16.8 ms |
+
+These are bounded desktop measurements, not guarantees for every device. The five new chapters meet the existing scene workload budget without adding per-window lights or unbounded reflections. The ordinary UI workflow also passed all-seven-world walking, firing, planting, persisted night mode and browser-history restoration; responsive/Explore-flight checks passed London, Moon and Lisbon at 320, 390, 820 and 1440 pixels.
+
+Ten new day/night README images are actual renderer captures and are never loaded by the game. Reproduce with `node scripts/capture-world-gallery.mjs HTTPS_CAPTURE_PREVIEW`.
 
 ## Explore toolbar update
 
 The toolbar now contains Explore, Grenade Gun and Plant a Tree. The duplicate Teleport tab, panel, keyboard shortcut and unused ghost/glide runtime are removed. Explore retains validated click/tap flight and its smooth zoom return. The header link row has a 12px top gap, increased from 8px; the toolbar uses three columns on desktop and mobile. Visible labels are “Explore,” “Grenade Gun” and “Plant a Tree,” with “Space to plant” for the tree action. The north compass straddles the minimap’s upper-right corner with reserved mobile clearance.
 
-The active suite contains 137 passing tests, including facade variation and bounded night emission, after removing four cases specific to the retired teleport selector/glide. City/UI audits, TypeScript and the production build pass. The browser smoke workflow now exercises travel through ordinary Explore clicks instead of the removed selector.
+That toolbar release contained 137 passing tests, including facade variation and bounded night emission, after removing four cases specific to the retired teleport selector/glide. City/UI audits, TypeScript and the production build pass. The browser smoke workflow now exercises travel through ordinary Explore clicks instead of the removed selector.
 
 ## Previous Dubai refinement checks and measured scope
 

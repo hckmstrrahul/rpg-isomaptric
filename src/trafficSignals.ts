@@ -1,7 +1,7 @@
 import * as T from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { Builder, material } from './geometry.ts';
-import { bank, BRIDGES, GROUND } from './layout.ts';
+import { bank, BRIDGES, surfaceHeight } from './layout.ts';
 
 export type TrafficAxis='along'|'across';
 export function signalPhase(time:number,index:number,axis:TrafficAxis) {
@@ -23,7 +23,7 @@ export function createTrafficSignals(scene:T.Scene,locations?:{x:number;z:number
     const poles:{x:number;z:number}[]=[];
     for(const axis of ['along','across'] as const)for(const direction of [-1,1]) {
       const z=locations?point.z+(axis==='along'?-direction*5:direction*3.6):point.z-direction*4.25,x=locations?point.x+(axis==='along'?direction*3.6:-direction*5):bank(z,point.side,4.2)+(axis==='along'?direction:-direction)*3.1;
-      poles.push({x,z});const fixture=new T.Group(),b=new Builder();fixture.position.set(x,GROUND,z);
+      poles.push({x,z});const fixture=new T.Group(),b=new Builder();fixture.position.set(x,surfaceHeight(x,z),z);
       // Every head faces its approaching lane. A pale backing board and deep
       // black hoods keep the three round lenses legible in bright daylight.
       fixture.rotation.y=axis==='along'?(direction>0?0:Math.PI):(direction>0?Math.PI/2:-Math.PI/2);

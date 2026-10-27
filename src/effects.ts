@@ -59,10 +59,10 @@ export class GameEffects {
     this.projection.show(end,visible&&!planting,valid);
     this.reticle.visible=visible&&planting;this.ghost.visible=visible&&planting;this.path.visible=visible&&!planting&&valid;
     this.reticle.geometry=planting?this.plantDisc:this.blastDisc;
-    this.reticle.position.set(end.x,(planting?GROUND:surfaceHeight(end.x,end.z))+.04,end.z);
+    this.reticle.position.set(end.x,surfaceHeight(end.x,end.z)+.04,end.z);
     this.reticle.material.color.set(planting?'#62aa70':'#e74944');
     this.reticle.material.opacity=planting?(valid?.3:.12):valid?.28:.16;
-    this.ghost.position.set(end.x,GROUND+.12,end.z);this.ghost.material.color.set('#7ead7b');this.ghost.material.opacity=valid?.28:.12;
+    this.ghost.position.set(end.x,surfaceHeight(end.x,end.z)+.12,end.z);this.ghost.material.color.set('#7ead7b');this.ghost.material.opacity=valid?.28:.12;
     if(this.path.visible) {
       const starts=this.path.geometry.getAttribute('instanceStart') as T.InterleavedBufferAttribute,ends=this.path.geometry.getAttribute('instanceEnd') as T.InterleavedBufferAttribute;
       starts.setXYZ(0,start.x,start.y,start.z);ends.setXYZ(0,end.x,end.y,end.z);starts.data.needsUpdate=true;
