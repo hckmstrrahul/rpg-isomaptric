@@ -4,7 +4,7 @@ import {riverMaterial} from '../../nature.ts';
 import {WorldObjects} from '../../interactables.ts';
 import {createTraffic} from '../../traffic.ts';
 import {GROUND,WATER_HEIGHT,type Obstacle} from '../../layout.ts';
-import {glowMaterial,lightPool} from '../../lighting.ts';
+import {glowMaterial,lightPool,registerGlow} from '../../lighting.ts';
 import {LocalNightLighting,localNightLight} from '../../localNightLighting.ts';
 import {NightGroundGlows} from '../../nightGroundGlows.ts';
 import type {CityAssets} from '../../importedAssets.ts';
@@ -42,8 +42,9 @@ export function createMoonWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}){
  const base=terrain.finish();base.name='Moon bonus · exposed gray regolith cutaway';scene.add(base);
  const river=riverMaterial(),water=new T.Mesh(new T.PlaneGeometry(1,1),river.material);water.visible=false;water.position.y=WATER_HEIGHT;water.name='Moon · inactive water surface';scene.add(water);
  const paving=material('#687279'),edge=material('#aab0ae');
+ const guidance=registerGlow(new T.MeshStandardMaterial({color:'#d9e3e5',emissive:'#e3f4ff',roughness:.45}),1.5);guidance.name='Lunar white guidance markers';guidance.userData.noShadow=true;
  for(const path of SERVICE_PATHS){const g=strokeGeometry(path.points,path.width,lunarHeight(0,0)+.025);details.add(g,paving);g.dispose();
-  let distance=0,next=2.5;for(let i=1;i<path.points.length;i++){const a=path.points[i-1],b=path.points[i],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);while(next<distance+len){const t=(next-distance)/len,x=a.x+dx*t,z=a.z+dz*t;for(const side of [-1,1])details.box(x-dz/len*path.width*.43*side,GROUND+.048,z+dx/len*path.width*.43*side,.18,.035,.5,glowMaterial('#b7d2dc',1.05),Math.atan2(dx,dz));next+=4;}distance+=len;}
+  let distance=0,next=2.5;for(let i=1;i<path.points.length;i++){const a=path.points[i-1],b=path.points[i],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);while(next<distance+len){const t=(next-distance)/len,x=a.x+dx*t,z=a.z+dz*t;for(const side of [-1,1])details.box(x-dz/len*path.width*.43*side,GROUND+.048,z+dx/len*path.width*.43*side,.18,.035,.5,guidance,Math.atan2(dx,dz));next+=4;}distance+=len;}
  }
  for(const [index,pad] of PADS.entries()){
   details.cylinder(pad.x,GROUND+.07,pad.z,pad.r,.14,material('#7f878b'),pad.r,64);details.ring(pad.x,GROUND+.15,pad.z,pad.r-1,.18,'#cbd1ce');details.ring(pad.x,GROUND+.153,pad.z,pad.r-4,.12,'#a9b4b7');

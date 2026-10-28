@@ -1,10 +1,11 @@
 import * as T from 'three';
 import {Builder,material,vec} from '../../geometry.ts';
 import {glowMaterial} from '../../lighting.ts';
+import {boatCabinGlass} from '../../boatLighting.ts';
 import {BAY} from './plan.ts';
 import {GROUND,WATER_HEIGHT} from '../../layout.ts';
 
-const ivory=material('#f2eee2',.37,.12),teak=material('#bfa37a'),glass=material('#203d4a',.23,.45),chrome=material('#c4ced0',.3,.65);
+const ivory=material('#f2eee2',.37,.12),teak=material('#bfa37a'),glass=boatCabinGlass('#203d4a',.23,.45),chrome=material('#c4ced0',.3,.65);
 const sailCloth=material('#ece8d7',.75);sailCloth.side=T.DoubleSide;
 export function createYacht(length=4.4,sailing=false,furled=false) {
   const b=new Builder(),beam=length*.29,outline=[{x:0,z:.5},{x:-.30,z:.41},{x:-.5,z:.12},{x:-.45,z:-.43},{x:.45,z:-.43},{x:.5,z:.12},{x:.3,z:.41}];

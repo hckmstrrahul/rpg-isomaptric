@@ -51,6 +51,16 @@
   </head>
   <body>
     <main id="app" aria-label="City explorer"><div class="boot-loading" role="status" aria-live="polite"><h2>A little world awaits</h2></div></main>
+    <script id="world-loading-bootstrap">
+      (() => {
+        const worlds = ['london', 'dubai', 'bengaluru', 'agra', 'lisbon', 'moon'];
+        let world = new URLSearchParams(location.search).get('world');
+        if (!worlds.includes(world)) {
+          try { world = localStorage.getItem('rpg-isomaptric-world'); } catch { world = null; }
+        }
+        if (world === 'moon') document.querySelector('.boot-loading h2').textContent = 'To the moon...';
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

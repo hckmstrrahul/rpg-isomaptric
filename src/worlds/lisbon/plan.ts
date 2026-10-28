@@ -17,13 +17,47 @@ export const bridgeX=(z:number)=>BRIDGE.north.x+(BRIDGE.south.x-BRIDGE.north.x)*
 export function lisbonBridge(x:number,z:number){return z>=BRIDGE.north.z&&z<=BRIDGE.south.z&&Math.abs(x-bridgeX(z))<3.15;}
 const smooth=(t:number)=>{const x=Math.max(0,Math.min(1,t));return x*x*(3-2*x);};
 export const PENA={x:-89,z:-101,radius:35};
-export function landHeight(x:number,z:number){
+export const hillStreetZ=(x:number)=>x< -103?-75:x< -80?-75-(x+103)*2/23:x< -59?-77-(x+80)*2/21:-79-(x+59)*.7/6;
+const northBase=(x:number,z:number)=>1.35+6.1*smooth((shoreAt(x,NORTH_BANK)-z-20)/72)+1.2*Math.exp(-(((x+16)/30)**2)-(((z+75)/23)**2));
+export const hillRoadGrade=(x:number)=>northBase(x,hillStreetZ(x));
+// Shallow folds give residential streets Lisbon's rising/falling grain without
+// perturbing the engineered hill bench, palace stairs or bridge approaches.
+export function neighbourhoodRelief(x:number,z:number){
+ const north=z<shoreAt(x,NORTH_BANK),coast=north?shoreAt(x,NORTH_BANK)-z:z-shoreAt(x,SOUTH_BANK),shoreFade=smooth((coast-15)/16),bridgeFade=smooth((Math.abs(x-bridgeX(z))-12)/16),penaFade=smooth((x+50)/12);
+ const wave=north?1.05*Math.sin((x+12)/23)*Math.sin((z+42)/20)+.55*Math.cos((x-z)/31):.85*Math.sin((x+28)/27)*Math.sin((z-89)/19);
+ return wave*shoreFade*bridgeFade*(north?penaFade:1);
+}
+function gradedTerrainHeight(x:number,z:number){
   const hill=12*(1-smooth((Math.hypot(x-PENA.x,(z-PENA.z)*1.08)-17)/18));
-  if(z<shoreAt(x,NORTH_BANK))return 1.35+6.1*smooth((shoreAt(x,NORTH_BANK)-z-20)/72)+1.2*Math.exp(-(((x+16)/30)**2)-(((z+75)/23)**2))+hill;
-  return 1.35+7.7*smooth((z-shoreAt(x,SOUTH_BANK))/25)+.85*Math.exp(-(((x-78)/22)**2)-(((z-62)/19)**2));
+  if(z<shoreAt(x,NORTH_BANK)){
+    const natural=northBase(x,z)+hill+neighbourhoodRelief(x,z);
+    // An engineered bench passes the foot of the Sintra hill. The grading
+    // also drives walking/traffic; the road no longer drapes over the mound.
+    const endFade=smooth((x+126)/8)*(1-smooth((x+59)/12)),bench=(1-smooth((Math.abs(z-hillStreetZ(x))-4.2)/6))*endFade;
+    return natural+(hillRoadGrade(x)-natural)*bench;
+  }
+  return 1.35+7.7*smooth((z-shoreAt(x,SOUTH_BANK))/25)+.85*Math.exp(-(((x-78)/22)**2)-(((z-62)/19)**2))+neighbourhoodRelief(x,z);
+}
+// One monotonic pedestrian stair flight with two small resting landings.
+// Its level cross-sections and tread heights are shared by collision and mesh.
+export const PALACE_APPROACH:Road={id:'pena-walking-approach',size:'small',width:1.7,points:[{x:-57,z:-82},{x:-79,z:-86.9}]};
+const pa=PALACE_APPROACH.points[0],pb=PALACE_APPROACH.points[1],pdx=pb.x-pa.x,pdz=pb.z-pa.z;
+export const PALACE_PATH_LENGTH=Math.hypot(pdx,pdz);
+export const PALACE_LANDINGS=[{from:0,to:1.4},{from:PALACE_PATH_LENGTH/3-.6,to:PALACE_PATH_LENGTH/3+.6},{from:PALACE_PATH_LENGTH*2/3-.6,to:PALACE_PATH_LENGTH*2/3+.6}];
+const pathStart=gradedTerrainHeight(pa.x,pa.z)+.18,pathTop=gradedTerrainHeight(PENA.x,PENA.z)+.205,pathRise=pathTop-pathStart,activeLength=PALACE_PATH_LENGTH-PALACE_LANDINGS.reduce((n,p)=>n+p.to-p.from,0),stepRise=pathRise/Math.ceil(pathRise/.16);
+export function palacePathSection(x:number,z:number){const along=((x-pa.x)*pdx+(z-pa.z)*pdz)/PALACE_PATH_LENGTH,across=(-(x-pa.x)*pdz+(z-pa.z)*pdx)/PALACE_PATH_LENGTH;return{along,across};}
+export function palaceRampHeight(along:number){const s=Math.max(0,Math.min(PALACE_PATH_LENGTH,along)),travel=s-PALACE_LANDINGS.reduce((n,p)=>n+Math.max(0,Math.min(p.to-p.from,s-p.from)),0);return pathStart+pathRise*travel/activeLength;}
+export function palaceStepHeight(along:number){return Math.min(pathTop,pathStart+Math.ceil((palaceRampHeight(along)-pathStart)/stepRise-1e-7)*stepRise);}
+export function palacePathWidth(along:number){return PALACE_LANDINGS.slice(1).some(p=>along>=p.from&&along<=p.to)?2.15:1.7;}
+export const PALACE_TREADS=(()=>{const cuts=[0,PALACE_PATH_LENGTH,...PALACE_LANDINGS.flatMap(p=>[p.from,p.to])];for(let i=1;i<Math.ceil(pathRise/.16);i++){const target=pathStart+i*stepRise;let lo=0,hi=PALACE_PATH_LENGTH;for(let j=0;j<40;j++){const mid=(lo+hi)/2;if(palaceRampHeight(mid)<target)lo=mid;else hi=mid;}cuts.push((lo+hi)/2);}return cuts.sort((a,b)=>a-b).filter((v,i,all)=>i===0||v-all[i-1]>.00001).slice(1).map((end,i,all)=>{const start=i?all[i-1]:0,middle=(start+end)/2;return{start,end,height:palaceStepHeight(middle),width:palacePathWidth(middle)};});})();
+export function landHeight(x:number,z:number){
+ const natural=gradedTerrainHeight(x,z),p=palacePathSection(x,z);
+ if(p.along<0||p.along>PALACE_PATH_LENGTH||Math.abs(p.across)>3.8)return natural;
+ const edge=(1-smooth((Math.abs(p.across)-2.2)/1.6))*smooth(p.along/.8)*(1-smooth((p.along-PALACE_PATH_LENGTH+1.2)/1.2)),roadProtection=smooth((Math.abs(z-hillStreetZ(x))-2.2)/.65);
+ return natural+(palaceRampHeight(p.along)-.65-natural)*edge*roadProtection;
 }
 export function bridgeHeight(z:number){const north=landHeight(BRIDGE.north.x,BRIDGE.north.z),south=landHeight(BRIDGE.south.x,BRIDGE.south.z);const deck=z<-39?north+(BRIDGE.deck-north)*smooth((z-BRIDGE.north.z)/(-39-BRIDGE.north.z)):z>47?BRIDGE.deck+(south-BRIDGE.deck)*smooth((z-47)/44):BRIDGE.deck;return lisbonLand(bridgeX(z),z)?Math.max(deck,landHeight(bridgeX(z),z)):deck;}
-export const heightAt=(x:number,z:number)=>lisbonBridge(x,z)?bridgeHeight(z):landHeight(x,z);
+export const heightAt=(x:number,z:number)=>{const p=palacePathSection(x,z);if(p.along>=0&&p.along<=PALACE_PATH_LENGTH&&Math.abs(p.across)<=palacePathWidth(p.along)/2)return palaceStepHeight(p.along);return lisbonBridge(x,z)?bridgeHeight(z):landHeight(x,z);};
 export function path(points:number[][]):PlanPoint[]{const out:PlanPoint[]=[];for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/2));for(let j=0;j<n;j++)out.push({x:a[0]+(b[0]-a[0])*j/n,z:a[1]+(b[1]-a[1])*j/n});}out.push({x:points.at(-1)![0],z:points.at(-1)![1]});return out;}
 const rawRoads:{id:string;p:number[][];size?:Road['size'];bridge?:boolean}[]=[
   // Existing street corridors continue through the miniature's cut edge;
@@ -52,7 +86,7 @@ const rawRoads:{id:string;p:number[][];size?:Road['size'];bridge?:boolean}[]=[
   {id:'almada-central-link',p:[[-27,91],[-27,113]],size:'small'},
   {id:'almada-south-link',p:[[43,81],[43,113]],size:'small'},
 ];
-export const lisbonRoads=():Road[]=>rawRoads.map(r=>({id:r.id,points:path(r.p),size:r.size??'main',width:r.size==='bridge'?4.7:r.size==='small'?3.2:4,bridge:r.bridge}));
+export const lisbonRoads=():Road[]=>rawRoads.map(r=>({id:r.id,points:path(r.p),size:r.size??'main',width:r.size==='bridge'?4.7:r.id==='ajuda-hills'?2.8:r.size==='small'?2.6:3.2,bridge:r.bridge}));
 export const TRAFFIC_LOOPS=[
   [[-80,-13],[-59,-18],[-33,-21],[-33,-49],[-59,-46],[-80,-44],[-80,-13]],
   [[-8,-29],[17,-35],[39,-43],[39,-65],[17,-58],[-8,-53],[-8,-29]],
@@ -73,6 +107,7 @@ export const LANDMARKS:Landmark[]=[
   {id:'cristo-rei',name:'Santuário de Cristo Rei',short:'Cristo Rei',...project(38.6786,-9.1719),height:23,visitX:86,visitZ:54,description:'The open-armed monument overlooks Lisbon from the Almada bank.'},
   {id:'pena-palace',name:'Pena Palace · Sintra',short:'Pena Palace',x:PENA.x,z:PENA.z,height:20,visitX:-75,visitZ:-85,description:'A scenic Sintra excursion inset: the yellow-domed and red-towered Romantic palace on its wooded hill. Sintra lies outside this Lisbon district in reality.'},
 ];
+export const waterfrontYaw=(x:number)=>-Math.atan2(shoreAt(x+4,NORTH_BANK)-shoreAt(x-4,NORTH_BANK),8);
 export const SPAWN={x:14,z:-25};
 export const GARDENS=[{x:-50,z:-13,r:5},{x:-20,z:-64,r:8},{x:86,z:64,r:9},{x:-92,z:-19,r:6}];
 export const PLAN:WorldPlan={spawn:SPAWN,landmarks:LANDMARKS,roads:lisbonRoads,landAt:lisbonLand,bridgeAt:lisbonBridge,heightAt,map:{extent:252,land:LAND,gardens:GARDENS},camera:{focus:[0,3,0],zoom:.95,offset:[150,135,170]},waterColor:'#338e9c'};

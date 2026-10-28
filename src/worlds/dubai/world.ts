@@ -5,6 +5,7 @@ import { createTerrainBase } from '../../terrainBase.ts';
 import { WorldObjects } from '../../interactables.ts';
 import { createTraffic } from '../../traffic.ts';
 import { createYacht, createMarinaDocks, DOCK_ANGLES } from './marina.ts';
+import {lightBoat} from '../../boatLighting.ts';
 import { BoatWakes } from '../../boatWakes.ts';
 import { GROUND, WATER_HEIGHT, LANDMARKS, PLAYER_SPAWN, surfaceHeight, bridgeLiftAt, type Obstacle } from '../../layout.ts';
 import { ROAD_ASPHALT, roadDash } from '../../roadSurfaces.ts';
@@ -111,7 +112,7 @@ export function createDubaiWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
   const quay=MARINA_PROMENADE;
   const marina=createMarinaDocks();scene.add(marina.root);
   const mooredBoats=marina.berths.map((berth,index)=>{
-    const yacht=createYacht(berth.length,berth.sailing,true);yacht.root.position.set(berth.x,WATER_HEIGHT+.025,berth.z);yacht.root.rotation.y=berth.yaw;scene.add(yacht.root);
+    const yacht=createYacht(berth.length,berth.sailing,true);lightBoat(yacht.root,{cabin:index%3!==1,party:!berth.sailing&&index%4===0?{beam:berth.length*.29,length:berth.length,height:.70}:undefined});yacht.root.position.set(berth.x,WATER_HEIGHT+.025,berth.z);yacht.root.rotation.y=berth.yaw;scene.add(yacht.root);
     const object=objects.registerModel(yacht.root,berth.sailing?'Moored sailing yacht':'Moored motor yacht','boat');
     return {group:yacht.root,object,length:yacht.length,phase:index*.7};
   });
@@ -186,7 +187,7 @@ export function createDubaiWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
   for(let i=0;i<18;i++){
     const sailing=i>=12,path=sailing?ellipse(BAY.x,BAY.z,10.5,11.5,32).slice(0,-1).map(p=>[p.x,p.z]):i<8?harbourPath:outerPath;
     const curve=new T.CatmullRomCurve3(path.map(([x,z])=>vec(x,0,z)),true,'centripetal');
-    const boat=createYacht(sailing?3.4:3.8+(i%3)*.45,sailing);scene.add(boat.root);
+    const boat=createYacht(sailing?3.4:3.8+(i%3)*.45,sailing);lightBoat(boat.root,{cabin:i%3!==1,party:!sailing&&i%6===0?{beam:boat.length*.29,length:boat.length,height:.70}:undefined});scene.add(boat.root);
     const object=objects.registerModel(boat.root,boat.root.name,'boat');boats.push({group:boat.root,object,length:boat.length,phase:sailing?(i-12)/6:i<8?i/8:(i-8)/4,speed:sailing?.004:i<8?.0045:.0016,lane:0,curve});
   }
   const localLighting=new LocalNightLighting(scene),groundGlows=new NightGroundGlows(scene,pools);

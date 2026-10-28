@@ -2,6 +2,7 @@ import * as T from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { Builder, material, vec } from './geometry.ts';
 import { glowMaterial, lightPool } from './lighting.ts';
+import {boatCabinGlass} from './boatLighting.ts';
 
 const chrome=new T.MeshStandardMaterial({color:'#b9c9ca',roughness:.26,metalness:.8});
 const windowGlass=new T.MeshPhysicalMaterial({color:'#294e5e',roughness:.12,metalness:.28,clearcoat:1});
@@ -88,8 +89,8 @@ export function createBoat(length=4,color='#a84d36',ferry=false) {
   }
   rounded(b,0,.7,-length*.12,beam*.72,.48,length*(ferry?.6:.38),material('#e6e2d0'),.06);
   for(const side of [-1,1])for(let z=-length*.33;z<length*.07;z+=.32)
-    b.box(side*beam*.365,.79,z,.022,.2,.23,windowGlass);
-  b.box(0,.82,length*.07,beam*.58,.22,.025,windowGlass);
+    b.box(side*beam*.365,.79,z,.022,.2,.23,boatCabinGlass('#294e5e',.12,.28));
+  b.box(0,.82,length*.07,beam*.58,.22,.025,boatCabinGlass('#294e5e',.12,.28));
   rounded(b,0,.99,-length*.12,beam*.81,.13,length*(ferry?.62:.4),material('#f0ebd7'),.035);
   b.beam(vec(0,1,-.2),vec(0,1.72,-.2),.022,'#b3c2bd');
   b.beam(vec(-.25,1.5,-.2),vec(.25,1.5,-.2),.017,'#c3cec6');
@@ -101,5 +102,5 @@ export function createBoat(length=4,color='#a84d36',ferry=false) {
   }
   b.box(0,.99,-length*.15,beam*.55,.035,.07,glowMaterial('#ffe2a3',1.8));
   const root=b.finish();root.name=ferry?'Thames passenger launch':'River motor launch';
-  return {root,length};
+  return {root,length,beam};
 }

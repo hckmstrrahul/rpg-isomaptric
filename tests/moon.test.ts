@@ -69,3 +69,38 @@ test('moon stays in world space through pan, orbit and zoom, with matching local
   assert.deepEqual(light.position.toArray(),[-90,170,60]);assert.equal(moon.root.visible,false);
   assert.equal(moon.localLight.intensity,0);
 });
+
+test('textured moon keeps its depth and halo ordering throughout the rise and exposes smooth illumination',()=>{
+  const scene=new T.Scene(),light=new T.DirectionalLight(),color=new T.Texture(),height=new T.Texture();
+  const moon=createMoon(scene,light,{color,height});
+  const surface=moon.root.children.find(child=>child.name==='LROC textured lunar surface') as T.Mesh<T.SphereGeometry,T.ShaderMaterial>;
+  moon.setNight(true);let previous=0,sawFade=false;
+  for(let frame=0;frame<240;frame++){
+    moon.update(1/60);
+    assert.equal(surface.material.depthWrite,true,'No material-depth switch near full opacity');
+    assert.ok(surface.renderOrder<moon.halo.renderOrder,'The surface occludes the center of the glow');
+    assert.equal(surface.material.uniforms.colorMap.value,color);
+    assert.equal(surface.material.uniforms.heightMap.value,height);
+    const opacity=surface.material.uniforms.opacity.value;
+    if(opacity>0&&opacity<.99)sawFade=true;
+    assert.ok(moon.reveal>=previous&&moon.reveal<=1);
+    assert.ok(moon.reveal-previous<.06,'Moon illumination has no one-frame jump');
+    assert.ok(Math.abs(moon.localLight.intensity/1350-moon.reveal)<1e-12);
+    previous=moon.reveal;
+  }
+  assert.ok(sawFade);assert.equal(moon.reveal,1);
+});
+
+test('only the visible moon surface is clickable, never its halo',()=>{
+  const moon=createMoon(new T.Scene(),new T.DirectionalLight(),{color:new T.Texture(),height:new T.Texture()},true);
+  const center=new T.Vector3(...Object.values(MOON_POSITION) as [number,number,number]);
+  const ray=new T.Raycaster(center.clone().add(new T.Vector3(0,0,100)),new T.Vector3(0,0,-1));
+  assert.equal(moon.hitDistance(ray),null,'Daytime moon has no hidden hit target');
+  moon.setNight(true);for(let i=0;i<10;i++)moon.update(.05);
+  assert.ok(Math.abs(moon.hitDistance(ray)!-91)<.1);
+  ray.ray.origin.x+=15;
+  assert.ok(ray.intersectObject(moon.halo,false).length>0,'Probe lies inside the visible halo');
+  assert.equal(moon.hitDistance(ray),null,'Halo-only click must retain ordinary scene interaction');
+  moon.setNight(false);for(let i=0;i<10;i++)moon.update(.05);
+  ray.ray.origin.x-=15;assert.equal(moon.hitDistance(ray),null);
+});

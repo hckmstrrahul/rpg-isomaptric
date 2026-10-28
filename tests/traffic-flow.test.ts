@@ -1,10 +1,18 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from 'three';
-import {createTraffic} from '../src/traffic.ts';
+import {createTraffic,RoadRoute} from '../src/traffic.ts';
 import {WorldObjects} from '../src/interactables.ts';
 import {PLAYER_SPAWN} from '../src/layout.ts';
 import {OBB} from 'three/addons/math/OBB.js';
+
+test('compact city lane widths affect route spacing and stay stable during normal travel',()=>{
+ const points=[[40,70],[65,70],[65,95],[40,95],[40,70]].map(([x,z])=>new T.Vector3(x,0,z));
+ for(const offset of [.75,.85]){const route=offset===.85?new RoadRoute(points):new RoadRoute(points,1,offset);for(let i=0;i<40;i++){const d=route.length*i/40;assert.ok(Math.abs(route.sample(d).point.distanceTo(route.sample(d,0).point)-offset)<1e-8);}}
+ const scene=new T.Scene(),objects=new WorldObjects(scene,[]),traffic=createTraffic(scene,objects,{loops:[points.map(p=>({x:p.x,z:p.z}))],junctions:[],laneOffset:.75,carsPerRoute:2,city:'Lisbon'});
+ for(let i=0;i<100;i++)traffic.update(i*.1);
+ for(const car of traffic.cars)assert.ok(Math.abs(car.lane-.75)<1e-8);
+});
 
 test('mixed traffic passes the central explorer, keeps separation and completes its routes',()=>{
  const scene=new T.Scene(),objects=new WorldObjects(scene,[]),traffic=createTraffic(scene,objects);

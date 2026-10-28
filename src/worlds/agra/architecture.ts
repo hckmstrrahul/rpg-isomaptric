@@ -12,7 +12,17 @@ const marbleMap=canvasTexture(256,256,c=>{
   c.strokeStyle='rgba(130,122,112,.07)';c.lineWidth=.6;
   for(let i=0;i<7;i++){c.beginPath();for(let x=0;x<=256;x+=8){const y=i*43+Math.sin(x*.027+i)*5;x?c.lineTo(x,y):c.moveTo(x,y);}c.stroke();}
 });marbleMap.wrapS=marbleMap.wrapT=T.RepeatWrapping;
-const marble=new T.MeshStandardMaterial({color:'#ffffff',map:marbleMap,roughness:.68,metalness:0});marble.userData.worldTile=2.6;
+// A small ambient moon bounce lifts the stone without filling its dark recesses.
+// Reuse the stone map, so there is no extra texture or window-style illumination.
+const marble=registerGlow(new T.MeshStandardMaterial({color:'#ffffff',map:marbleMap,emissiveMap:marbleMap,emissive:'#d3e0ea',roughness:.68,metalness:0}),0);marble.userData.worldTile=2.6;marble.userData.agraMarble=true;
+const domeMarble=registerGlow(marble.clone(),0);domeMarble.userData.agraPolishedDome=true;
+export function updateAgraMarble(night:boolean,reveal=night?1:0) {
+  // Smooth curved stone catches a localized moon highlight; walls stay softly matte.
+  // The original daytime material is restored exactly when changing theme.
+  const strength=night?T.MathUtils.clamp(reveal,0,1):0;
+  marble.emissiveIntensity=strength*.26;domeMarble.emissiveIntensity=strength*.32;
+  marble.roughness=.68-strength*.18;domeMarble.roughness=.68-strength*.34;
+}
 const shadow=material('#464845'),red=material(sandstone),gold=material('#b99a5c',.36,.55);
 const inlayLine=new T.MeshStandardMaterial({color:inlay,roughness:.81,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});inlayLine.userData.noShadow=true;
 
@@ -34,7 +44,7 @@ function arch(b:Builder,x:number,y:number,z:number,w:number,h:number,face:T.Mate
 }
 function onion(b:Builder,x:number,y:number,z:number,r:number,h:number,mat:T.Material=marble,fluted=false) {
   const profile=[[.75,0],[.79,.09],[.94,.22],[1,.36],[.98,.50],[.88,.65],[.68,.79],[.41,.89],[.16,.95],[.04,1]];
-  const geo=new T.LatheGeometry(profile.map(([a,c])=>new T.Vector2(a*r,c*h)),40);b.add(geo,mat,x,y,z);geo.dispose();
+  const geo=new T.LatheGeometry(profile.map(([a,c])=>new T.Vector2(a*r,c*h)),40);b.add(geo,mat===marble?domeMarble:mat,x,y,z);geo.dispose();
   b.cylinder(x,y+.025,z,r*.82,.1,edge,r*.82,40);
   if(fluted)for(let i=0;i<16;i++){const a=i*Math.PI/8;const points=profile.slice(1,-1).map(([v,c])=>vec(x+Math.cos(a)*v*r,y+c*h,z+Math.sin(a)*v*r));b.tube(points,.018,edge,12);}
   b.cylinder(x,y+h+.18,z,.035,.42,gold,.018,8);b.sphere(x,y+h+.37,z,.06,.08,.06,gold);
@@ -194,7 +204,8 @@ export function tajGanjHouse(index:number,w:number,d:number,h:number) {
   if(index%2===0){
     b.box(0,1.42,front+.35,w*.8,.09,.7,index%4===0?'#9b6955':'#7e9079');
     for(const x of [-1,1])b.box(x*w*.33,.69,front+.6,.045,1.38,.045,'#716c59');
-    for(let i=0;i<5;i++)b.box((i-2)*w*.13,.65,front+.05,w*.12,1.15,.05,index%4===0?'#7d6152':'#778677');
+    // Leave the central residential doorway open between the shop shutters.
+    for(let i=0;i<5;i++)if(i!==2)b.box((i-2)*w*.13,.65,front+.05,w*.12,1.15,.05,index%4===0?'#7d6152':'#778677');
   }
   if(index%3===1){
     b.box(0,h*.59,front+.25,w*.65,.1,.54,'#b8aa8c');
@@ -202,7 +213,7 @@ export function tajGanjHouse(index:number,w:number,d:number,h:number) {
     for(let i=-3;i<=3;i++)b.box(i*w*.1,h*.59+.16,front+.48,.025,.29,.025,'#645b4b');
     for(const x of [-1,1])b.box(x*w*.25,h*.59-.18,front+.14,.08,.36,.28,color);
   }
-  const root=b.finish();root.name='Taj Ganj · courtyard house';root.userData.roofHeight=h;return root;
+  const root=b.finish();root.name='Taj Ganj · courtyard house';root.userData.roofHeight=h;root.userData.doorway={x:0,z:front+.045,insideZ:front-.45};return root;
 }
 /** An attached row shares party walls and two cached facade families. Roofline,
  * courtyards, shutters, balconies and service roofs change from lot to lot. */

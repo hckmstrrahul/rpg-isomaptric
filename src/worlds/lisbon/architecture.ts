@@ -1,11 +1,13 @@
 import * as T from 'three';
 import {Builder,material,vec} from '../../geometry.ts';
 import {registerGlow} from '../../lighting.ts';
+import {boatCabinGlass} from '../../boatLighting.ts';
 const stone='#d8cfad',trim='#eee4c8',shadow='#4d6467',roof='#b86642';
 const windows=[0,1,2].map(i=>registerGlow(new T.MeshStandardMaterial({color:['#405b61','#556a67','#435258'][i],emissive:['#eac697','#efdbb2','#b4c6cc'][i],roughness:.48}),[.62,.48,.26][i]));
+const rowWindows=windows.map(m=>{const glass=registerGlow(new T.MeshStandardMaterial({color:m.color,emissive:m.emissive,roughness:.48}),.38);glass.userData.glowStrength=.38;return glass;});
 function glass(b:Builder,x:number,y:number,z:number,w:number,h:number,lit=0){b.box(x,y,z,w+.13,h+.14,.075,trim);b.box(x,y,z+.045,w,h,.035,lit<0?shadow:windows[lit%3]);b.box(x,y,z+.08,.035,h,.025,'#d4d1ba');}
-function arch(b:Builder,x:number,y:number,z:number,w:number,h:number,depth=.25,color=trim){
- const s=new T.Shape();s.moveTo(-w/2,0);s.lineTo(-w/2,h-w/2);s.absarc(0,h-w/2,w/2,Math.PI,0,true);s.lineTo(w/2,0);s.lineTo(w/2-.15,0);s.lineTo(w/2-.15,h-w/2);s.absarc(0,h-w/2,w/2-.15,0,Math.PI,false);s.lineTo(-w/2+.15,0);s.closePath();const g=new T.ExtrudeGeometry(s,{depth,steps:1,bevelEnabled:false,curveSegments:10});b.add(g,material(color),x,y,z);g.dispose();
+function arch(b:Builder,x:number,y:number,z:number,w:number,h:number,depth=.25,color=trim,segments=w<1.3?6:10){
+ const s=new T.Shape();s.moveTo(-w/2,0);s.lineTo(-w/2,h-w/2);s.absarc(0,h-w/2,w/2,Math.PI,0,true);s.lineTo(w/2,0);s.lineTo(w/2-.15,0);s.lineTo(w/2-.15,h-w/2);s.absarc(0,h-w/2,w/2-.15,0,Math.PI,false);s.lineTo(-w/2+.15,0);s.closePath();const g=new T.ExtrudeGeometry(s,{depth,steps:1,bevelEnabled:false,curveSegments:segments});b.add(g,material(color),x,y,z);g.dispose();
 }
 function pitchedRoof(b:Builder,x:number,y:number,z:number,w:number,d:number,h:number,color=roof){const s=new T.Shape();s.moveTo(-w/2,0);s.lineTo(0,h);s.lineTo(w/2,0);s.closePath();const g=new T.ExtrudeGeometry(s,{depth:d,bevelEnabled:false});b.add(g,material(color),x,y,z-d/2);g.dispose();for(let v=-d/2;v<=d/2;v+=.3){b.beam(vec(x-w/2,y+.02,z+v),vec(x,y+h+.02,z+v),.018,color==='#6b716b'?'#81877d':color==='#b79370'?'#c0ac91':color==='#a8967d'?'#bbb09d':'#bd7b59',4);b.beam(vec(x,y+h+.02,z+v),vec(x+w/2,y+.02,z+v),.018,color==='#6b716b'?'#81877d':color==='#b79370'?'#c0ac91':color==='#a8967d'?'#bbb09d':'#bd7b59',4);}}
 function dome(b:Builder,x:number,y:number,z:number,r:number,h:number,color=trim){const points=[vec(0,0,0),vec(r,0,0),vec(r*.98,h*.2,0),vec(r*.73,h*.65,0),vec(r*.22,h*.95,0),vec(.025,h*1.12,0)].map(p=>new T.Vector2(p.x,p.y));const g=new T.LatheGeometry(points,16);b.add(g,material(color),x,y,z);g.dispose();}
@@ -59,13 +61,15 @@ export function padrao(){const b=new Builder();b.box(0,.2,0,5.2,.4,7.3,trim);con
 export function cristoRei(){const b=new Builder();b.box(0,.24,0,8.2,.48,7.2,'#d3c6aa');for(const x of [-1.35,1.35])for(const z of [-1.35,1.35]){const g=new T.CylinderGeometry(.58,.88,15.3,4);b.add(g,material('#c5bdac'),x,8,z,1,1,1,0,Math.PI/4);g.dispose();}b.box(0,15.25,0,4,.7,4,trim);for(const x of [-1,1])b.beam(vec(x*1.35,13.7,-1.35),vec(0,15.5,-1.35),.52,stone,4);b.box(0,16.1,0,3.35,1,3.35,stone);b.cylinder(0,18.85,0,.72,4.7,trim,.45,12);b.sphere(0,21.7,0,.5,.68,.48,trim);b.beam(vec(-.3,20.15,0),vec(-3.45,20.25,0),.24,trim,10);b.beam(vec(.3,20.15,0),vec(3.45,20.25,0),.24,trim,10);for(const side of [-1,1])b.sphere(side*3.65,20.25,0,.3,.16,.2,trim);const r=b.finish();r.name='Cristo Rei · four-pier pedestal and open-armed statue';return r;}
 export function maat(){const b=new Builder();
  // Closed, walk-over low shell; front edge cantilevers over a recessed glass wall.
- const nx=56,nz=24,p:number[]=[],uv:number[]=[],ind:number[]=[];for(let j=0;j<=nz;j++)for(let i=0;i<=nx;i++){const u=i/nx*2-1,v=j/nz*2-1,x=u*9,z=v*4.1*Math.sqrt(Math.max(.03,1-u*u)),h=.32+3.5*Math.pow(Math.max(0,1-u*u),.7)*(.68+.32*Math.sin(v*Math.PI*.7));p.push(x,h,z);uv.push(i/nx*8,j/nz*4);if(i<nx&&j<nz){const a=j*(nx+1)+i;ind.push(a,a+nx+1,a+1,a+1,a+nx+1,a+nx+2);}}
+ const nx=48,nz=20,p:number[]=[],uv:number[]=[],ind:number[]=[];for(let j=0;j<=nz;j++)for(let i=0;i<=nx;i++){const u=i/nx*2-1,v=j/nz*2-1,x=u*9,z=v*4.1*Math.sqrt(Math.max(.03,1-u*u)),h=.32+3.5*Math.pow(Math.max(0,1-u*u),.7)*(.68+.32*Math.sin(v*Math.PI*.7));p.push(x,h,z);uv.push(i/nx*8,j/nz*4);if(i<nx&&j<nz){const a=j*(nx+1)+i;ind.push(a,a+nx+1,a+1,a+1,a+nx+1,a+nx+2);}}
  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.setIndex(ind);g.computeVertexNormals();const ceramic=material('#e8e6d9',.6);b.add(g,ceramic);
  const soffit=g.clone();soffit.translate(0,-.18,0);const underside=ind.slice();for(let i=0;i<underside.length;i+=3)[underside[i+1],underside[i+2]]=[underside[i+2],underside[i+1]];soffit.setIndex(underside);soffit.computeVertexNormals();b.add(soffit,ceramic);soffit.dispose();
  const perimeter=[...Array.from({length:nx+1},(_,i)=>i),...Array.from({length:nz},(_,j)=>(j+1)*(nx+1)+nx),...Array.from({length:nx},(_,i)=>nz*(nx+1)+nx-i-1),...Array.from({length:nz-1},(_,j)=>(nz-j-1)*(nx+1))],edgePos:number[]=[],edgeIndices:number[]=[];perimeter.push(perimeter[0]);for(let i=0;i<perimeter.length;i++){const k=perimeter[i]*3;edgePos.push(p[k],p[k+1],p[k+2],p[k],p[k+1]-.18,p[k+2]);if(i<perimeter.length-1){const a=i*2;edgeIndices.push(a,a+2,a+1,a+1,a+2,a+3);}}const edge=new T.BufferGeometry();edge.setAttribute('position',new T.Float32BufferAttribute(edgePos,3));edge.setIndex(edgeIndices);edge.computeVertexNormals();b.add(edge,ceramic);edge.dispose();g.dispose();
  for(const side of [-1,1]){const pos:number[]=[],ids:number[]=[];for(let i=0;i<=56;i++){const u=i/56*2-1,edge=4.1*Math.sqrt(Math.max(.03,1-u*u)),top=.32+3.5*Math.pow(Math.max(0,1-u*u),.7)*(.68+.32*Math.sin(side*Math.PI*.7));pos.push(u*9,.1,side*edge*(side===1?.84:1),u*9,Math.max(.15,top-(side===1?.28:0)),side*edge*(side===1?.84:1));if(i<56){const a=i*2;ids.push(a,a+1,a+2,a+1,a+3,a+2);}}const skin=new T.BufferGeometry();skin.setAttribute('position',new T.Float32BufferAttribute(pos,3));skin.setIndex(ids);skin.computeVertexNormals();const finish=side===1?material('#385963',.3,.15):material('#e1dfd1');finish.side=T.DoubleSide;b.add(skin,finish);skin.dispose();}
  for(let i=1;i<28;i++){const u=i/28*2-1,edge=4.1*Math.sqrt(1-u*u),top=.32+3.5*Math.pow(1-u*u,.7)*(.68+.32*Math.sin(Math.PI*.7));b.beam(vec(u*9,.1,edge*.84),vec(u*9,top-.27,edge*.84),.022,'#cdd5d1',4);}for(let i=0;i<5;i++)b.box(0,.08+i*.11,4.4-i*.26,16-i*.6,.16,.62,'#d5d5c5');
- for(let i=0;i<28;i++){const u=i/27*1.94-.97,x=u*9,depth=4.1*Math.sqrt(1-u*u);const points=Array.from({length:15},(_,j)=>{const v=j/14*2-1;return vec(x,.345+3.5*Math.pow(1-u*u,.7)*(.68+.32*Math.sin(v*Math.PI*.7)),v*depth);});b.tube(points,.018,'#c6cdc7',14);}
+ // Fine ceramic joints are etched surface ribbons, not cylindrical tubes.
+ // They retain the wave curve while avoiding invisible underside segments.
+ for(let i=0;i<28;i++){const x=(i/27*1.94-.97)*9,pos:number[]=[],indices:number[]=[];for(let j=0;j<=14;j++)for(const side of[-1,1]){const xx=x+side*.016,u=xx/9,v=j/14*2-1;pos.push(xx,.345+3.5*Math.pow(1-u*u,.7)*(.68+.32*Math.sin(v*Math.PI*.7)),v*4.1*Math.sqrt(1-u*u));}for(let j=0;j<14;j++){const a=j*2;indices.push(a,a+2,a+1,a+1,a+2,a+3);}const seam=new T.BufferGeometry();seam.setAttribute('position',new T.Float32BufferAttribute(pos,3));seam.setIndex(indices);seam.computeVertexNormals();b.add(seam,material('#c6cdc7'));seam.dispose();}
  const r=b.finish();r.name='MAAT · ceramic waterfront wave';return r;}
 export function centralTejo(){
  const b=new Builder(),halls=[{x:-4,w:5,h:7},{x:1,w:4.4,h:5.6},{x:5,w:3.5,h:8}];
@@ -75,7 +79,11 @@ export function centralTejo(){
   const e=new Builder(),columns=Math.max(2,Math.round(width/1.08)),bay=width/columns;
   for(let i=0;i<columns;i++){
    const xx=-width/2+bay*(i+.5);
-   for(let y=base+.95;y<height-.65;y+=1.9){glass(e,xx,y,0,Math.min(.64,bay-.3),1.25,-1);arch(e,xx,y-.65,.055,Math.min(.81,bay-.13),1.5,.09,'#c29170');}
+   for(let y=base+.95;y<height-.65;y+=1.9){
+    const pane=new T.PlaneGeometry(Math.min(.64,bay-.3),1.25);e.add(pane,material(shadow),xx,y,.045);pane.dispose();
+    const mullion=new T.PlaneGeometry(.035,1.25);e.add(mullion,material('#d4d1ba'),xx,y,.08);mullion.dispose();
+    arch(e,xx,y-.65,.055,Math.min(.81,bay-.13),1.5,.09,'#c29170',4);
+   }
   }
   for(let i=0;i<=columns;i++){const xx=-width/2+bay*i;e.box(xx,(base+height)/2,.08,.16,height-base,.18,'#c38b65');e.box(xx,height+.04,.09,.24,.17,.24,'#c18a68');}
   for(let y=base+.24;y<height;y+=1.9)e.box(0,y,.06,width+.12,.1,.14,'#b77f5e');
@@ -91,19 +99,26 @@ export function centralTejo(){
  for(const x of [-5,-2]){b.cylinder(x,10.3,-1.1,.43,9.7,'#a46449',.31,12);b.cylinder(x,15.1,-1.1,.45,.27,'#c59070',.45,12);}
  const root=b.finish();root.name='Central Tejo · brick industrial halls and arched bays';return root;
 }
-export function tagusBoat(sail=false){const b=new Builder();b.sphere(0,.12,0,.62,.25,1.65,'#eee7d2');b.box(0,.29,0,1,.13,2.4,'#c4ad84');if(sail){b.cylinder(0,2.1,0,.035,3.8,'#d1d5c6',.02,6);const p=new T.BufferGeometry();p.setAttribute('position',new T.Float32BufferAttribute([0,.45,.07,0,3.9,.07,0,.45,1.38],3));p.computeVertexNormals();const m=material('#e8e7d6');m.side=T.DoubleSide;b.add(p,m);p.dispose();}else{b.box(0,.64,-.25,.9,.6,1.65,'#e7dfc9');b.box(0,.73,.59,.8,.35,.025,material('#3b6972',.3));b.box(0,.98,-.25,1.03,.1,1.8,'#e1e2d5');}return b.finish();}
+export function tagusBoat(sail=false){const b=new Builder();b.sphere(0,.12,0,.62,.25,1.65,'#eee7d2');b.box(0,.29,0,1,.13,2.4,'#c4ad84');if(sail){b.cylinder(0,2.1,0,.035,3.8,'#d1d5c6',.02,6);const p=new T.BufferGeometry();p.setAttribute('position',new T.Float32BufferAttribute([0,.45,.07,0,3.9,.07,0,.45,1.38],3));p.computeVertexNormals();const m=material('#e8e7d6');m.side=T.DoubleSide;b.add(p,m);p.dispose();}else{b.box(0,.64,-.25,.9,.6,1.65,'#e7dfc9');b.box(0,.73,.59,.8,.35,.025,boatCabinGlass('#3b6972',.3));b.box(0,.98,-.25,1.03,.1,1.8,'#e1e2d5');}return b.finish();}
 
 function hipRoof(b:Builder,x:number,y:number,z:number,w:number,d:number,h:number,color:string){
- const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute([-w/2,0,-d/2,w/2,0,-d/2,w/2,0,d/2,-w/2,0,d/2,-w*.31,h,0,w*.31,h,0],3));g.setIndex([0,4,5,0,5,1,2,5,4,2,4,3,0,3,4,1,5,2]);g.computeVertexNormals();b.add(g,material(color),x,y,z);g.dispose();b.beam(vec(x-w*.31,y+h+.02,z),vec(x+w*.31,y+h+.02,z),.045,color,6);
+ const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute([-w/2,0,-d/2,w/2,0,-d/2,w/2,0,d/2,-w/2,0,d/2,-w*.31,h,0,w*.31,h,0],3));g.setIndex([0,4,5,0,5,1,2,5,4,2,4,3,0,3,4,1,5,2]);g.computeVertexNormals();b.add(g,material(color),x,y,z);g.dispose();b.beam(vec(x-w*.31,y+h+.02,z),vec(x+w*.31,y+h+.02,z),.045,color,4);
 }
-/** Ten bounded shared row archetypes, each assembled from attached party-wall lots. */
+/** Twelve bounded shared row archetypes, each assembled from attached party-wall lots. */
 export function terraceRow(type:number){
- const variants=[{widths:[3.15,3.8,2.9,3.5],floors:[2,4,3,3]}, {widths:[4.2,3.2,4.1],floors:[4,3,5]}, {widths:[2.7,3.2,2.85,3.05,2.6],floors:[2,2,3,2,2]}, {widths:[3.5,4.1,3.35,3.8],floors:[3,5,4,3]}, {widths:[2.7,3.05,3.3,2.8],floors:[1,2,3,2]}, {widths:[3.2,3.5,3.15],floors:[3,4,3]}, {widths:[4.8,4.6,4.9],floors:[5,7,6]}, {widths:[4.3,4.8,4.2],floors:[6,8,5]}, {widths:[2.5,2.7,2.45],floors:[1,2,2]}, {widths:[2.65,2.45,2.8],floors:[2,3,2]}];
- const v=variants[type%10],b=new Builder(),face=new T.PlaneGeometry(1,1),panel=(x:number,y:number,z:number,w:number,h:number,color:string|T.Material,yaw=0)=>b.add(face,typeof color==='string'?material(color):color,x,y,z,w,h,1,0,yaw),depth=type>=8?3.5:type===1?5.7:4.9,total=v.widths.reduce((a,w)=>a+w,0),colors=['#e6d8b7','#d7bc87','#d4aaa1','#c2cfbf','#d7e1dc','#aebfca','#e8d7b5','#b8ced0'];let cursor=-total/2;
- v.widths.forEach((w,i)=>{const x=cursor+w/2,h=v.floors[i]*1.38+.35,index=type*5+i,color=colors[index%colors.length],d=depth+(i%3===0?.35:0);cursor+=w;
-  b.box(x,h/2,0,w,h,d,color);b.box(x,.18,0,w,.36,d+.12,'#c4c1af');b.box(x,h-.06,0,w,.16,d+.2,trim);
+ const variants=[{widths:[3.15,3.8,2.9,3.5],floors:[2,4,3,3]}, {widths:[4.2,3.2,4.1],floors:[4,3,5]}, {widths:[2.7,3.2,2.85,3.05,2.6],floors:[2,2,3,2,2]}, {widths:[3.5,4.1,3.35,3.8],floors:[3,5,4,3]}, {widths:[2.7,3.05,3.3,2.8],floors:[1,2,3,2]}, {widths:[3.2,3.5,3.15],floors:[3,4,3]}, {widths:[4.8,4.6,4.9],floors:[5,7,6]}, {widths:[4.3,4.8,4.2],floors:[6,8,5]}, {widths:[2.1,2.2,2.15,2.1],floors:[2,3,2,3]}, {widths:[2.2,2.1,2.15,2.25],floors:[3,2,4,3]}, {widths:[2.55,2.7],floors:[3,5]}, {widths:[2.65,2.5],floors:[2,4]}];
+ const v=variants[type%12],b=new Builder(),face=new T.PlaneGeometry(1,1),panel=(x:number,y:number,z:number,w:number,h:number,color:string|T.Material,yaw=0)=>b.add(face,typeof color==='string'?material(color):color,x,y,z,w,h,1,0,yaw),depth=type>=8?3.5:type===1?5.7:4.9,total=v.widths.reduce((a,w)=>a+w,0),colors=['#e3ddcc','#d7c49e','#caa89d','#c7cec1','#dde0d6','#aebfc3','#e6dbc5','#bfd0cb'];let cursor=-total/2;
+ v.widths.forEach((w,i)=>{const x=cursor+w/2,h=v.floors[i]*1.38+.35,index=type*5+i,color=colors[index%colors.length],d=depth;cursor+=w;
+  // Roofs and attached neighbours conceal top/bottom/party walls. Keep only
+  // exposed masonry faces, saving geometry without changing the silhouette.
+  panel(x,h/2,d/2,w,h,color);panel(x,h/2,-d/2,w,h,color,Math.PI);
+  if(i===0)panel(x-w/2,h/2,0,d,h,color,-Math.PI/2);
+  if(i===v.widths.length-1)panel(x+w/2,h/2,0,d,h,color,Math.PI/2);
+  if(i&&v.floors[i]>v.floors[i-1])panel(x-w/2,(h+v.floors[i-1]*1.38+.35)/2,0,d,h-(v.floors[i-1]*1.38+.35),color,-Math.PI/2);
+  if(i<v.widths.length-1&&v.floors[i]>v.floors[i+1])panel(x+w/2,(h+v.floors[i+1]*1.38+.35)/2,0,d,h-(v.floors[i+1]*1.38+.35),color,Math.PI/2);
+  b.box(x,.18,0,w,.36,d+.12,'#c4c1af');b.box(x,h-.06,0,w,.16,d+.2,trim);
   // Parallel terracotta roof ridges dominate; occasional cross-gable breaks the roofline.
-  const rc=['#ad6041','#bd7450','#9f563e','#c28157'][index%4];
+  const rc=['#88402c','#9c4b32','#773a2c','#a65336'][index%4];
   if(type===6||type===7){b.box(x,h+.1,0,w-.04,.2,d+.1,'#c4c1b0');b.box(x,h+.47,-.5,w*.5,.55,d*.4,'#b3b8ae');}
   else if(type===2&&i===2)pitchedRoof(b,x,h,0,w-.04,d+.16,.85,rc);else hipRoof(b,x,h,0,w-.04,d+.18,.65+(i%2)*.25,rc);
   if((type<6||type>=8)&&index%3===0)b.box(x+w*.22,h+.9,-d*.16,.32,.95,.44,'#d6b49a');
@@ -111,14 +126,14 @@ export function terraceRow(type:number){
   for(let floor=0;floor<v.floors[i];floor++)for(let col=0;col<cols;col++){
    const wx=x-w/2+(col+1)*w/(cols+1),wy=.95+floor*1.38;
    for(const side of [-1,1]){const zz=side*(d/2+.03),ww=cols===3?.51:.6;
-    panel(wx,wy,zz,ww+.13,1.04,trim,side<0?Math.PI:0);panel(wx,wy,zz+side*.045,ww,.87,(index+floor+col)%4===0?windows[(index+floor)%3]:shadow,side<0?Math.PI:0);
+    panel(wx,wy,zz,ww+.13,1.04,trim,side<0?Math.PI:0);panel(wx,wy,zz+side*.045,ww,.87,(index+floor+col)%4===0?rowWindows[(index+floor)%3]:shadow,side<0?Math.PI:0);
     if(side===1){panel(wx-ww/2-.13,wy,zz+.055,.16,.98,index%2?'#537567':'#4e6872');panel(wx+ww/2+.13,wy,zz+.055,.16,.98,index%2?'#537567':'#4e6872');
-     if(floor>0&&(floor+index)%2===0){b.box(wx,wy-.6,zz+.17,ww+.35,.08,.4,trim);for(const dx of [-.36,0,.36])b.box(wx+dx,wy-.36,zz+.36,.025,.4,.025,'#3f504d');b.box(wx,wy-.16,zz+.36,ww+.35,.035,.035,'#3f504d');}
+     if(floor>0&&(floor+index)%2===0){b.box(wx,wy-.6,zz+.17,ww+.35,.08,.4,trim);for(const dx of [-.36,0,.36])panel(wx+dx,wy-.36,zz+.36,.025,.4,'#3f504d');panel(wx,wy-.16,zz+.36,ww+.35,.035,'#3f504d');}
     }
    }
   }
   // Exposed end elevations have windows rather than blank party-wall slabs.
-  for(const side of [-1,1])if((side<0&&i===0)||(side>0&&i===v.widths.length-1))for(let floor=0;floor<v.floors[i];floor++)for(const z of [-d*.27,d*.27]){panel(x+side*(w/2+.025),.95+floor*1.38,z,.68,.97,trim,side*Math.PI/2);panel(x+side*(w/2+.052),.95+floor*1.38,z,.52,.81,(floor+index)%4===0?windows[index%3]:shadow,side*Math.PI/2);}
+  for(const side of [-1,1])if((side<0&&i===0)||(side>0&&i===v.widths.length-1))for(let floor=0;floor<v.floors[i];floor++)for(const z of [-d*.27,d*.27]){panel(x+side*(w/2+.025),.95+floor*1.38,z,.68,.97,trim,side*Math.PI/2);panel(x+side*(w/2+.052),.95+floor*1.38,z,.52,.81,(floor+index)%4===0?rowWindows[index%3]:shadow,side*Math.PI/2);}
   panel(x,.65,d/2+.1,.55,1.3,index%2?'#4f665c':'#416779');
   // A few blue-and-cream azulejo friezes are geometry, not per-house textures.
   if(index%4===0)for(let k=0;k<Math.floor(w/.24);k++){panel(x-w/2+.12+k*.24,1.58,d/2+.065,.22,.16,k%2?'#577c8d':'#e2dfc5');panel(x-w/2+.12+k*.24,h-.33,d/2+.065,.22,.16,k%2?'#e2dfc5':'#577c8d');}
@@ -189,9 +204,31 @@ export function tagusVessel(kind:TagusVessel){
  if(cat){hull(-.8,.45);hull(.8,.45);b.box(0,.5,0,2.1,.2,length*.8,'#eee9d6');}else hull(0,width);
  b.box(0,ship?.85:.48,0,width*.84,.12,length*.83,ship?'#cbb792':'#ccb695');
  const floors=ship?3:ferry?2:1;
- for(let floor=0;floor<floors;floor++){const y=(ship?1.1:.7)+floor*.66,w=width*(.78-floor*.07),l=length*(.68-floor*.1);b.box(0,y+.28,-length*.06,w,.56,l,'#e6e4d7');for(const side of [-1,1])for(let z=-l*.42;z<l*.45;z+=ship?.65:.48)b.box(side*(w/2+.025),y+.32,z,.035,.25,ship?.42:.3,material('#315562',.4));b.box(0,y+.58,-length*.06,w+.12,.1,l+.15,'#eee9db');}
+ for(let floor=0;floor<floors;floor++){const y=(ship?1.1:.7)+floor*.66,w=width*(.78-floor*.07),l=length*(.68-floor*.1);b.box(0,y+.28,-length*.06,w,.56,l,'#e6e4d7');for(const side of [-1,1])for(let z=-l*.42;z<l*.45;z+=ship?.65:.48)b.box(side*(w/2+.025),y+.32,z,.035,.25,ship?.42:.3,boatCabinGlass('#315562',.4));b.box(0,y+.58,-length*.06,w+.12,.1,l+.15,'#eee9db');}
  if(ship){b.box(0,3.27,-2.6,1.05,.8,1.4,'#b57848');b.box(0,3.75,-2.6,1.15,.18,1.45,'#344f56');for(const side of [-1,1])for(const z of [-3,-1,1,3])b.sphere(side*1.53,1.75,z,.24,.21,.64,'#d89c50');}
  else if(!ferry){b.box(0,1.62,-.25,width*.73,.12,length*.44,'#eee7d5');b.cylinder(0,2.05,-.5,.035,.8,'#b7c6c3',.02,6);}
  for(const side of [-1,1]){const y=ship?1.25:.85;for(let z=-length*.4;z<length*.4;z+=.6)b.cylinder(side*width*.45,y,z,.022,.5,'#bec8c3',.022,5);b.beam(vec(side*width*.45,y+.25,-length*.42),vec(side*width*.45,y+.25,length*.35),.025,'#bec8c3',5);}
  const root=b.finish();root.name=`Tagus ${kind}`;root.userData.length=length;return root;
+}
+
+
+/** Small original Portuguese parish/civic studies. The Alfama reference informs
+ * the vocabulary; these are not relocated named monuments. */
+export function neighbourhoodCivic(church=true){
+ const b=new Builder(),white='#ece9dc',edge='#d4d1c3',recess='#506361',w=church?8.6:12.5,d=church?9.4:6.8,h=church?7:6.3;
+ b.box(0,.14,0,w+.7,.28,d+.8,edge);b.box(0,h/2,0,w,h,d,white);
+ for(const y of [.38,3.35,h-.15])b.box(0,y,0,w+.12,.18,d+.12,edge);
+ hipRoof(b,0,h,0,w+.2,d+.25,church?1.8:1.2,'#b9704f');
+ const elevation=(x:number,z:number,yaw:number,width:number,bays:number)=>{const e=new Builder();for(let col=0;col<bays;col++){const xx=-width/2+(col+.5)*width/bays;for(const y of [1.75,4.75]){glass(e,xx,y,0,.62,1.35,-1);if(church)arch(e,xx,y-.68,.06,.85,1.6,.09,edge);}e.box(xx+.62,h/2,.05,.13,h,.15,edge);}const face=e.finish();face.position.set(x,0,z);face.rotation.y=yaw;b.absorb(face);};
+ elevation(0,d/2+.04,0,w,church?3:5);elevation(0,-d/2-.04,Math.PI,w,church?3:5);elevation(w/2+.04,0,Math.PI/2,d,church?4:3);elevation(-w/2-.04,0,-Math.PI/2,d,church?4:3);
+ // A white classical pediment conceals the front roof end and frames an oculus.
+ const pediment=new T.Shape();pediment.moveTo(-w/2,h-.05);pediment.lineTo(0,h+1.8);pediment.lineTo(w/2,h-.05);pediment.closePath();const pg=new T.ExtrudeGeometry(pediment,{depth:.22,bevelEnabled:false});b.add(pg,material(white),0,0,d/2+.1);pg.dispose();
+ b.beam(vec(-w/2,h+.02,d/2+.36),vec(0,h+1.86,d/2+.36),.11,edge,4);b.beam(vec(0,h+1.86,d/2+.36),vec(w/2,h+.02,d/2+.36),.11,edge,4);
+ const oculus=new T.CircleGeometry(.34,16);b.add(oculus,material(recess),0,h+.64,d/2+.34);oculus.dispose();b.box(0,1.2,d/2+.14,1.25,2.4,.07,recess);arch(b,0,.15,d/2+.2,1.9,3.1,.13,edge);
+ for(let i=0;i<4;i++)b.box(0,.05+i*.08,d/2+.78-i*.14,2.7,.12,1.15-i*.2,edge);
+ if(church){const x=3.55,z=3.35;b.box(x,9.15,z,2.1,5.4,2.35,white);for(const y of [7.3,8.5,11.5])b.box(x,y,z,2.3,.2,2.55,edge);
+  for(const yaw of [0,Math.PI/2,Math.PI,-Math.PI/2]){const e=new Builder();glass(e,0,10,0,.64,1.52,-1);arch(e,0,9.2,.05,.88,1.95,.1,edge);const face=e.finish();face.position.set(x+Math.sin(yaw)*1.08,0,z+Math.cos(yaw)*1.2);face.rotation.y=yaw;b.absorb(face);}
+  dome(b,x,11.6,z,1.1,1.45,'#b5b8b1');b.box(x,13.6,z,.08,1.1,.08,edge);b.box(x,13.78,z,.65,.08,.08,edge);
+ }else{b.box(0,6.6,0,3.3,.45,2.8,white);for(const x of [-4.9,-2.45,0,2.45,4.9]){b.box(x,1.1,d/2+.14,1.3,2.2,.05,recess);arch(b,x,.05,d/2+.18,1.55,2.7,.12,edge);}}
+ const root=b.finish();root.name=church?'Portuguese neighbourhood parish church':'Portuguese white civic hall';root.userData.architecturalStudy=true;return root;
 }

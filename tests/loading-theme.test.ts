@@ -21,3 +21,22 @@ test('blocked local storage still gives a dark loading screen when the operating
   runInNewContext(script,{window:{matchMedia:()=>({matches:true})},localStorage:storage,document:{documentElement:element,querySelector:()=>({})}});
   assert.equal(element.dataset.theme,'night');
 });
+
+const worldScript=html.match(/<script id="world-loading-bootstrap">([\s\S]*?)<\/script>/)![1];
+test('Moon first paint uses its travel message for direct URLs and saved selection',()=>{
+  for(const [search,saved,expected] of [
+    ['?world=moon','london','To the moon...'],
+    ['', 'moon','To the moon...'],
+    ['?world=invalid','moon','To the moon...'],
+    ['?world=agra','moon','A little world awaits'],
+    ['',null,'A little world awaits'],
+  ]){
+    const title={textContent:'A little world awaits'};
+    runInNewContext(worldScript,{URLSearchParams,location:{search},localStorage:{getItem:()=>saved},document:{querySelector:()=>title}});
+    assert.equal(title.textContent,expected);
+  }
+  const title={textContent:'A little world awaits'};
+  runInNewContext(worldScript,{URLSearchParams,location:{search:'?world=moon'},localStorage:{getItem:()=>{throw new Error('Blocked');}},document:{querySelector:()=>title}});
+  assert.equal(title.textContent,'To the moon...');
+  assert.ok(html.indexOf('world-loading-bootstrap')<html.indexOf('src="/src/main.ts"'));
+});

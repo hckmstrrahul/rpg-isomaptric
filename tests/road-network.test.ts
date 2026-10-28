@@ -29,8 +29,26 @@ test('curved hill roads keep curbs outside asphalt and adapt to their vertical c
  for(const x of [-20,-12,12,20])assert.ok(hits(curb,x,2.4).length>0,'Missing outer curb');
 });
 
+test('separately tessellated junction aprons exclude the original asphalt and curb footprint',()=>{
+ const base=[road('street',[[-20,0],[20,0]])],extension=[road('apron',[[0,-7],[0,7]])];
+ const asphalt=new T.Mesh(roadNetworkGeometry(extension,1.4,{excludeRoads:base}),new T.MeshBasicMaterial());
+ const curb=new T.Mesh(roadNetworkGeometry(extension,1.39,{padding:1,excludePadding:0,excludeRoads:base,excludeRoadPadding:1}),new T.MeshBasicMaterial());
+ asphalt.updateMatrixWorld();curb.updateMatrixWorld();
+ for(const z of [-6,-3,-1.4,.4,1.4,3,6]){
+  assert.equal(hits(asphalt,.2,z).length,Math.abs(z)>2?1:0,`Apron overlap/gap at ${z}`);
+  assert.equal(hits(curb,2.2,z).length,Math.abs(z)>2.5?1:0,`Curbs overlap at ${z}`);
+ }
+});
+
 test('adaptive hill triangles share every interior edge without T-junction cracks',()=>{
  const height=(x:number,z:number)=>1.35+8*Math.exp(-((x+13)**2+(z-1)**2)/45),g=roadNetworkGeometry([road('hill',[[-24,0],[24,0]])],height,{maxSegment:16,maxHeightError:.03}),p=g.getAttribute('position'),edges=new Map<string,{count:number;x:number;z:number}>();
  for(let i=0;i<p.count;i+=3)for(let j=0;j<3;j++){const a=i+j,b=i+(j+1)%3,ka=`${p.getX(a)},${p.getZ(a)}`,kb=`${p.getX(b)},${p.getZ(b)}`,key=ka<kb?`${ka}|${kb}`:`${kb}|${ka}`,edge=edges.get(key)??{count:0,x:(p.getX(a)+p.getX(b))/2,z:(p.getZ(a)+p.getZ(b))/2};edge.count++;edges.set(key,edge);}
  for(const edge of edges.values())if(Math.abs(edge.x)<23.99999&&Math.abs(edge.z)<1.99999)assert.equal(edge.count,2,`Open interior seam at ${edge.x},${edge.z}`);
+});
+
+test('tapered aprons preserve miters and both split curb regions cover the combined ring',()=>{
+ const base=[road('base',[[-12,0],[0,0],[0,12]])],arc=road('arc',[[-5,0],[-2.8125,.3125],[-1.25,1.25],[-.3125,2.8125],[0,5]]),aprons=[arc],widths=[4,4.5,4.7,4.5,4],widthAt=(r:Road,i:number)=>r===arc?widths[i]:r.width;
+ const all=new T.Mesh(roadNetworkGeometry([...base,...aprons],1.39,{padding:1,excludePadding:0,widthAt}),new T.MeshBasicMaterial()),first=new T.Mesh(roadNetworkGeometry(base,1.39,{padding:1,excludePadding:0,excludeRoads:aprons,widthAt}),new T.MeshBasicMaterial()),second=new T.Mesh(roadNetworkGeometry(aprons,1.39,{padding:1,excludePadding:0,excludeRoads:base,excludeRoadPadding:1,widthAt}),new T.MeshBasicMaterial());for(const mesh of[all,first,second])mesh.updateMatrixWorld();
+ for(let x=-6.031;x<3;x+=.173)for(let z=-3.043;z<6;z+=.191){const expected=hits(all,x,z).length,actual=hits(first,x,z).length+hits(second,x,z).length;assert.equal(actual,expected,`Split curb gap or overlap at ${x},${z}`);}
+ const taper=new T.Mesh(roadNetworkGeometry([road('line',[[-10,0],[0,0],[10,0]])],1,{widthAt:(_r,i)=>[2,4,2][i]}),new T.MeshBasicMaterial());taper.updateMatrixWorld();assert.equal(hits(taper,-9,1.3).length,0);assert.equal(hits(taper,0,1.7).length,1);
 });

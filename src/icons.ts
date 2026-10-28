@@ -3,7 +3,6 @@ import MapIcon from '@hugeicons/core-free-icons/MapIcon';
 import ArrowRight02Icon from '@hugeicons/core-free-icons/ArrowRight02Icon';
 import Add01Icon from '@hugeicons/core-free-icons/Add01Icon';
 import MinusSignIcon from '@hugeicons/core-free-icons/MinusSignIcon';
-import CenterFocusIcon from '@hugeicons/core-free-icons/CenterFocusIcon';
 import City01Icon from '@hugeicons/core-free-icons/City01Icon';
 import HelpCircleIcon from '@hugeicons/core-free-icons/HelpCircleIcon';
 import Location01Icon from '@hugeicons/core-free-icons/Location01Icon';
@@ -13,7 +12,7 @@ import Mouse01Icon from '@hugeicons/core-free-icons/Mouse01Icon';
 import WalkingIcon from '@hugeicons/core-free-icons/WalkingIcon';
 import Flag01Icon from '@hugeicons/core-free-icons/Flag01Icon';
 import Tick02Icon from '@hugeicons/core-free-icons/Tick02Icon';
-import BombIcon from '@hugeicons/core-free-icons/BombIcon';
+import GunIcon from '@hugeicons/core-free-icons/GunIcon';
 import PineTreeIcon from '@hugeicons/core-free-icons/PineTreeIcon';
 import User03Icon from '@hugeicons/core-free-icons/User03Icon';
 import Building06Icon from '@hugeicons/core-free-icons/Building06Icon';
@@ -33,10 +32,10 @@ const compass:typeof CubeIcon=[
 ];
 const icons = {
   cube: CubeIcon, map: MapIcon, arrow: ArrowRight02Icon, plus: Add01Icon,
-  minus: MinusSignIcon, compass, target: CenterFocusIcon,
+  minus: MinusSignIcon, compass,
   home: City01Icon, help: HelpCircleIcon, pin: Location01Icon,
   expand: FullScreenIcon, close: Cancel01Icon, mouse: Mouse01Icon,
-  walk: WalkingIcon, flag: Flag01Icon, check: Tick02Icon, bomb: BombIcon,
+  walk: WalkingIcon, flag: Flag01Icon, check: Tick02Icon, gun: GunIcon,
   tree: PineTreeIcon, hero: User03Icon, city: Building06Icon,
   sun: Sun03Icon, moon: Moon02Icon, up: ArrowUp02Icon,
   left: ArrowLeft02Icon, down: ArrowDown02Icon, right: ArrowRight02Icon,

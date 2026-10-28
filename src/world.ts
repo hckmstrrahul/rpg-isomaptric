@@ -3,6 +3,7 @@ import { Builder, material, range, random, pick, vec, facadeLightSamples } from 
 import { riverMaterial, surfaceMaterial } from './nature.ts';
 import { addFlowerBed, addRiverGroundcover } from './landscaping.ts';
 import { createBoat } from './vehicles.ts';
+import {lightBoat} from './boatLighting.ts';
 import { createTraffic } from './traffic.ts';
 import { ROAD_ASPHALT, ROAD_BORDER, createRoadBorder, roadDash } from './roadSurfaces.ts';
 import { bankSections, bankPath } from './embankment.ts';
@@ -364,14 +365,14 @@ export function createWorld(scene: T.Scene, assets:CityAssets={loaded:[]}) {
   const wakes=new BoatWakes(scene);
   const boats:{group:T.Group;object:Destructible;length:number;phase:number;speed:number;lane:number}[]=[];
   for(let i=0;i<22;i++) {
-    const boat=createBoat(range(3.2,4.6),pick(['#a84331','#d9d9c6','#426775']),i%3===0);scene.add(boat.root);
+    const boat=createBoat(range(3.2,4.6),pick(['#a84331','#d9d9c6','#426775']),i%3===0);lightBoat(boat.root,{cabin:i%3!==1,party:i%7===0?{beam:boat.beam,length:boat.length,height:.84,supportHeight:.72}:undefined});scene.add(boat.root);
     const object=objects.registerModel(boat.root,boat.root.name,'boat');
     boats.push({group:boat.root,object,length:boat.length,phase:i/22,speed:range(.0033,.0052)*(i%2?-1:1),lane:(i%2?-1:1)*range(.2,.58)});
   }
   const terrain=b.finish();terrain.name='Terrain, streets and promenades';scene.add(terrain);
   const localLighting=new LocalNightLighting(scene);
   const groundGlows=new NightGroundGlows(scene,staticLightPools);
-  const updateLights=(dt:number,focus:T.Vector3,time:number,night:boolean,reduced=false)=>{
+  const updateLights=(dt:number,focus:T.Vector3,time:number,night:boolean,reduced=false,_moonReveal?:number)=>{
     groundGlows.update();localLighting.update(dt,focus,night);updateRooftopBeacons(beacons,time,night,reduced);
   };
   let wheelAngle=0,lastWheelTime=0;

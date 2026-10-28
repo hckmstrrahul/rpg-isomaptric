@@ -34,8 +34,13 @@ Bengaluru, Agra and Lisbon have parallel builders. A dedicated review lead owns 
 - Initial geometry targets: fewer than 1,500 meshes and 650,000 unique triangles per new chapter, with the shared 12-local-light pool. Measured draw calls and frame timings remain the decisive performance check.
 - Hills and decks share one height field for walking, click picking, trees, traffic signals, tool aiming and flight clearance.
 - New city roads are unioned once at construction, including their pavements. Height-field subdivision keeps Lisbon's bridge approaches grounded. Road ends must meet another road or the cut edge; traffic simulations must demonstrate continued movement through signal cycles.
-- Fountain streams share one animated water material and merged stone geometry. Lunar guide lights use batched emissive geometry. Neither feature adds realtime lights.
+- Fountain streams share one animated water material and merged stone geometry. Lunar guide lights use batched emissive geometry, with brighter white service markers at night. Neither feature adds realtime lights.
+- Boat cabin illumination uses cached material variants on selected vessels. Small deck strings share two merged batches per decorated boat, move with the hull, and add no real lights or per-frame animation. Agra’s rowboats use modest warm lanterns.
+- The Taj’s marble lift follows the Moon's animated reveal, retaining the stone texture and smoother curved dome highlights. One depth-tested batch supplies a narrow silhouette aura; it adds no lights or full-screen bloom. Daytime roughness and emission are restored when the theme changes.
+- Agra's 72 visitors share four instanced figure batches and a 20 Hz movement controller. Fixed routes reach actual home doors through the Great Gate and a marked crossing, with staggered departure and traffic reservation. Seated boat crews reuse cached geometry in one batch per hull.
+- Lisbon’s narrower residential streets retain vehicle turn clearances. The road beneath the Sintra inset follows a graded bench; stair treads and walking height must use one shared profile. Generic white parish/civic studies are architectural references, not relocated named churches.
 - The full-screen scene background supplies the backdrop color. A transparent shadow receiver keeps contact shadows without revealing the edge of a colored ground plane at low camera angles.
+- The sky Moon keeps a consistent depth/render order throughout its entrance and pre-uploads its textures during loading. Only the visible sphere is a travel target; clicking it opens the separately loaded Moon chapter. The north-up minimap uses a separate camera-heading needle.
 
 ## Primary references
 

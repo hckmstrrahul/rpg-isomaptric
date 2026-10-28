@@ -15,7 +15,9 @@ export function createMoon(scene:T.Scene,keyLight:T.DirectionalLight,textures:Aw
   const motion=createMoonMotion(reduced),root=new T.Group();root.name='Moon';root.visible=false;
   const uniforms={colorMap:{value:textures.color},heightMap:{value:textures.height},opacity:{value:0}};
   const material=new T.ShaderMaterial({
-    uniforms,transparent:true,depthWrite:false,
+    // Keep the depth contract unchanged during the entire fade. Toggling it
+    // near opacity 1 lets the additive halo wash out the surface, then snap off.
+    uniforms,transparent:true,depthWrite:true,
     vertexShader:`varying vec2 vUv; varying vec3 vNormal;
       void main(){vUv=uv;vNormal=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
     fragmentShader:`uniform sampler2D colorMap;uniform sampler2D heightMap;uniform float opacity;
@@ -30,7 +32,7 @@ export function createMoon(scene:T.Scene,keyLight:T.DirectionalLight,textures:Aw
         #include <colorspace_fragment>
       }`,
   });
-  const sphere=new T.Mesh(new T.SphereGeometry(1,64,32),material);sphere.name='LROC textured lunar surface';sphere.rotation.y=Math.atan2(215,235)-Math.PI/2;root.add(sphere);root.scale.setScalar(9);
+  const sphere=new T.Mesh(new T.SphereGeometry(1,64,32),material);sphere.name='LROC textured lunar surface';sphere.rotation.y=Math.atan2(215,235)-Math.PI/2;sphere.renderOrder=1;root.add(sphere);root.scale.setScalar(9);
   const haloMaterial=new T.ShaderMaterial({
     uniforms:{opacity:{value:0}},transparent:true,depthWrite:false,side:T.BackSide,blending:T.AdditiveBlending,
     vertexShader:`varying vec3 vPosition;varying vec3 vCenter;
@@ -40,21 +42,30 @@ export function createMoon(scene:T.Scene,keyLight:T.DirectionalLight,textures:Aw
         float glow=exp(-r*r*.62)*(1.-smoothstep(2.2,3.2,r));
         gl_FragColor=vec4(.67,.72,.78,glow*opacity*.2);}`,
   });
-  const halo=new T.Mesh(new T.SphereGeometry(3.2,40,28),haloMaterial);halo.name='Spherical lunar glow';root.add(halo);scene.add(root);
+  const halo=new T.Mesh(new T.SphereGeometry(3.2,40,28),haloMaterial);halo.name='Spherical lunar glow';halo.renderOrder=2;root.add(halo);scene.add(root);
   const localLight=new T.PointLight('#ccd4db',0,380,2);localLight.name='Moon · soft surrounding light';scene.add(localLight);
   const origin=new T.Vector3(0,4,0),daylightPosition=new T.Vector3(-90,170,60);
+  let reveal=0;
   scene.add(keyLight.target);keyLight.shadow.camera.far=1100;
   return {
     root,halo,localLight,
+    get reveal(){return reveal;},
+    hitDistance(raycaster:T.Raycaster):number|null {
+      if(!root.visible||material.uniforms.opacity.value<.05)return null;
+      root.updateWorldMatrix(true,true);
+      // The diffuse glow deliberately has no interaction target.
+      return raycaster.intersectObject(sphere,false)[0]?.distance??null;
+    },
     setNight:(night:boolean)=>motion.setNight(night),
     setReduced:(value:boolean)=>motion.setReduced(value),
     update(dt:number) {
       const state=motion.tick(dt);
       root.visible=state.opacity>0;
       root.position.set(state.x,state.y,state.z);
-      material.uniforms.opacity.value=state.opacity;material.depthWrite=state.opacity>.99;
+      material.uniforms.opacity.value=state.opacity;
       haloMaterial.uniforms.opacity.value=state.opacity;
       const elevation=T.MathUtils.smoothstep(root.position.y,15,65),strength=state.opacity*elevation;
+      reveal=state.night?strength:0;
       localLight.position.copy(root.position);localLight.intensity=state.night?1350*strength:0;
       if(state.night) {
         keyLight.position.copy(root.position);keyLight.target.position.copy(origin);

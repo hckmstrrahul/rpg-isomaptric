@@ -1,10 +1,12 @@
 import * as T from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {Builder,material,vec} from '../../geometry.ts';
 import {riverMaterial,surfaceMaterial} from '../../nature.ts';
 import {createTerrainBase} from '../../terrainBase.ts';
 import {WorldObjects} from '../../interactables.ts';
 import {createTraffic} from '../../traffic.ts';
 import {BoatWakes} from '../../boatWakes.ts';
+import {lightBoat} from '../../boatLighting.ts';
 import {WATER_HEIGHT,type Obstacle} from '../../layout.ts';
 import {ROAD_ASPHALT,ROAD_PAINT} from '../../roadSurfaces.ts';
 import {roadClearance,plotTouchesRoad,type Road} from '../../cityPlan.ts';
@@ -16,8 +18,8 @@ import type {Destructible} from '../../sandbox.ts';
 import {strokeGeometry} from '../shared/surfaces.ts';
 import {roadNetworkGeometry} from '../shared/roadNetwork.ts';
 import {createFountain} from '../shared/fountain.ts';
-import {PLAN,CUT_HALF,NORTH_BANK,SOUTH_BANK,LAND,landHeight,heightAt,lisbonLand,lisbonBridge,lisbonRoads,LANDMARKS,SPAWN,GARDENS,TRAFFIC_LOOPS,shoreAt,PENA,BRIDGE,bridgeX} from './plan.ts';
-import {belemTower,jeronimos,padrao,cristoRei,maat,centralTejo,terraceRow,tagusVessel,penaPalace,type TagusVessel} from './architecture.ts';
+import {PLAN,CUT_HALF,NORTH_BANK,SOUTH_BANK,LAND,landHeight,heightAt,lisbonLand,lisbonBridge,lisbonRoads,LANDMARKS,SPAWN,GARDENS,TRAFFIC_LOOPS,shoreAt,PENA,BRIDGE,bridgeX,hillStreetZ,hillRoadGrade,PALACE_APPROACH,PALACE_TREADS,PALACE_PATH_LENGTH,palaceStepHeight,waterfrontYaw} from './plan.ts';
+import {belemTower,jeronimos,padrao,cristoRei,maat,centralTejo,terraceRow,tagusVessel,penaPalace,type TagusVessel,neighbourhoodCivic} from './architecture.ts';
 import {ponte25DeAbril} from './bridge.ts';
 
 export function createLisbonWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}){
@@ -62,30 +64,66 @@ export function createLisbonWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}){
  // Traffic samples each straight every two metres. Remove numerically
  // collinear copies before polygon union; otherwise microscopic snapped
  // zigzags create many long, thin triangles without changing the road shape.
+ // Corner aprons follow the same quadratic centre curves as the vehicles.
+ // They close the tiny inner grass triangles left by square road unions while
+ // the narrower straight carriageways keep their compact street character.
+ const cornerAprons:Road[]=[],cornerKeys=new Set<string>(),cornerWidths=new Map<Road,number[]>();
+ const localStreetWidth=(p:{x:number;z:number})=>roads.reduce((best,r)=>{const distance=roadClearance(p,[r])+r.width/2;return distance<best.distance?{distance,width:r.width}:best;},{distance:Infinity,width:2.6}).width;
+ for(const loop of TRAFFIC_LOOPS){const corners=loop.slice(0,-1);corners.forEach((p,i)=>{const a=corners[(i+corners.length-1)%corners.length],c=corners[(i+1)%corners.length],incoming=vec(p.x-a.x,0,p.z-a.z).normalize(),outgoing=vec(c.x-p.x,0,c.z-p.z).normalize();if(incoming.dot(outgoing)>.995)return;const cut=Math.min(4.5,Math.hypot(p.x-a.x,p.z-a.z)*.45,Math.hypot(c.x-p.x,c.z-p.z)*.45),start=vec(p.x,0,p.z).addScaledVector(incoming,-cut),end=vec(p.x,0,p.z).addScaledVector(outgoing,cut),key=[start.toArray().join(','),end.toArray().join(',')].sort().join('|');if(cornerKeys.has(key))return;cornerKeys.add(key);const curve=new T.QuadraticBezierCurve3(start,vec(p.x,0,p.z),end);const first=localStreetWidth(start),last=localStreetWidth(end),widths=Array.from({length:9},(_,j)=>{const t=j/8,base=first+(last-first)*t;return base+Math.max(0,3.45-base)*Math.sin(Math.PI*t);}),apron:Road={id:`lisbon-turn-${cornerAprons.length}`,size:'small',width:Math.max(...widths),points:Array.from({length:9},(_,j)=>{const v=curve.getPoint(j/8);return{x:v.x,z:v.z};})};cornerAprons.push(apron);cornerWidths.set(apron,widths);});}
  const surfaceRoads=roads.map(road=>({...road,points:road.points.filter((p,i,all)=>{if(i===0||i===all.length-1)return true;const a=all[i-1],b=all[i+1];return Math.abs((p.x-a.x)*(b.z-a.z)-(p.z-a.z)*(b.x-a.x))/Math.hypot(b.x-a.x,b.z-a.z)>1e-5;})}));
- const border=roadNetworkGeometry(surfaceRoads,(x,z)=>roadSurface(x,z)-.011,{padding:1.5,excludePadding:0,bounds:CUT_HALF,maxSegment:16,maxHeightError:.03}),asphalt=roadNetworkGeometry(surfaceRoads,roadSurface,{bounds:CUT_HALF,maxSegment:16,maxHeightError:.03});streets.add(border,pavement);streets.add(asphalt,ROAD_ASPHALT);border.dispose();asphalt.dispose();
+ const options={bounds:CUT_HALF,maxSegment:16,maxHeightError:.03,widthAt:(road:Road,index:number)=>cornerWidths.get(road)?.[index]??road.width};
+ const border=roadNetworkGeometry(surfaceRoads,(x,z)=>roadSurface(x,z)-.011,{...options,padding:1,excludePadding:0,excludeRoads:cornerAprons,excludeRoadPadding:0}),asphalt=roadNetworkGeometry(surfaceRoads,roadSurface,options);
+ const turnAsphalt=roadNetworkGeometry(cornerAprons,roadSurface,{...options,maxSegment:4,excludeRoads:surfaceRoads}),turnCurbs=roadNetworkGeometry(cornerAprons,(x,z)=>roadSurface(x,z)-.011,{...options,maxSegment:4,padding:1,excludePadding:0,excludeRoads:surfaceRoads,excludeRoadPadding:1});
+ streets.add(border,pavement);streets.add(asphalt,ROAD_ASPHALT);streets.add(turnAsphalt,ROAD_ASPHALT);streets.add(turnCurbs,pavement);for(const g of[border,asphalt,turnAsphalt,turnCurbs])g.dispose();
  for(const road of roads){const y=roadSurface;
   let distance=0,next=1.2;for(let i=1;i<road.points.length;i++){const a=road.points[i-1],b=road.points[i],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);while(next<distance+len){const t=(next-distance)/len,x=a.x+dx*t,z=a.z+dz*t;if(roadClearance({x,z},roads.filter(r=>r!==road))>.45){const dash=strokeGeometry(Array.from({length:5},(_,j)=>({x:x+dx/len*(j/4-.5)*1.1,z:z+dz/len*(j/4-.5)*1.1})),.095,(xx,zz)=>y(xx,zz)+.025);streets.add(dash,ROAD_PAINT);dash.dispose();}next+=3.4;}distance+=len;}
  }
+ const retaining=new Builder();
+ // End before the independent stair bed. A level bench parapet must not
+ // climb with the cut terrain or sprout a raised hook beside the first flight.
+ for(let x=-119;x< -71;x+=1){const x1=x+1,z=hillStreetZ(x)-2.65,z1=hillStreetZ(x1)-2.65,y=hillRoadGrade(x),y1=hillRoadGrade(x1),bottom=Math.min(y-.2,terrainHeight(x,z)-.08),bottom1=Math.min(y1-.2,terrainHeight(x1,z1)-.08),p=[x,bottom,z,x,y+.55,z,x1,bottom1,z1,x1,y1+.55,z1],g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.setIndex([0,1,2,1,3,2,2,1,0,2,3,1]);g.computeVertexNormals();retaining.add(g,material('#b5ad93'));g.dispose();retaining.beam(vec(x,y+.58,z),vec(x1,y1+.58,z1),.105,'#d5ceba',4);if(Math.round(x)%5===0)retaining.box(x,(bottom+y+.72)/2,z,.28,y+.72-bottom,.32,'#c5bca3');}
+ for(const x of[-119,-71]){const z=hillStreetZ(x)-2.65,y=hillRoadGrade(x),bottom=Math.min(y-.2,terrainHeight(x,z)-.08);retaining.box(x,(bottom+y+.68)/2,z,.42,y+.68-bottom,.42,'#c5bca3');retaining.box(x,y+.72,z,.5,.12,.5,'#ded7c1');}
+ const hillRetaining=retaining.finish();hillRetaining.name='Pena hill · graded road retaining edge';scene.add(hillRetaining);
  const streetRoot=streets.finish();streetRoot.name='Lisbon · joined asphalt and curb rings';scene.add(streetRoot);const bridge=ponte25DeAbril();scene.add(bridge);const bridgeRoots=[bridge];
  for(const z of [-26,23]){const beacon=createRooftopBeacon(z*.1);beacon.position.set(bridgeX(z),26.9,z);scene.add(beacon);beacons.push(beacon);}
+ // Reserve the actual rounded vehicle turns before fitting compact buildings.
+ // Narrow streets need clearance at their inside corners, not wider lawns
+ // along every straight frontage.
+ const turnPoints:{x:number;z:number}[]=[];
+ for(const loop of TRAFFIC_LOOPS){const corners=loop.slice(0,-1);corners.forEach((p,i)=>{const a=corners[(i+corners.length-1)%corners.length],c=corners[(i+1)%corners.length],incoming=vec(p.x-a.x,0,p.z-a.z).normalize(),outgoing=vec(c.x-p.x,0,c.z-p.z).normalize(),cut=Math.min(4.5,Math.hypot(p.x-a.x,p.z-a.z)*.45,Math.hypot(c.x-p.x,c.z-p.z)*.45),curve=new T.QuadraticBezierCurve3(vec(p.x,0,p.z).addScaledVector(incoming,-cut),vec(p.x,0,p.z),vec(p.x,0,p.z).addScaledVector(outgoing,cut));for(let t=0;t<=1;t+=.1){const at=curve.getPoint(t),direction=curve.getTangent(t);for(const side of [-1,1])turnPoints.push({x:at.x-direction.z*.75*side,z:at.z+direction.x*.75*side});}});}
+ const clearsTurns=(box:Obstacle)=>turnPoints.every(p=>Math.hypot(Math.max(0,Math.abs(p.x-box.x)-box.w/2),Math.max(0,Math.abs(p.z-box.z)-box.d/2))>.75);
  const blocked=(x:number,z:number,w:number,d:number,margin=0)=>obstacles.some(o=>Math.abs(o.x-x)<(o.w+w)/2+margin&&Math.abs(o.z-z)<(o.d+d)/2+margin);
  const arrivalClear=(x:number,z:number,r:number)=>[SPAWN,...LANDMARKS.map(l=>({x:l.visitX,z:l.visitZ}))].every(p=>Math.hypot(x-p.x,z-p.z)>r+2.7);
  const dry=(x:number,z:number,w:number,d:number,margin=.2)=>[-.5,0,.5].every(a=>[-.5,0,.5].every(b=>lisbonLand(x+a*w,z+b*d,margin)));
  const place=(root:T.Group,x:number,z:number,name:string,id?:string,kind:'building'|'prop'='building')=>{
   root.updateMatrixWorld(true);const local=new T.Box3().setFromObject(root),size=local.getSize(vec(0,0,0));const heights=[landHeight(x,z),...[-.5,.5].flatMap(a=>[-.5,.5].map(b=>landHeight(x+a*size.x,z+b*size.z)))],high=Math.max(...heights),low=Math.min(...heights);
-  if(kind==='building'&&high-low>.08){const rotation=root.rotation.clone();root.rotation.set(0,0,0);root.updateMatrixWorld(true);const localBase=new T.Box3().setFromObject(root),ls=localBase.getSize(vec(0,0,0)),lc=localBase.getCenter(vec(0,0,0));root.rotation.copy(rotation);const f=new Builder();f.box(lc.x/root.scale.x,-(high-low)/(2*root.scale.y),lc.z/root.scale.z,ls.x/root.scale.x,(high-low+.1)/root.scale.y,ls.z/root.scale.z,'#c1baa7');root.add(f.finish());}
-  root.position.set(x,high+.025,z);root.name=name;scene.add(root);root.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(root),s=bounds.getSize(vec(0,0,0)),c=bounds.getCenter(vec(0,0,0)),box={x:c.x,z:c.z,w:s.x,d:s.z};obstacles.push(box);const object=objects.registerModel(root,name,kind,[box],id);return {root,object,box};
+  if(kind==='building'&&high-low>.08){const rotation=root.rotation.clone();root.rotation.set(0,0,0);root.updateMatrixWorld(true);const localBase=new T.Box3().setFromObject(root),ls=localBase.getSize(vec(0,0,0)),lc=localBase.getCenter(vec(0,0,0));root.rotation.copy(rotation);const f=new Builder();f.box(lc.x/root.scale.x,-(high-low)/(2*root.scale.y),lc.z/root.scale.z,ls.x/root.scale.x,(high-low+.1)/root.scale.y,ls.z/root.scale.z,'#c1baa7');const foundation=f.finish(),foot=foundation.children[0] as T.Mesh,target=root.children.find(n=>n instanceof T.Mesh&&n.material===foot.material) as T.Mesh|undefined;if(target){const merged=mergeGeometries([target.geometry,foot.geometry]);if(merged){target.geometry=merged;foot.geometry.dispose();}else root.add(foundation);}else root.add(foundation);}
+  root.position.set(x,high+.025,z);root.name=name;scene.add(root);root.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(root),s=bounds.getSize(vec(0,0,0)),c=bounds.getCenter(vec(0,0,0)),box={x:c.x,z:c.z,w:s.x,d:s.z};const owned:Obstacle[]=[];
+  if(id==='maat'||name.startsWith('Central Tejo')){
+   // Short oriented strips retain a traversable riverfront. A single rotated
+   // world AABB would block the promenade and falsely touch the road behind.
+   const maatSite=id==='maat',left=maatSite?-9:-6.7,right=maatSite?9:6.95;
+   for(let xx=left;xx<right;xx+=.45){const end=Math.min(right,xx+.45),back=maatSite?-4.1*Math.sqrt(Math.max(.03,1-(Math.min(Math.abs(xx),Math.abs(end))/9)**2)):-2.95,front=maatSite?(xx<8&&end> -8?4.72:4.1*Math.sqrt(Math.max(.03,1-(Math.min(Math.abs(xx),Math.abs(end))/9)**2))):2.95,bounds=new T.Box3();for(const px of[xx,end])for(const pz of[back,front])bounds.expandByPoint(root.localToWorld(vec(px,0,pz)));const sz=bounds.getSize(vec(0,0,0)),ct=bounds.getCenter(vec(0,0,0));owned.push({x:ct.x,z:ct.z,w:sz.x,d:sz.z});}
+  }else owned.push(box);
+  obstacles.push(...owned);const object=objects.registerModel(root,name,kind,owned,id);return {root,object,box};
  };
  const groundWash=(owner:T.Object3D,x:number,z:number,r:number,color:string,opacity=.06)=>{const pool=lightPool(r,color,opacity);pool.position.set(x,.1,z);pool.geometry.dispose();pool.geometry=new T.PlaneGeometry(r*2,r*2,8,8);pool.geometry.rotateX(-Math.PI/2);pool.rotation.x=0;owner.updateMatrixWorld(true);const p=pool.geometry.getAttribute('position'),idx=pool.geometry.index!,ok:boolean[]=[],point=new T.Vector3();for(let i=0;i<p.count;i++){point.set(x+p.getX(i),0,z+p.getZ(i));owner.localToWorld(point);ok.push(lisbonLand(point.x,point.z)||lisbonBridge(point.x,point.z));point.y=heightAt(point.x,point.z)+.11;owner.worldToLocal(point);p.setY(i,point.y-pool.position.y);}const triangles:number[]=[];for(let i=0;i<idx.count;i+=3)if([0,1,2].every(j=>ok[idx.getX(i+j)]))triangles.push(idx.getX(i),idx.getX(i+1),idx.getX(i+2));pool.geometry.setIndex(triangles);owner.add(pool);pools.push(pool);};
  const landmarkRoots:T.Group[]=[];const factories=[belemTower,jeronimos,padrao,maat,()=>new T.Group(),cristoRei,penaPalace];
- LANDMARKS.forEach((l,i)=>{if(i===4)return;const model=factories[i]();if(i===1)model.scale.set(.84,.84,.82);if(i===3)model.scale.set(.82,.82,.82);const root=place(model,l.x,l.z,l.name,l.id).root;landmarkRoots.push(root);for(const side of [-1,1]){const light=localNightLight('#f4d3a5',7,13,1.7);light.position.set(side*2,2,4.2);root.add(light);groundWash(root,side*2,4.6,5,'#f0c99b',.045);}});
- const palaceApproach:Road={id:'pena-walking-approach',size:'small',width:2.2,points:[{x:-71.7,z:-80.14},{x:-72,z:-81},{x:-75,z:-84},{x:-79,z:-85.7},{x:-79,z:-86.9}]};
- const palaceBase=landmarkRoots.find(root=>root.name==='Pena Palace · Sintra')!.position.y;
- const walkHeight=(x:number,z:number)=>{const ground=terrainHeight(x,z)+.065,t=T.MathUtils.smoothstep(2.6-Math.hypot(x+79,z+86.9),0,2.6);return ground+Math.max(0,palaceBase+.18-ground)*t;};
- const palaceWalk=new T.Mesh(roadNetworkGeometry([palaceApproach],walkHeight,{maxSegment:1,maxHeightError:.015}),pavement);palaceWalk.name='Pena Palace · continuous hill approach';palaceWalk.receiveShadow=true;scene.add(palaceWalk);
+ LANDMARKS.forEach((l,i)=>{if(i===4)return;const model=factories[i]();if(i===1)model.scale.set(.84,.84,.82);if(i===3){model.scale.set(.82,.82,.82);model.rotation.y=waterfrontYaw(l.x);}const root=place(model,l.x,l.z-(i===3?1.1:0),l.name,l.id).root;landmarkRoots.push(root);for(const side of [-1,1]){const light=localNightLight('#f4d3a5',7,13,1.7);light.position.set(side*2,2,4.2);root.add(light);groundWash(root,side*2,4.6,5,'#f0c99b',.045);}});
+ const palaceApproach=PALACE_APPROACH,from=palaceApproach.points[0],to=palaceApproach.points[1],ux=(to.x-from.x)/PALACE_PATH_LENGTH,uz=(to.z-from.z)/PALACE_PATH_LENGTH;
+ const pathPosition=(along:number,across:number,y:number)=>vec(from.x+ux*along-uz*across,y,from.z+uz*along+ux*across);
+ const pathVertices:number[]=[],pathIndices:number[]=[],sideDetails=new Builder();
+ const quad=(a:T.Vector3,b:T.Vector3,c:T.Vector3,d:T.Vector3)=>{const i=pathVertices.length/3;for(const p of[a,b,c,d])pathVertices.push(p.x,p.y,p.z);pathIndices.push(i,i+1,i+2,i+1,i+3,i+2);};
+ for(let i=0;i<PALACE_TREADS.length;i++){const tread=PALACE_TREADS[i],half=tread.width/2,a=pathPosition(tread.start,-half,tread.height),b=pathPosition(tread.start,half,tread.height),c=pathPosition(tread.end,-half,tread.height),d=pathPosition(tread.end,half,tread.height);quad(a,b,c,d);
+  if(i){const previous=PALACE_TREADS[i-1];if(tread.height>previous.height+.001)quad(pathPosition(tread.start,-half,previous.height),pathPosition(tread.start,half,previous.height),a,b);}
+  // Narrow supported side faces stop at the real terrain; no stretched slabs
+  // span across a turn or inherit the hillside's transverse slope.
+  for(const side of[-1,1]){const a=pathPosition(tread.start,side*half,tread.height),b=pathPosition(tread.end,side*half,tread.height),g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute([a.x,Math.min(a.y-.12,terrainHeight(a.x,a.z)-.04),a.z,a.x,a.y,a.z,b.x,Math.min(b.y-.12,terrainHeight(b.x,b.z)-.04),b.z,b.x,b.y,b.z],3));g.setIndex([0,1,2,1,3,2,2,1,0,2,3,1]);g.computeVertexNormals();sideDetails.add(g,material('#bcb6a2'));g.dispose();}
+ }
+ const pathGeometry=new T.BufferGeometry();pathGeometry.setAttribute('position',new T.Float32BufferAttribute(pathVertices,3));pathGeometry.setIndex(pathIndices);pathGeometry.computeVertexNormals();const palaceWalk=new T.Mesh(pathGeometry,pavement);palaceWalk.name='Pena Palace · monotonic stone stair approach';palaceWalk.receiveShadow=true;scene.add(palaceWalk);
+ const palaceSteps=sideDetails.finish();palaceSteps.name='Pena Palace · grounded stair supports';scene.add(palaceSteps);
  objects.plantingBlockers.push({x:-75,z:-83,w:11,d:13});
- const power=place(centralTejo(),-14,-18,'Central Tejo · brick power station');landmarkRoots.push(power.root);
+ const powerModel=centralTejo();powerModel.rotation.y=waterfrontYaw(-14);const power=place(powerModel,-14,-19.1,'Central Tejo · brick power station');landmarkRoots.push(power.root);
  // A stone quay joins the fortress footing to the existing river wall.
  // Keep the geographic landmark centre and bank outline unchanged.
  const apronPoints=[new T.Vector2(belem.x-6.2,-(belem.z-4)),new T.Vector2(belem.x+6.2,-(belem.z-4)),...Array.from({length:13},(_,i)=>{const x=belem.x+6.2-i*12.4/12;return new T.Vector2(x,-shoreAt(x,NORTH_BANK));})];
@@ -96,33 +134,48 @@ export function createLisbonWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}){
  const fountainX=-50,fountainZ=-13,fountain=createFountain({radius:2.7,height:3.1});place(fountain.root,fountainX,fountainZ,'Praça do Império flowing fountain',undefined,'prop');
  // Attached street walls sit parallel to real road corridors. Reuse ten
  // complete row geometries; shared party walls remove the detached lawn grid.
- const rowCache=Array.from({length:10},(_,i)=>terraceRow(i)),homes:T.Object3D[]=[];
+ const civicRoots=[place(neighbourhoodCivic(true),-111,-57,'Lisbon neighbourhood parish church').root,place(neighbourhoodCivic(false),14,-73,'Lisbon white civic hall').root];
+ const rowCache=Array.from({length:12},(_,i)=>terraceRow(i)),homes:T.Object3D[]=[];
  const streetRows=roads.filter(r=>!r.bridge&&r.id!=='bridge-north-access');
  let rowIndex=0,terraceDwellings=0;
+ // A few later apartment blocks punctuate the low tiled street fabric.
+ // Reserve their sites first so compact infill cannot erase height variety.
+ for(const [x,z,type]of[[112,-91,6],[115,104,7],[112,-120,1]]){const source=rowCache[type],root=place(source.clone(true),x,z,'Lisbon neighbourhood apartment row').root;homes.push(root);terraceDwellings+=source.userData.dwellings as number;}
+
  for(const road of streetRows){
   const lengths:number[]=[0];for(let i=1;i<road.points.length;i++)lengths.push(lengths.at(-1)!+Math.hypot(road.points[i].x-road.points[i-1].x,road.points[i].z-road.points[i-1].z));
   const sample=(distance:number)=>{const i=Math.max(1,lengths.findIndex(d=>d>=distance)),a=road.points[i-1],b=road.points[i],t=(distance-lengths[i-1])/(lengths[i]-lengths[i-1]);return {x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t,dx:b.x-a.x,dz:b.z-a.z};};
   for(const side of [-1,1])for(let along=9;along<lengths.at(-1)!-8;){
-   const sequence=rowIndex++,outer=road.id.includes('residential')||road.id.includes('ajuda')||road.id.includes('almada'),type=road.id.includes('infill')?8+sequence%2:outer?[4,8,6,2,9,7,0,3][sequence%8]:sequence%6,source=rowCache[type],w=source.userData.rowWidth as number,d=source.userData.rowDepth as number,p=sample(along),len=Math.hypot(p.dx,p.dz),yaw=-Math.atan2(p.dz,p.dx)+(side>0?Math.PI:0),offset=road.width/2+d/2+Math.abs(p.dx*p.dz/(len*len))*w+1.05;
-   const x=p.x-p.dz/len*offset*side,z=p.z+p.dx/len*offset*side,model=source.clone(true);model.rotation.y=yaw;model.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(model),size=bounds.getSize(vec(0,0,0)),box={x,z,w:size.x,d:size.z};along+=w+.7;
-   if(Math.hypot(x-PENA.x,z-PENA.z)<32+Math.hypot(box.w,box.d)/2||!dry(x,z,box.w,box.d,.4)||plotTouchesRoad(box,roads,.75)||blocked(x,z,box.w,box.d,.35)||!arrivalClear(x,z,Math.hypot(box.w,box.d)/2)||GARDENS.some(g=>Math.hypot(x-g.x,z-g.z)<g.r+Math.hypot(box.w,box.d)/2+.5))continue;
+   const sequence=rowIndex++,outer=road.id.includes('residential')||road.id.includes('ajuda')||road.id.includes('almada'),type=road.id.includes('infill')?8+sequence%2:outer?[4,8,6,2,9,7,0,3][sequence%8]:sequence%6,source=rowCache[type],w=source.userData.rowWidth as number,d=source.userData.rowDepth as number,p=sample(along),len=Math.hypot(p.dx,p.dz),yaw=-Math.atan2(p.dz,p.dx)+(side>0?Math.PI:0),offset=road.width/2+d/2+Math.abs(p.dx*p.dz/(len*len))*w+.75;
+   const x=p.x-p.dz/len*offset*side,z=p.z+p.dx/len*offset*side,model=source.clone(true);model.rotation.y=yaw;model.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(model),size=bounds.getSize(vec(0,0,0)),center=bounds.getCenter(vec(0,0,0)),box={x:x+center.x,z:z+center.z,w:size.x,d:size.z};along+=Math.min((box.w+.35)/Math.max(.01,Math.abs(p.dx/len)),(box.d+.35)/Math.max(.01,Math.abs(p.dz/len)));
+   if(Math.hypot(x-PENA.x,z-PENA.z)<32+Math.hypot(box.w,box.d)/2||!dry(x,z,box.w,box.d,.4)||plotTouchesRoad(box,roads,.55)||plotTouchesRoad(box,cornerAprons,.15)||!clearsTurns(box)||blocked(box.x,box.z,box.w,box.d,.2)||!arrivalClear(x,z,Math.hypot(box.w,box.d)/2)||GARDENS.some(g=>Math.hypot(x-g.x,z-g.z)<g.r+Math.hypot(box.w,box.d)/2+.5))continue;
    const row=place(model,x,z,'Lisbon attached terrace row').root;homes.push(row);terraceDwellings+=source.userData.dwellings as number;
    const footpath=strokeGeometry([{x:x-Math.cos(yaw)*(w/2+.15),z:z+Math.sin(yaw)*(w/2+.15)},{x:x+Math.cos(yaw)*(w/2+.15),z:z-Math.sin(yaw)*(w/2+.15)}],d+.9,(xx,zz)=>landHeight(xx,zz)+.035);details.add(footpath,pavement);footpath.dispose();
   }
  }
  // Small courtyard rows complete the residential blocks between the main
  // street walls. Their paving and front courts are distinct from vehicle roads.
- for(let z=-117;z<=117;z+=10.5)for(let x=-118;x<=118;x+=10.5){
-  if(!lisbonLand(x,z,7)||Math.hypot(x-PENA.x,z-PENA.z)<35||roadClearance({x,z},roads)>21)continue;
+ for(let z=-119;z<=119;z+=5.15)for(let x=-118;x<=118;x+=8.9){
+  if(!lisbonLand(x,z,7)||Math.hypot(x-PENA.x,z-PENA.z)<35||roadClearance({x,z},roads)>28)continue;
   const source=rowCache[8+(rowIndex++%2)],model=source.clone(true),w=source.userData.rowWidth as number,d=source.userData.rowDepth as number;
   let nearest={distance:Infinity,dx:1,dz:0};for(const road of streetRows)for(let i=1;i<road.points.length;i++){const a=road.points[i-1],b=road.points[i],dx=b.x-a.x,dz=b.z-a.z,len=dx*dx+dz*dz,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/len)),distance=Math.hypot(x-a.x-t*dx,z-a.z-t*dz);if(distance<nearest.distance)nearest={distance,dx,dz};}
-  model.rotation.y=-Math.atan2(nearest.dz,nearest.dx);model.updateMatrixWorld(true);const size=new T.Box3().setFromObject(model).getSize(vec(0,0,0)),box={x,z,w:size.x,d:size.z};
-  if(!dry(x,z,box.w,box.d,.5)||plotTouchesRoad(box,roads,1)||blocked(x,z,box.w,box.d,1)||!arrivalClear(x,z,Math.hypot(box.w,box.d)/2)||GARDENS.some(g=>Math.hypot(x-g.x,z-g.z)<g.r+Math.hypot(box.w,box.d)/2+1))continue;
+  model.rotation.y=-Math.atan2(nearest.dz,nearest.dx);model.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(model),size=bounds.getSize(vec(0,0,0)),center=bounds.getCenter(vec(0,0,0)),box={x:x+center.x,z:z+center.z,w:size.x,d:size.z};
+  if(!dry(x,z,box.w,box.d,.5)||plotTouchesRoad(box,roads,.55)||plotTouchesRoad(box,cornerAprons,.15)||!clearsTurns(box)||blocked(box.x,box.z,box.w,box.d,.3)||!arrivalClear(x,z,Math.hypot(box.w,box.d)/2)||GARDENS.some(g=>Math.hypot(x-g.x,z-g.z)<g.r+Math.hypot(box.w,box.d)/2+1))continue;
   const row=place(model,x,z,'Lisbon courtyard terrace row').root;homes.push(row);terraceDwellings+=source.userData.dwellings as number;
-  const court=new T.PlaneGeometry(w+.6,d+1.3);court.rotateX(-Math.PI/2);court.rotateY(model.rotation.y);court.translate(x,0,z);const cp=court.getAttribute('position');for(let i=0;i<cp.count;i++)cp.setY(i,landHeight(cp.getX(i),cp.getZ(i))+.035);court.computeVertexNormals();details.add(court,pavement);court.dispose();
+  const court=new T.PlaneGeometry(w+.4,d+.4);court.rotateX(-Math.PI/2);court.rotateY(model.rotation.y);court.translate(x,0,z);const cp=court.getAttribute('position');for(let i=0;i<cp.count;i++)cp.setY(i,landHeight(cp.getX(i),cp.getZ(i))+.035);court.computeVertexNormals();details.add(court,pavement);court.dispose();
+ }
+ // Short two-house lots finish awkward block gaps. Their street alignment
+ // and enclosed courts produce continuous urban fabric rather than lawn dots.
+ let shortLots=0;
+ for(let z=-119;z<=119;z+=5.1)for(let x=-120;x<=120;x+=5.5){
+  if(shortLots>=42||!lisbonLand(x,z,6)||Math.hypot(x-PENA.x,z-PENA.z)<35||roadClearance({x,z},roads)>25)continue;
+  const source=rowCache[10+(rowIndex++%2)],model=source.clone(true);let nearest={distance:Infinity,dx:1,dz:0};for(const road of streetRows)for(let i=1;i<road.points.length;i++){const a=road.points[i-1],b=road.points[i],dx=b.x-a.x,dz=b.z-a.z,len=dx*dx+dz*dz,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/len)),distance=Math.hypot(x-a.x-t*dx,z-a.z-t*dz);if(distance<nearest.distance)nearest={distance,dx,dz};}
+  model.rotation.y=-Math.atan2(nearest.dz,nearest.dx);model.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(model),size=bounds.getSize(vec(0,0,0)),center=bounds.getCenter(vec(0,0,0)),box={x:x+center.x,z:z+center.z,w:size.x,d:size.z};
+  if(!dry(x,z,box.w,box.d,.5)||plotTouchesRoad(box,roads,.55)||plotTouchesRoad(box,cornerAprons,.15)||!clearsTurns(box)||blocked(box.x,box.z,box.w,box.d,.3)||!arrivalClear(x,z,Math.hypot(box.w,box.d)/2)||GARDENS.some(g=>Math.hypot(x-g.x,z-g.z)<g.r+Math.hypot(box.w,box.d)/2+1))continue;
+  const row=place(model,x,z,'Lisbon compact block infill').root;shortLots++;homes.push(row);terraceDwellings+=source.userData.dwellings as number;
  }
  // Warm Portuguese street lanterns: proxy sources share the existing 12 lights.
- const lamp=(x:number,z:number)=>{if(!lisbonLand(x,z,.35)||lisbonBridge(x,z)||roadClearance({x,z},roads)<.75||blocked(x,z,.35,.35,.45)||!arrivalClear(x,z,.3)||streetLamps.some(p=>Math.hypot(x-p.x,z-p.z)<7))return;const b=new Builder();b.cylinder(0,1.65,0,.045,3.3,'#4c615a',.03,8);b.box(0,3.4,0,.32,.5,.32,'#50635a');b.box(0,3.4,.17,.24,.34,.035,glowMaterial('#f2d3a0',3));b.box(0,3.4,-.17,.24,.34,.035,glowMaterial('#f2d3a0',3));b.cylinder(0,3.75,0,.25,.25,'#4c615a',0,6);const root=place(b.finish(),x,z,'Lisbon street lantern',undefined,'prop').root;const light=localNightLight('#f4d1a0',7,14,1.8);light.position.set(0,3.4,0);root.add(light);const halo=lightHalo('#f0d2a0',2.2,.09);halo.position.set(0,3.4,0);root.add(halo);groundWash(root,0,0,5.5,'#f0cf9e',.065);streetLamps.push({x,z});};
+ const lamp=(x:number,z:number)=>{if(!lisbonLand(x,z,.35)||lisbonBridge(x,z)||roadClearance({x,z},roads)<1||!clearsTurns({x,z,w:.35,d:.35})||blocked(x,z,.35,.35,.45)||!arrivalClear(x,z,.3)||streetLamps.some(p=>Math.hypot(x-p.x,z-p.z)<7))return;const b=new Builder();b.cylinder(0,1.65,0,.045,3.3,'#4c615a',.03,8);b.box(0,3.4,0,.32,.5,.32,'#50635a');b.box(0,3.4,.17,.24,.34,.035,glowMaterial('#f2d3a0',3));b.box(0,3.4,-.17,.24,.34,.035,glowMaterial('#f2d3a0',3));b.cylinder(0,3.75,0,.25,.25,'#4c615a',0,6);const root=place(b.finish(),x,z,'Lisbon street lantern',undefined,'prop').root;const light=localNightLight('#f4d1a0',8.6,16.8,1.8);light.position.set(0,3.4,0);root.add(light);const halo=lightHalo('#f0d2a0',2.2,.09);halo.position.set(0,3.4,0);root.add(halo);groundWash(root,0,0,6.7,'#f0cf9e',.078);streetLamps.push({x,z});};
  for(const road of roads.filter(r=>!r.bridge))for(let i=2;i<road.points.length-2;i+=7){const a=road.points[i],b=road.points[i+1],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz)||1,side=(i%2?1:-1),offset=road.width/2+1.1;lamp(a.x-dz/len*offset*side,a.z+dx/len*offset*side);}
  const tree=(x:number,z:number,scale:number)=>{const r=scale*1.45;if(!dry(x,z,r*2,r*2,.35)||onBelemApron(x,z,r)||roadClearance({x,z},roads)<r+1.1||roadClearance({x,z},[palaceApproach])<r+.6||blocked(x,z,r*2,r*2,.15)||!arrivalClear(x,z,r)||GARDENS.some(g=>Math.hypot(x-g.x,z-g.z)<g.r*.8))return false;if(objects.state.objects.some(o=>o.kind==='tree'&&Math.hypot(x-o.x,z-o.z)<1.8*scale))return false;objects.addTree(x,z,scale);return true;};
  for(let i=0;i<15000&&objects.trees.size<820;i++)tree(range(-104,104),range(-104,104),range(.48,.95));
@@ -141,15 +194,15 @@ export function createLisbonWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}){
  shrubs.count=shrubCount;shrubs.castShadow=true;shrubs.receiveShadow=true;shrubs.userData.nonSolid=true;shrubs.raycast=()=>{};shrubs.name='Lisbon · instanced Mediterranean groundcover';scene.add(shrubs);
  const rail=new Builder();for(const bank of [NORTH_BANK,SOUTH_BANK])for(let i=1;i<bank.length;i++){const a=bank[i-1],b=bank[i],n=Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/2.3);for(let j=0;j<n;j++){const p={x:a.x+(b.x-a.x)*j/n,z:a.z+(b.z-a.z)*j/n},p2={x:a.x+(b.x-a.x)*(j+1)/n,z:a.z+(b.z-a.z)*(j+1)/n},y=landHeight(p.x,p.z);rail.beam(vec(p.x,y,p.z),vec(p.x,y+.65,p.z),.035,'#5f7875',5);for(const h of [.35,.65])rail.beam(vec(p.x,y+h,p.z),vec(p2.x,landHeight(p2.x,p2.z)+h,p2.z),.025,'#85958a',5);}}
  const railings=rail.finish();scene.add(railings);scene.add(details.finish());
- const traffic=createTraffic(scene,objects,{loops:TRAFFIC_LOOPS,junctions:[{x:-80,z:-44},{x:-33,z:-49},{x:-8,z:-53},{x:39,z:-65},{x:43,z:81},{x:60,z:-94},{x:72,z:91},{x:98,z:-101},{x:-27,z:91},{x:99,z:93},{x:-8,z:-85},{x:39,z:-91}],laneSign:-1,carsPerRoute:3,city:'Lisbon',roads});
+ const traffic=createTraffic(scene,objects,{loops:TRAFFIC_LOOPS,junctions:[{x:-80,z:-44},{x:-33,z:-49},{x:-8,z:-53},{x:39,z:-65},{x:43,z:81},{x:60,z:-94},{x:72,z:91},{x:98,z:-101},{x:-27,z:91},{x:99,z:93},{x:-8,z:-85},{x:39,z:-91},{x:69.9047619048,z:58.6984126984}],laneSign:-1,laneOffset:.75,carsPerRoute:3,city:'Lisbon',roads});
  const wakes=new BoatWakes(scene),boats:{group:T.Group;object:Destructible;length:number;phase:number;speed:number;curve:T.CatmullRomCurve3}[]=[];
  // Open estuary routes stay clear of both banks and the two tower foundations.
  const boatPath=[[-99,39],[-72,29],[-36,17],[0,6],[39,-6],[92,-15],[98,0],[60,10],[20,24],[-19,37],[-57,49],[-92,58]];
  const curve=new T.CatmullRomCurve3(boatPath.map(([x,z])=>vec(x,WATER_HEIGHT,z)),true,'centripetal');
  const fleet:TagusVessel[]=['launch','sail','yacht','catamaran','ferry','ship'],boatCache=new Map(fleet.map(kind=>[kind,tagusVessel(kind)]));
- for(let i=0;i<25;i++){const kind=i===24?'ship':fleet[i%5],group=boatCache.get(kind)!.clone(true);scene.add(group);const object=objects.registerModel(group,`Tagus ${kind}`,'boat');boats.push({group,object,length:kind==='ship'?14:kind==='ferry'?7.6:kind==='yacht'?5.5:kind==='catamaran'?5.2:3.3,phase:i/25,speed:kind==='sail'?.0014:kind==='ship'?.001:kind==='ferry'?.0022:.0025,curve});}
+ for(let i=0;i<25;i++){const kind=i===24?'ship':fleet[i%5],group=boatCache.get(kind)!.clone(true);lightBoat(group,{cabin:i%3!==1,party:(kind==='yacht'||kind==='catamaran')&&i%2===0?{beam:kind==='catamaran'?2.2:1.6,length:kind==='catamaran'?5.2:5.5,height:1.17,sideFraction:.45}:undefined});scene.add(group);const object=objects.registerModel(group,`Tagus ${kind}`,'boat');boats.push({group,object,length:kind==='ship'?14:kind==='ferry'?7.6:kind==='yacht'?5.5:kind==='catamaran'?5.2:3.3,phase:i/25,speed:kind==='sail'?.0014:kind==='ship'?.001:kind==='ferry'?.0022:.0025,curve});}
  const localLighting=new LocalNightLighting(scene),groundGlows=new NightGroundGlows(scene,pools);
  const update=(time:number,player?:{x:number;z:number},_night=false)=>{river.time.value=time;fountain.update(time);objects.updateWind(time);traffic.update(time,player);for(const boat of boats){if(boat.object.destroyed)continue;const t=T.MathUtils.euclideanModulo(boat.phase+time*boat.speed,1),p=boat.curve.getPointAt(t),d=boat.curve.getTangentAt(t);boat.group.position.set(p.x,WATER_HEIGHT+.03+Math.sin(time+boat.phase*17)*.018,p.z);boat.group.rotation.y=Math.atan2(d.x,d.z);objects.syncModelPose(boat.object);wakes.emit(boat.object.id,boat.group.position,boat.group.rotation.y,boat.length,time);}wakes.update(time);};
  const updateLights=(dt:number,focus:T.Vector3,time:number,night:boolean,reduced=false)=>{groundGlows.update();localLighting.update(dt,focus,night);updateRooftopBeacons(beacons,time,night,reduced);};update(0);
- return {objects,roads,obstacles,water,river,traffic,boats,wakes,update,updateLights,updateClock:(_date=new Date())=>{},landmarks:LANDMARKS,localLighting,groundGlows,beacons,streetLamps,railings,furniture,bins:[],hydrants:[],gardens:GARDENS,circularSites:[],towers:landmarkRoots,homes,terraceDwellings,bridgeRoots,shrubs,fountain,palaceWalk,palaceApproach,ground,cutWalls,streetRoot,plan:PLAN};
+ return {cornerAprons,cornerWidths,objects,roads,obstacles,water,river,traffic,boats,wakes,update,updateLights,updateClock:(_date=new Date())=>{},landmarks:LANDMARKS,localLighting,groundGlows,beacons,streetLamps,railings,furniture,bins:[],hydrants:[],gardens:GARDENS,circularSites:[],towers:landmarkRoots,homes,terraceDwellings,civicRoots,bridgeRoots,shrubs,fountain,hillRetaining,palaceSteps,palaceWalk,palaceApproach,ground,cutWalls,streetRoot,plan:PLAN};
 }

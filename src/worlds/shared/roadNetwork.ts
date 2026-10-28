@@ -11,24 +11,24 @@ const xy=(p:PlanPoint):[number,number]=>[snap(p.x),snap(p.z)];
 
 /** One joined surface per network: intersections contain no overlapping faces.
  * Union/triangulation runs once at construction; animation never rebuilds it. */
-export function roadNetworkGeometry(roads:Road[],height:number|((x:number,z:number)=>number),options:{padding?:number;excludePadding?:number;bounds?:number;maxSegment?:number;maxHeightError?:number}={}){
- const unionAt=(padding:number)=>{
+export function roadNetworkGeometry(roads:Road[],height:number|((x:number,z:number)=>number),options:{padding?:number;excludePadding?:number;excludeRoads?:Road[];excludeRoadPadding?:number;bounds?:number;maxSegment?:number;maxHeightError?:number;widthAt?:(road:Road,index:number)=>number}={}){
+ const unionAt=(padding:number,network=roads)=>{
   const polygons:Polygon[]=[];
-  for(const road of roads){
+  for(const road of network){
     if(road.points.length<2)continue;
-    const sections=strokeSections(road.points,road.width+padding),closed=Math.hypot(road.points[0].x-road.points.at(-1)!.x,road.points[0].z-road.points.at(-1)!.z)<1e-6;
+    const sections=strokeSections(road.points,options.widthAt?p=>options.widthAt!(road,road.points.indexOf(p))+padding:road.width+padding),closed=Math.hypot(road.points[0].x-road.points.at(-1)!.x,road.points[0].z-road.points.at(-1)!.z)<1e-6;
     const left=sections.map(s=>xy(s.left)),right=sections.map(s=>xy(s.right));
     if(closed)polygons.push(Math.abs(area(left))>Math.abs(area(right))?[left,right]:[right,left]);
     else polygons.push([[...left,...right.reverse()]]);
     // Separate road definitions can meet at a corner or terminate on a through
     // road. A compact round join fills their outer wedge before the union.
     for(const end of [road.points[0],road.points.at(-1)!]){
-      const connected=roads.some(other=>other!==road&&other.points.slice(1).some((b,i)=>{
+      const connected=network.some(other=>other!==road&&other.points.slice(1).some((b,i)=>{
         const a=other.points[i],dx=b.x-a.x,dz=b.z-a.z,len=dx*dx+dz*dz;
         const t=len?Math.max(0,Math.min(1,((end.x-a.x)*dx+(end.z-a.z)*dz)/len)):0;
         return Math.hypot(end.x-a.x-t*dx,end.z-a.z-t*dz)<1e-5;
       }));
-      if(connected){const r=(road.width+padding)/2;polygons.push([Array.from({length:20},(_,i)=>[snap(end.x+Math.cos(i*Math.PI/10)*r),snap(end.z+Math.sin(i*Math.PI/10)*r)] as [number,number])]);}
+      if(connected){const r=((options.widthAt?.(road,end===road.points[0]?0:road.points.length-1)??road.width)+padding)/2;polygons.push([Array.from({length:20},(_,i)=>[snap(end.x+Math.cos(i*Math.PI/10)*r),snap(end.z+Math.sin(i*Math.PI/10)*r)] as [number,number])]);}
     }
   }
   return polygons.length?clipping.union(polygons[0],...polygons.slice(1)):[];
@@ -37,6 +37,9 @@ export function roadNetworkGeometry(roads:Road[],height:number|((x:number,z:numb
   // Curbs use a true ring rather than a second full draped road. Independent
   // triangles can otherwise cross the asphalt on a curved height field.
   if(options.excludePadding!==undefined)merged=clipping.difference(merged,unionAt(options.excludePadding));
+  // Small junction extensions can be triangulated separately without drawing
+  // over the existing network or retessellating every distant hillside road.
+  if(options.excludeRoads?.length)merged=clipping.difference(merged,unionAt(options.excludeRoadPadding??0,options.excludeRoads));
   if(options.bounds){const b=options.bounds;merged=clipping.intersection(merged,[[[-b,-b],[b,-b],[b,b],[-b,b],[-b,-b]]]);}
   type Point=Ring[number];type Triangle=[Point,Point,Point];
   const vertices:number[]=[],uv:number[]=[],limit=options.maxSegment??3,triangles:Triangle[]=[],midpoints=new Map<string,Point>();

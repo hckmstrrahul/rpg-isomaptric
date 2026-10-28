@@ -32,9 +32,10 @@ https://github.com/user-attachments/assets/3212fd84-550a-4bce-9fa4-1f4871d053b8
 - **A lunar world.** Cratered terrain, pressure habitats, landing pads, gold-foil satellites, a solar farm and a crater-relief minimap. Planting creates a tree in a sealed greenhouse.
 - **Only the selected world loads.** Chapter plans and geometry are separate dynamic imports. London’s asset pack and Dubai’s lettering load only in their own chapters; a location change releases the previous scene. Dry worlds skip river reflections.
 - **Cities in motion.** London has 44 vehicles across cars, buses, cabs, vans, trucks, bicycles and motorcycles; left-hand traffic, timed signals and player avoidance. 22 boats leave fading world-space wakes and pass beneath three bridges. Dubai uses 36 vehicles with right-hand traffic, eight signal junctions, 18 moving motor/sailing yachts, and 20 moored yachts across five connected piers.
-- **Day and night.** Warm clock rings, softly blue Eye capsules, occupied windows, 205 street lanterns, red rooftop beacons, and a world-space moon with a critically damped entrance. Dubai adds illuminated tower suites, softly lit glass shells and 147 waterfront street lights. Appearance persists through loading and location changes.
+- **Day and night.** Warm clock rings, softly blue Eye capsules, occupied windows, 205 street lanterns, red rooftop beacons, and a textured moon that rises smoothly with consistent shading. Dubai adds illuminated tower suites, softly lit glass shells and 147 waterfront street lights. Selected boats have warm occupied cabins; a few yachts and launches carry restrained deck strings, while Yamuna rowboats carry seated people and small warm lanterns. Appearance persists through loading and location changes.
 - **A playful sandbox.** “Grenade Gun” fires straight, fiery shells up to 50 m, with projected blast previews and water splashes. Plant trees within 50 m, including on cleared plots. Reload restores the city.
-- **Camera and touch controls.** Slow arrival zoom, smooth follow, Birdview, free orbit and pinch. Separate pointer tracking supports simultaneous touch movement, running and tool use.
+- **Camera and touch controls.** Slow arrival zoom, compass-icon Follow, Birdview, free orbit and pinch. The minimap stays north-up while its camera needle tracks your orbit. Separate pointer tracking supports simultaneous touch movement, running and tool use.
+- **A trip to the Moon.** Click the Moon in the sky to open Moon Base. Selecting or loading the lunar world always begins with **“To the moon...”**.
 - **Continuous backgrounds.** The backdrop fills the screen in every world, by day and night, including low camera angles and wide zooms. Cast shadows keep the miniature grounded without exposing a rectangular background-plane edge.
 - **Connected and grounded.** City roads meet at joined junctions and continue to the miniature's cut edges. Signals face their approaches; traffic runs on tested circulating routes. Every world starts the explorer near its center on accessible ground. Discoveries update the counter silently.
 - **Small details that hold up close.** Tiled roofs on every face, modeled goggles and armor, British railings and hydrant markers, glazed telephone boxes, bridge ramps and flush road paint.
@@ -71,7 +72,7 @@ https://github.com/user-attachments/assets/3212fd84-550a-4bce-9fa4-1f4871d053b8
 
 ## Chapter 003 · Bengaluru
 
-The inland Cubbon Park civic district: a larger Vidhana Soudha, Attara Kacheri, mature park canopy, a flowing fountain and varied office towers. Cars and cyclists circulate on the connected civic ring.
+The inland Cubbon Park civic district: a larger Vidhana Soudha, Attara Kacheri, mature park canopy, a flowing fountain and varied office towers. Cars and cyclists circulate on the connected civic ring. Street and park lights cast a slightly brighter, wider warm wash at night.
 
 | Day | Night |
 | --- | --- |
@@ -79,7 +80,7 @@ The inland Cubbon Park civic district: a larger Vidhana Soudha, Attara Kacheri, 
 
 ## Chapter 004 · Agra
 
-A grander Taj Mahal beside the Yamuna, with four detached minarets, mosque, jawab, charbagh and Great Gate; Mehtab Bagh lies across the river. The monument and precinct are artistically enlarged, with 184 varied dwellings around Taj Ganj.
+A grander Taj Mahal beside the Yamuna, with four detached minarets, mosque, jawab, charbagh and Great Gate; Mehtab Bagh lies across the river. The monument and precinct are artistically enlarged, with 184 varied dwellings around Taj Ganj. As the Moon rises, the marble gradually brightens with cool highlights and a restrained luminous rim. Seventy-two tourists visit the gardens by day, walk through the gate into nearby homes at dusk, and emerge gradually at dawn. Seated rowers and passengers ride the Yamuna boats; 83 street and garden lamps light the district through the existing twelve-light pool.
 
 | Day | Night |
 | --- | --- |
@@ -87,7 +88,7 @@ A grander Taj Mahal beside the Yamuna, with four detached minarets, mosque, jawa
 
 ## Chapter 005 · Lisbon
 
-Belém–Alcântara and Almada face one another across the Tagus: limestone monuments, MAAT, 497 varied dwellings, a flowing fountain and the 25 de Abril Bridge. Twenty-five vessels mix launches, sails, yachts, catamarans, ferries and one large ship. Pena Palace stands on a wooded corner hill, explicitly labelled as a **Sintra excursion**; this is an artistic inset rather than its real geographic position.
+Belém–Alcântara and Almada face one another across the Tagus: limestone monuments, 822 dwellings in compact attached neighborhoods, gently rolling residential terrain, narrower streets, a flowing fountain and the 25 de Abril Bridge. Houses vary in height and use deeper terracotta and rust tile colors. MAAT and Central Tejo follow the riverbank while leaving the promenade open. Twenty-five vessels mix launches, sails, yachts, catamarans, ferries and one large ship. Pena Palace stands on a wooded corner hill, explicitly labelled as a **Sintra excursion**; this is an artistic inset rather than its real geographic position. Its road follows a gently graded bench with a continuous capped retaining edge and a separate stepped palace approach. White parish-style and civic buildings draw on Portuguese architectural references without relocating a named church into the district.
 
 | Day | Night |
 | --- | --- |
@@ -97,13 +98,13 @@ Belém–Alcântara and Almada face one another across the Tagus: limestone monu
 
 ## Chapter 006 · Moon Base
 
-A **fictional settlement** on cratered lunar terrain, with pressure habitats, gold-foil satellites, solar arrays, rovers and contained greenhouse planting. Its minimap uses subtle crater relief while retaining the shared game controls and default subtitle.
+A **fictional settlement** on cratered lunar terrain, with pressure habitats, gold-foil satellites, solar arrays, rovers and contained greenhouse planting. White service-road markers glow more clearly at night. Its minimap uses subtle crater relief while retaining the shared game controls and default subtitle. Reach it through the location selector or by clicking the Moon in another world's night sky.
 
 | Sunlit terrain | Base lights |
 | --- | --- |
 | ![Fictional Moon base with crater bowls and pressure habitats](docs/media/moon-day.jpg) | ![Fictional Moon base with restrained cyan habitat lighting](docs/media/moon-night.jpg) |
 
-These gallery images are captures from the playable renderer. [Research and geographic scope](docs/WORLD-EXPANSION.md) · [Latest visual review](docs/refinement-review.md).
+These gallery images are captures from the playable renderer. [Research and geographic scope](docs/WORLD-EXPANSION.md) · [Latest visual review](docs/latest-refinement-review.md).
 
 ## Run it
 
@@ -111,7 +112,7 @@ Use **Node.js 24** and a browser with WebGL 2.
 
 ```sh
 npm ci
-npm run dev
+npm run dev -- --port 5188
 ```
 
 Vite prints the development URL. For the production build and complete automated checks:
@@ -135,6 +136,7 @@ There is no backend, account, API key, paid service, or external runtime asset r
 | Follow / city / character | `F` / `R` / `C` |
 | Straight-down follow | Birdview button |
 | Day / night | Sun or moon button |
+| Travel to Moon Base | Click the Moon in the night sky |
 | Change world | Location pill at the top; arrow keys then Enter or Space when focused |
 | Help / cancel | `?` / `Escape` |
 

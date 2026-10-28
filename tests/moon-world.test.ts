@@ -8,6 +8,13 @@ const {createMoonWorld}=await import('../src/worlds/moon/world.ts');
 const {PLAN,FICTIONAL,CRATERS,SERVICE_PATHS,lunarHeight}=await import('../src/worlds/moon/plan.ts');
 const {canWalk,surfaceHeight,resolveTeleport}=await import('../src/layout.ts');
 const scene=new T.Scene(),world=createMoonWorld(scene);
+test('White lunar road guidance is brighter only at night and stays a single batch',async()=>{
+ const {setNightMaterials}=await import('../src/lighting.ts');const matches:T.Mesh[]=[];
+ scene.traverse(o=>{if(o instanceof T.Mesh&&!Array.isArray(o.material)&&o.material.name==='Lunar white guidance markers')matches.push(o);});
+ assert.equal(matches.length,1);const mat=matches[0].material as T.MeshStandardMaterial;
+ setNightMaterials(true);assert.equal(mat.emissiveIntensity,1.5);assert.ok(mat.emissive.r>.7&&mat.emissive.g>.8);
+ setNightMaterials(false);assert.equal(mat.emissiveIntensity,0);assert.equal(matches[0].castShadow,false);
+});
 test('Moon Base is explicitly fictional, dry, and has eight connected engineering sites',()=>{
  assert.equal(FICTIONAL,true);assert.equal(world.fictional,true);assert.equal(PLAN.waterVisible,false);assert.equal(PLAN.moonVisible,false);assert.equal(world.water.visible,false);
  assert.equal(PLAN.landmarks.length,8);assert.ok(PLAN.landmarks.every(l=>/fictional/i.test(l.description)));assert.equal(world.traffic.cars.length,0);

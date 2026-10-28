@@ -11,12 +11,16 @@ import {glowMaterial,lightHalo,lightPool} from '../../lighting.ts';
 import {LocalNightLighting,localNightLight} from '../../localNightLighting.ts';
 import {NightGroundGlows} from '../../nightGroundGlows.ts';
 import {BoatWakes} from '../../boatWakes.ts';
+import {lightBoat} from '../../boatLighting.ts';
 import type {Destructible} from '../../sandbox.ts';
 import type {CityAssets} from '../../importedAssets.ts';
 import {strokeGeometry} from '../shared/surfaces.ts';
 import {roadNetworkGeometry} from '../shared/roadNetwork.ts';
 import {PLAN,TAJ,TAJ_SCALE,GARDEN,GATE,MEHTAB,SOUTH_BANK,NORTH_BANK,SOUTH_LAND,NORTH_LAND,AGRA_PATHS,AGRA_LANDMARKS,TRAFFIC_LOOPS,agraLand,agraHeight,agraRoads,southBankAt,northBankAt} from './plan.ts';
-import {tajMahal,terrace,mosque,greatGate,arcade,tajGanjHouse,tajGanjRow,cypressResources} from './architecture.ts';
+import {tajMahal,terrace,mosque,greatGate,arcade,tajGanjHouse,tajGanjRow,cypressResources,updateAgraMarble} from './architecture.ts';
+import {createTajMoonAura} from './moonAura.ts';
+import {agraVisitorPlan,TajVisitors} from './visitors.ts';
+import {addRiverboatPeople} from '../../miniPeople.ts';
 
 /** No imported city assets. All façades and vegetation resources belong to this
  * selected chapter, and all real point lighting comes from the existing 12-light pool. */
@@ -60,6 +64,7 @@ export function createAgraWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
   const podium=terrace();podium.scale.setScalar(TAJ_SCALE);staticRoot(podium,TAJ.x,TAJ.z,'Taj Mahal · marble riverfront podium and south stair');
   const tajBoxes:Obstacle[]=[{x:0,z:TAJ.z,w:10.36*TAJ_SCALE,d:10.36*TAJ_SCALE},...[-1,1].flatMap(x=>[-1,1].map(z=>({x:x*7.88*TAJ_SCALE,z:TAJ.z+z*7.88*TAJ_SCALE,w:1.44*TAJ_SCALE,d:1.44*TAJ_SCALE})))];
   const taj=tajMahal();taj.scale.setScalar(TAJ_SCALE);landmarkRoots.push(place(taj,0,TAJ.z,'Taj Mahal','taj',tajBoxes).root);
+  const moonAura=createTajMoonAura(taj);let moonlight=0;
   for(const side of [-1,1]){const model=mosque(side===1);model.scale.setScalar(1.2);landmarkRoots.push(place(model,side*29,TAJ.z,side<0?'Taj Mahal Mosque':'Jawab Guesthouse',side<0?'taj-mosque':'jawab').root);}
   const gate=place(greatGate(),GATE.x,GATE.z,'Darwaza-i Rauza','great-gate',[{x:-3.35,z:GATE.z,w:3.5,d:4.6},{x:3.35,z:GATE.z,w:3.5,d:4.6}]);landmarkRoots.push(gate.root);
   // The enlarged ensemble preserves bilateral symmetry and stands entirely on
@@ -130,18 +135,32 @@ export function createAgraWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
     const home=place(tajGanjHouse(homes.length,w,d,h),x,z,'Taj Ganj courtyard residence');homes.push(home.root);
     if(homes.length%12===0){const source=localNightLight('#f1d4a8',3.5,8,2);source.position.set(0,1.5,d/2+.1);home.root.add(source);const pool=lightPool(3.5,'#ebc494',.035);pool.position.set(0,.09,d/2+.4);home.root.add(pool);pools.push(pool);}
   }
-  // Path lamps use warm dim bulbs and the shared bounded source pool. No giant halos.
+  const visitorPlan=agraVisitorPlan(homes);
+  // The central road connector has no circulating vehicle route. A marked crossing
+  // and shared traffic reservation still protect it if traffic is later extended.
+  for(let z=92.35;z<=95.7;z+=.67)detail.box(visitorPlan.crossing.x,GROUND+.079,z,1.65,.012,.27,'#cbd0be');
+  // More continuous sidewalk coverage, with modestly brighter/wider spill. These
+  // anchors still share the same twelve real lights and one batched ground wash.
   const lamp=(x:number,z:number,heritage=false)=>{
-    if(!agraLand(x,z,1)||blocked(x,z,.22,.22,.35)||!arrivalClear(x,z,.4)||streetLamps.some(p=>Math.hypot(x-p.x,z-p.z)<6))return;
-    const b=new Builder(),h=heritage?1.45:2.8;b.cylinder(0,h/2,0,.04,h,'#77735e',.035,7);b.box(0,h,0,.24,.22,.24,'#7c765e');b.box(0,h,0,.17,.15,.17,glowMaterial('#f8dfb8',1.8));
-    const {root}=place(b.finish(),x,z,'Agra path light',undefined,undefined,'prop');
-    const halo=lightHalo('#efd8b6',heritage?.7:1.2,.045);halo.position.set(0,h,0);root.add(halo);
-    const source=localNightLight('#f2d8b0',heritage?2.2:5,heritage?6:10,2);source.position.copy(halo.position);root.add(source);
-    const pool=lightPool(heritage?3:5,'#ecd5aa',heritage?.028:.048);pool.position.set(0,.12,0);root.add(pool);pools.push(pool);streetLamps.push({x,z});
+    if(!agraLand(x,z,1)||blocked(x,z,.22,.22,.35)||!arrivalClear(x,z,.4)||roadClearance({x,z},roads)<.45||streetLamps.some(p=>Math.hypot(x-p.x,z-p.z)<6))return false;
+    const b=new Builder(),h=heritage?1.45:2.8;b.cylinder(0,h/2,0,.04,h,'#77735e',.035,7);b.box(0,h,0,.24,.22,.24,'#7c765e');b.box(0,h,0,.17,.15,.17,glowMaterial('#f8dfb8',2.25));
+    const {root}=place(b.finish(),x,z,heritage?'Agra garden path light':'Agra sidewalk light',undefined,undefined,'prop');
+    const halo=lightHalo('#efd8b6',heritage?.7:1.2,.056);halo.position.set(0,h,0);root.add(halo);
+    const source=localNightLight('#f2d8b0',heritage?2.75:6.25,heritage?7.5:12.5,2);source.position.copy(halo.position);root.add(source);
+    const pool=lightPool(heritage?3.75:6.25,'#ecd5aa',heritage?.035:.06);pool.position.set(0,.12,0);root.add(pool);pools.push(pool);streetLamps.push({x,z});return true;
   };
-  for(const road of roads)for(let i=1;i<road.points.length;i++){
-    const a=road.points[i-1],b=road.points[i],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz),nx=-dz/len,nz=dx/len;
-    for(let d=4;d<len;d+=13){const x=a.x+dx*d/len,z=a.z+dz*d/len;for(const side of [-1,1])lamp(x+nx*(road.width/2+.7)*side,z+nz*(road.width/2+.7)*side);}
+  for(const road of roads){
+    let distance=0,next=4,index=0;
+    for(let i=1;i<road.points.length;i++){
+      const a=road.points[i-1],b=road.points[i],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);if(!len)continue;
+      const nx=-dz/len,nz=dx/len,offset=road.width/2+.7;
+      while(next<distance+len){
+        const t=(next-distance)/len,x=a.x+dx*t,z=a.z+dz*t,side=index++%2?1:-1;
+        if(!lamp(x+nx*offset*side,z+nz*offset*side))lamp(x-nx*offset*side,z-nz*offset*side);
+        next+=8;
+      }
+      distance+=len;
+    }
   }
   for(const x of [-31.3,31.3])for(const z of [19,38,57])lamp(x,z,true);
   for(const x of [-14,14])for(const z of [74,85])lamp(x,z,true);
@@ -150,7 +169,7 @@ export function createAgraWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
   const cypress=cypressResources();objects.registerTreeSpecies('agra-cypress',cypress.trunk,cypress.foliage,cypress.bark,cypress.leaves,'Cypress',4.7,.85);
   const tree=(x:number,z:number,scale:number,formal=false)=>{
     const radius=(formal?.42:1.25)*scale;
-    if(!agraLand(x,z,radius+.5)||blocked(x,z,radius*2,radius*2,.3)||roadClearance({x,z},roads)<radius+1||roadClearance({x,z},AGRA_PATHS)<radius+.15||!arrivalClear(x,z,radius))return false;
+    if(!agraLand(x,z,radius+.5)||blocked(x,z,radius*2,radius*2,.3)||roadClearance({x,z},roads)<radius+1||roadClearance({x,z},AGRA_PATHS)<radius+.15||roadClearance({x,z},visitorPlan.corridors)<radius+.12||!arrivalClear(x,z,radius))return false;
     if(objects.state.objects.some(o=>!o.destroyed&&o.kind==='tree'&&Math.hypot(x-o.x,z-o.z)<(formal?1.6:2.25)*scale))return false;
     objects.addTree(x,z,scale,false,0,formal?'agra-cypress':'default');return true;
   };
@@ -166,7 +185,7 @@ export function createAgraWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
   // Low hedges and shrub drifts are one instanced batch. Formal rows read from above.
   const shrubGeo=new T.IcosahedronGeometry(1,1),shrubs=new T.InstancedMesh(shrubGeo,material('#557d3a'),2300),matrix=new T.Matrix4(),quaternion=new T.Quaternion();let shrubCount=0;
   const shrub=(x:number,z:number,r=.35,formal=false)=>{
-    if(shrubCount>=2300||!agraLand(x,z,r+.4)||blocked(x,z,r*2,r*2,.15)||roadClearance({x,z},roads)<r+1||!arrivalClear(x,z,r))return;
+    if(shrubCount>=2300||!agraLand(x,z,r+.4)||blocked(x,z,r*2,r*2,.15)||roadClearance({x,z},roads)<r+1||roadClearance({x,z},visitorPlan.corridors)<r+.08||!arrivalClear(x,z,r))return;
     matrix.compose(vec(x,GROUND+r*.38,z),quaternion,vec(r,r*.6,r*.85));shrubs.setMatrixAt(shrubCount,matrix);shrubs.setColorAt(shrubCount,new T.Color(formal?'#4e7337':new T.Color().setHSL(.2+random()*.08,.33,.28+random()*.15)));shrubCount++;
   };
   for(const x of [-17.5,17.5])for(const z of [25,50.5])for(const dx of [-7.4,7.4])for(const dz of [-5.3,5.3]){
@@ -188,14 +207,19 @@ export function createAgraWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
   const curve=new T.CatmullRomCurve3([-94,-65,-30,0,35,65,94].map(x=>vec(x,0,center(x))),false,'centripetal');
   for(let i=0;i<4;i++){
     const b=new Builder();b.sphere(0,.08,0,.45,.16,1.15,'#8d6d4f');b.box(0,.18,0,.64,.12,1.65,'#c2a979');for(const z of [-.6,0,.6])b.box(0,.28,z,.7,.08,.15,'#775943');
-    const root=b.finish();root.name='Yamuna wooden riverboat';scene.add(root);const object=objects.registerModel(root,root.name,'boat');boats.push({group:root,object,length:2.3,phase:.12+i*.23,curve});
+    const root=b.finish();root.name='Yamuna wooden riverboat';if(i%2===0)lightBoat(root,{lantern:{x:0,y:.39,z:.6}});addRiverboatPeople(root,i);scene.add(root);const object=objects.registerModel(root,root.name,'boat');boats.push({group:root,object,length:2.3,phase:.12+i*.23,curve});
   }
+  const visitors=new TajVisitors(scene,visitorPlan,obstacles,traffic.cars);
   const localLighting=new LocalNightLighting(scene),groundGlows=new NightGroundGlows(scene,pools);
   const update=(time:number,player?:{x:number;z:number},_night=false)=>{
     river.time.value=time;objects.updateWind(time);traffic.update(time,player);
     for(const boat of boats){if(boat.object.destroyed)continue;const cycle=(boat.phase+time*.0015)%2,forward=cycle<1,t=forward?cycle:2-cycle,p=boat.curve.getPointAt(t),tangent=boat.curve.getTangentAt(t);boat.group.position.set(p.x,WATER_HEIGHT+.04+Math.sin(time+boat.phase)*.012,p.z);boat.group.rotation.y=Math.atan2(tangent.x,tangent.z)+(forward?0:Math.PI);objects.syncModelPose(boat.object);wakes.emit(boat.object.id,boat.group.position,boat.group.rotation.y,boat.length,time);}
     wakes.update(time);
   };
-  const updateLights=(dt:number,focus:T.Vector3,_time:number,night:boolean,_reduced=false)=>{groundGlows.update();localLighting.update(dt,focus,night);};update(0);
-  return {obstacles,roads,objects,water,river,traffic,boats,wakes,update,updateLights,updateClock:(_date=new Date())=>{},landmarks:AGRA_LANDMARKS,localLighting,groundGlows,beacons:[],streetLamps,railings,furniture:[],bins:[],hydrants:[],gardens:PLAN.map.gardens,circularSites:[],towers:landmarkRoots,homes,housingUnits:homes.reduce((n,h)=>n+(h.userData.houseCount??1),0),bridgeRoots:[],shrubs};
+  const updateLights=(dt:number,focus:T.Vector3,_time:number,night:boolean,reduced=false,moonReveal=night?1:0)=>{
+    const target=night?T.MathUtils.clamp(moonReveal,0,1):0;
+    moonlight=night?T.MathUtils.lerp(moonlight,target,1-Math.exp(-Math.max(0,dt)*3)):0;
+    updateAgraMarble(night,moonlight);moonAura.update(moonlight);visitors.update(dt,night,reduced);groundGlows.update();localLighting.update(dt,focus,night);
+  };update(0);
+  return {obstacles,roads,objects,water,river,traffic,boats,wakes,visitors,moonAura,update,updateLights,updateClock:(_date=new Date())=>{},landmarks:AGRA_LANDMARKS,localLighting,groundGlows,beacons:[],streetLamps,railings,furniture:[],bins:[],hydrants:[],gardens:PLAN.map.gardens,circularSites:[],towers:landmarkRoots,homes,housingUnits:homes.reduce((n,h)=>n+(h.userData.houseCount??1),0),bridgeRoots:[],shrubs};
 }
