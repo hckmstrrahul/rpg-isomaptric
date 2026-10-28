@@ -104,7 +104,7 @@ A **fictional settlement** on cratered lunar terrain, with pressure habitats, go
 | --- | --- |
 | ![Fictional Moon base with crater bowls and pressure habitats](docs/media/moon-day.jpg) | ![Fictional Moon base with restrained cyan habitat lighting](docs/media/moon-night.jpg) |
 
-These gallery images are captures from the playable renderer. [Research and geographic scope](docs/WORLD-EXPANSION.md) · [Latest visual review](docs/latest-refinement-review.md).
+These gallery images are captures from the playable renderer. [Research and geographic scope](docs/WORLD-EXPANSION.md) · [City refinement review](docs/latest-refinement-review.md) · [Taj white-marble review](docs/taj-white-review.md).
 
 ## Run it
 
