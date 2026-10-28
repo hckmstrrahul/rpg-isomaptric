@@ -80,7 +80,7 @@ The inland Cubbon Park civic district: a larger Vidhana Soudha, Attara Kacheri, 
 
 ## Chapter 004 · Agra
 
-A grander Taj Mahal beside the Yamuna, with four detached minarets, mosque, jawab, charbagh and Great Gate; Mehtab Bagh lies across the river. The monument and precinct are artistically enlarged, with 184 varied dwellings around Taj Ganj. As the Moon rises, the marble gradually brightens with cool highlights and a restrained luminous rim. Seventy-two tourists visit the gardens by day, walk through the gate into nearby homes at dusk, and emerge gradually at dawn. Seated rowers and passengers ride the Yamuna boats; 83 street and garden lamps light the district through the existing twelve-light pool.
+A grander Taj Mahal beside the Yamuna, with four detached minarets, mosque, jawab, charbagh and Great Gate; Mehtab Bagh lies across the river. The monument and precinct are artistically enlarged, with 184 varied dwellings around Taj Ganj. As the Moon rises, a dedicated white fill gradually lights only the Taj’s marble surfaces, with clean edges and dark arch recesses. Seventy-two tourists visit the gardens by day, walk through the gate into nearby homes at dusk, and emerge gradually at dawn. Seated rowers and passengers ride the Yamuna boats; 83 street and garden lamps light the district through the existing twelve-light pool.
 
 | Day | Night |
 | --- | --- |

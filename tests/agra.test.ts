@@ -51,29 +51,33 @@ test('Agra geometry and night resources remain bounded with sufficient neighbour
  const taj=scene.getObjectByName('Taj Mahal')!;taj.traverse(o=>{if(o instanceof T.Mesh)for(const mat of Array.isArray(o.material)?o.material:[o.material]){const m=mat as T.MeshStandardMaterial;if(m.emissiveMap)assert.ok(m.userData.agraMarble&&m.emissiveMap===m.map,'Taj must retain stone detail, not an office-window grid');assert.ok(!m.userData.glowStrength,'Taj must not use bright bulb materials');}});
  console.log(`Agra: ${world.homes.length} residences, ${world.objects.trees.size} trees, ${world.shrubs.count} shrubs, ${meshes} meshes, ${Math.round(triangles)} unique triangles, ${maps.size} maps, ${world.streetLamps.length} lamps.`);
 });
-test('night marble preserves carved contrast and restores its daytime finish without new lights',()=>{
- const stones=new Set<T.MeshStandardMaterial>();scene.getObjectByName('Taj Mahal')!.traverse(o=>{if(o instanceof T.Mesh)for(const mat of Array.isArray(o.material)?o.material:[o.material])if(mat.userData.agraMarble)stones.add(mat);});
- assert.equal(stones.size,2);const focus=new T.Vector3(0,2,0);
+test('Taj white fill is restricted to its own marble and restores the daytime finish',()=>{
+ const fill=world.tajNightLighting,stones=fill.materials,focus=new T.Vector3(0,2,0);
+ assert.equal(stones.length,2);
+ const unrelated:T.MeshStandardMaterial[]=[];
+ for(const name of ['Taj Mahal Mosque','Jawab Guesthouse','Taj Mahal · marble riverfront podium and south stair'])scene.getObjectByName(name)!.traverse(o=>{if(o instanceof T.Mesh)for(const mat of Array.isArray(o.material)?o.material:[o.material])if(mat instanceof T.MeshStandardMaterial)unrelated.push(mat);});
+ assert.ok(unrelated.length>0);assert.ok(unrelated.every(m=>!stones.includes(m)&&!m.userData.tajNightFill));
  setNightMaterials(false);world.updateLights(1,focus,0,false);
- const original=[...stones].map(m=>({material:m,color:m.color.getHex(),map:m.map}));
- for(const m of stones){assert.equal(m.emissiveIntensity,0);assert.equal(m.roughness,.68);assert.equal(m.metalness,0);}
- setNightMaterials(true);world.updateLights(1,focus,0,true);
- for(const m of stones){assert.ok(m.emissiveIntensity>.2&&m.emissiveIntensity<=.33);assert.ok(m.roughness>=.32&&m.roughness<.6);assert.equal(m.emissiveMap,m.map);}
- assert.ok([...stones].find(m=>m.userData.agraPolishedDome)!.roughness<[...stones].find(m=>!m.userData.agraPolishedDome)!.roughness);
+ const original=stones.map(m=>({material:m,color:m.color.getHex(),map:m.map}));
+ assert.equal(fill.strength.value,0);
+ for(const m of stones){assert.equal(m.emissiveIntensity,0);assert.equal(m.roughness,.68);assert.equal(m.transparent,false);}
+ setNightMaterials(true);for(let i=0;i<60;i++)world.updateLights(1/30,focus,i/30,true,false,1);
+ assert.ok(fill.strength.value>.98);
+ for(const m of stones){assert.equal(m.emissiveIntensity,0);assert.ok(m.roughness>=.37&&m.roughness<.6);assert.equal(m.transparent,false);}
+ assert.ok(stones.find(m=>m.userData.agraPolishedDome)!.roughness<stones.find(m=>!m.userData.agraPolishedDome)!.roughness);
  const lights:T.PointLight[]=[];scene.traverse(o=>{if(o instanceof T.PointLight)lights.push(o);});assert.equal(lights.length,12);
  setNightMaterials(false);world.updateLights(1,focus,0,false);
  for(const {material:m,color,map} of original){assert.equal(m.emissiveIntensity,0);assert.equal(m.roughness,.68);assert.equal(m.color.getHex(),color);assert.equal(m.map,map);}
- assert.ok(lights.every(light=>light.intensity===0));
+ assert.equal(fill.strength.value,0);assert.ok(lights.every(light=>light.intensity===0));
 });
-test('moon reveal drives a gradual local Taj aura without brightening the dark portals',()=>{
- const focus=new T.Vector3(0,2,0),aura=world.moonAura;
- setNightMaterials(false);world.updateLights(1,focus,0,false);assert.equal(aura.mesh.visible,false);
- setNightMaterials(true);world.updateLights(.1,focus,0,true,false,0);assert.equal(aura.strength.value,0);
- world.updateLights(.1,focus,0,true,false,1);assert.ok(aura.strength.value>.1&&aura.strength.value<.4);
- const partial=aura.strength.value;for(let i=0;i<60;i++)world.updateLights(1/60,focus,i/60,true,false,1);assert.ok(aura.strength.value>partial&&aura.strength.value>.95);
- assert.equal(aura.mesh.material.depthWrite,false);assert.equal(aura.mesh.material.depthTest,true);assert.equal(aura.mesh.material.side,T.BackSide);
- scene.getObjectByName('Taj Mahal')!.traverse(o=>{if(o instanceof T.Mesh&&o.material instanceof T.MeshStandardMaterial&&!o.material.userData.agraMarble)assert.equal(o.material.emissiveIntensity===undefined?0:o.material.emissive.getHex(),0,'Doorways and carved recesses must not become luminous');});
- setNightMaterials(false);world.updateLights(.01,focus,0,false);assert.equal(aura.strength.value,0);assert.equal(aura.mesh.visible,false);
+test('moon reveal gradually lights the Taj surface without halo geometry or luminous portals',()=>{
+ const focus=new T.Vector3(0,2,0),fill=world.tajNightLighting;
+ setNightMaterials(false);world.updateLights(1,focus,0,false);
+ setNightMaterials(true);world.updateLights(.1,focus,0,true,false,0);assert.equal(fill.strength.value,0);
+ world.updateLights(.1,focus,0,true,false,1);assert.ok(fill.strength.value>.1&&fill.strength.value<.5);
+ const partial=fill.strength.value;for(let i=0;i<60;i++)world.updateLights(1/60,focus,i/60,true,false,1);assert.ok(fill.strength.value>partial&&fill.strength.value>.95);
+ scene.getObjectByName('Taj Mahal')!.traverse(o=>{if(o instanceof T.Mesh){assert.ok(!o.geometry.hasAttribute('auraShell'));assert.ok(!o.name.includes('rim'));for(const m of Array.isArray(o.material)?o.material:[o.material]){assert.ok(!(m instanceof T.ShaderMaterial),'No separate halo shader pass');if(m instanceof T.MeshStandardMaterial&&!m.userData.agraMarble)assert.equal(m.emissive.getHex(),0,'Dark portals stay unlit');}}});
+ setNightMaterials(false);world.updateLights(.01,focus,0,false);assert.equal(fill.strength.value,0);
 });
 test('visitor paths connect real home doors to the gardens without cutting through buildings or water',()=>{
  const visitors=world.visitors;assert.equal(visitors.people.length,72);assert.equal(visitors.batches.length,4);assert.ok(visitors.plan.doors.length>=6);

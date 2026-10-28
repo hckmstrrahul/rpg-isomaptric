@@ -17,8 +17,8 @@ import type {CityAssets} from '../../importedAssets.ts';
 import {strokeGeometry} from '../shared/surfaces.ts';
 import {roadNetworkGeometry} from '../shared/roadNetwork.ts';
 import {PLAN,TAJ,TAJ_SCALE,GARDEN,GATE,MEHTAB,SOUTH_BANK,NORTH_BANK,SOUTH_LAND,NORTH_LAND,AGRA_PATHS,AGRA_LANDMARKS,TRAFFIC_LOOPS,agraLand,agraHeight,agraRoads,southBankAt,northBankAt} from './plan.ts';
-import {tajMahal,terrace,mosque,greatGate,arcade,tajGanjHouse,tajGanjRow,cypressResources,updateAgraMarble} from './architecture.ts';
-import {createTajMoonAura} from './moonAura.ts';
+import {tajMahal,terrace,mosque,greatGate,arcade,tajGanjHouse,tajGanjRow,cypressResources} from './architecture.ts';
+import {createTajNightLighting} from './nightLighting.ts';
 import {agraVisitorPlan,TajVisitors} from './visitors.ts';
 import {addRiverboatPeople} from '../../miniPeople.ts';
 
@@ -64,7 +64,7 @@ export function createAgraWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
   const podium=terrace();podium.scale.setScalar(TAJ_SCALE);staticRoot(podium,TAJ.x,TAJ.z,'Taj Mahal · marble riverfront podium and south stair');
   const tajBoxes:Obstacle[]=[{x:0,z:TAJ.z,w:10.36*TAJ_SCALE,d:10.36*TAJ_SCALE},...[-1,1].flatMap(x=>[-1,1].map(z=>({x:x*7.88*TAJ_SCALE,z:TAJ.z+z*7.88*TAJ_SCALE,w:1.44*TAJ_SCALE,d:1.44*TAJ_SCALE})))];
   const taj=tajMahal();taj.scale.setScalar(TAJ_SCALE);landmarkRoots.push(place(taj,0,TAJ.z,'Taj Mahal','taj',tajBoxes).root);
-  const moonAura=createTajMoonAura(taj);let moonlight=0;
+  const tajNightLighting=createTajNightLighting(taj);let moonlight=0;
   for(const side of [-1,1]){const model=mosque(side===1);model.scale.setScalar(1.2);landmarkRoots.push(place(model,side*29,TAJ.z,side<0?'Taj Mahal Mosque':'Jawab Guesthouse',side<0?'taj-mosque':'jawab').root);}
   const gate=place(greatGate(),GATE.x,GATE.z,'Darwaza-i Rauza','great-gate',[{x:-3.35,z:GATE.z,w:3.5,d:4.6},{x:3.35,z:GATE.z,w:3.5,d:4.6}]);landmarkRoots.push(gate.root);
   // The enlarged ensemble preserves bilateral symmetry and stands entirely on
@@ -219,7 +219,7 @@ export function createAgraWorld(scene:T.Scene,_assets:CityAssets={loaded:[]}) {
   const updateLights=(dt:number,focus:T.Vector3,_time:number,night:boolean,reduced=false,moonReveal=night?1:0)=>{
     const target=night?T.MathUtils.clamp(moonReveal,0,1):0;
     moonlight=night?T.MathUtils.lerp(moonlight,target,1-Math.exp(-Math.max(0,dt)*3)):0;
-    updateAgraMarble(night,moonlight);moonAura.update(moonlight);visitors.update(dt,night,reduced);groundGlows.update();localLighting.update(dt,focus,night);
+    tajNightLighting.update(moonlight);visitors.update(dt,night,reduced);groundGlows.update();localLighting.update(dt,focus,night);
   };update(0);
-  return {obstacles,roads,objects,water,river,traffic,boats,wakes,visitors,moonAura,update,updateLights,updateClock:(_date=new Date())=>{},landmarks:AGRA_LANDMARKS,localLighting,groundGlows,beacons:[],streetLamps,railings,furniture:[],bins:[],hydrants:[],gardens:PLAN.map.gardens,circularSites:[],towers:landmarkRoots,homes,housingUnits:homes.reduce((n,h)=>n+(h.userData.houseCount??1),0),bridgeRoots:[],shrubs};
+  return {obstacles,roads,objects,water,river,traffic,boats,wakes,visitors,tajNightLighting,update,updateLights,updateClock:(_date=new Date())=>{},landmarks:AGRA_LANDMARKS,localLighting,groundGlows,beacons:[],streetLamps,railings,furniture:[],bins:[],hydrants:[],gardens:PLAN.map.gardens,circularSites:[],towers:landmarkRoots,homes,housingUnits:homes.reduce((n,h)=>n+(h.userData.houseCount??1),0),bridgeRoots:[],shrubs};
 }

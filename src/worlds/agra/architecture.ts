@@ -12,17 +12,10 @@ const marbleMap=canvasTexture(256,256,c=>{
   c.strokeStyle='rgba(130,122,112,.07)';c.lineWidth=.6;
   for(let i=0;i<7;i++){c.beginPath();for(let x=0;x<=256;x+=8){const y=i*43+Math.sin(x*.027+i)*5;x?c.lineTo(x,y):c.moveTo(x,y);}c.stroke();}
 });marbleMap.wrapS=marbleMap.wrapT=T.RepeatWrapping;
-// A small ambient moon bounce lifts the stone without filling its dark recesses.
-// Reuse the stone map, so there is no extra texture or window-style illumination.
-const marble=registerGlow(new T.MeshStandardMaterial({color:'#ffffff',map:marbleMap,emissiveMap:marbleMap,emissive:'#d3e0ea',roughness:.68,metalness:0}),0);marble.userData.worldTile=2.6;marble.userData.agraMarble=true;
-const domeMarble=registerGlow(marble.clone(),0);domeMarble.userData.agraPolishedDome=true;
-export function updateAgraMarble(night:boolean,reveal=night?1:0) {
-  // Smooth curved stone catches a localized moon highlight; walls stay softly matte.
-  // The original daytime material is restored exactly when changing theme.
-  const strength=night?T.MathUtils.clamp(reveal,0,1):0;
-  marble.emissiveIntensity=strength*.26;domeMarble.emissiveIntensity=strength*.32;
-  marble.roughness=.68-strength*.18;domeMarble.roughness=.68-strength*.34;
-}
+// Base stone stays unlit outside the monument. Its private night fill is applied
+// only to the Taj's cloned materials by nightLighting.ts.
+const marble=new T.MeshStandardMaterial({color:'#ffffff',map:marbleMap,roughness:.68,metalness:0});marble.userData.worldTile=2.6;marble.userData.agraMarble=true;
+const domeMarble=marble.clone();domeMarble.userData.agraPolishedDome=true;
 const shadow=material('#464845'),red=material(sandstone),gold=material('#b99a5c',.36,.55);
 const inlayLine=new T.MeshStandardMaterial({color:inlay,roughness:.81,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});inlayLine.userData.noShadow=true;
 

@@ -1,5 +1,10 @@
 # World release validation
 
+## 29 October 2026 · Taj surface lighting
+
+The Taj’s layered silhouette halo is removed. A white directional fill now affects only cloned marble materials on the monument, keeping its arches dark and surrounding buildings unchanged. It follows Moon reveal, restores the daytime finish, and adds no geometry, outline, global bloom or extra light pool.
+
+
 Updated: 28 October 2026. Same Node.js 24 / Three.js / Vite toolchain as the first release. The lockfile remains authoritative.
 
 ## Six-world refinement
