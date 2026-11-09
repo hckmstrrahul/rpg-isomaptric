@@ -32,7 +32,9 @@ import { createArrivalZoom } from './arrivalZoom.ts';
 import { cameraPanFactor, BIRDVIEW_ZOOM } from './cameraGlide.ts';
 import { createExploreFlight, type ExploreFlightFrame } from './exploreFlight.ts';
 import { cameraHeading, compassLabel } from './cameraHeading.ts';
+import { createLoadingScreen } from './loadingScreen.ts';
 
+const loadingScreen=createLoadingScreen(document.getElementById('loading')!);
 document.querySelector<HTMLElement>('#app')!.innerHTML=hud;
 installInputFocus();
 const removeTooltips=installGlassTooltips();
@@ -42,15 +44,14 @@ if(WORLD_ID==='moon'){
   document.querySelector('#tree-tool')!.setAttribute('title','Plant a tree in a sealed greenhouse');
 }
 document.querySelector('#scene')!.setAttribute('aria-label',`Interactive three-dimensional ${WORLD_NAME}. Use WASD or arrow keys to walk. Click open ground to fly, drag to orbit and scroll to zoom.`);
-function navigateToWorld(id:WorldId) {
-  if(id===WORLD_ID)return;
+let navigating=false;
+async function navigateToWorld(id:WorldId) {
+  if(id===WORLD_ID||navigating)return;
+  navigating=true;
+  const app=document.getElementById('app')!;app.inert=true;app.setAttribute('aria-busy','true');
   try{localStorage.setItem('rpg-isomaptric-world',id);}catch{/* URL remains the source of truth. */}
-  let loading=document.getElementById('loading');
-  if(!loading){loading=document.createElement('div');loading.id='loading';document.querySelector('#app')!.append(loading);}
-  loading.className='loading';loading.setAttribute('role','status');loading.setAttribute('aria-live','polite');
-  loading.innerHTML=`<div class="spinner"></div><h2>${id==='moon'?'To the moon...':'A little world awaits'}</h2>`;
-  document.documentElement.classList.add('world-changing');
-  // Paint the destination-specific message before the next document starts.
+  await loadingScreen.cover(id==='moon'?'To the moon...':'A little world awaits');
+  // Navigate only after the opaque surface has painted, covering GPU teardown.
   requestAnimationFrame(()=>requestAnimationFrame(()=>location.assign(worldUrl(id,location.href))));
 }
 const worldTabs=[...document.querySelectorAll<HTMLAnchorElement>('[data-world]')];
@@ -517,7 +518,6 @@ async function init() {
     updateCompass();
     renderer.info.reset();reflections.update(renderer,now);composer.render();
   };
-  animationId=requestAnimationFrame(animate);
   addEventListener('pagehide',()=>{
     removeTooltips();helpResize.disconnect();removeEventListener('resize',positionHelp);
     resourcesReleased=true;cancelAnimationFrame(animationId);controls.dispose();reflections.dispose();
@@ -540,9 +540,16 @@ async function init() {
       refreshHud:()=>{const p=character.root.position;miniMap.draw(p.x,p.z,character.body.rotation.y,visited);screenPosition($('player-tag'),p.x,p.y+3.1,p.z);updateCompass();},
     });
   }
+  // Warm shaders and render behind the loader; never reveal a blank canvas or
+  // make the fade compete with the first heavy scene draw.
+  await renderer.compileAsync(scene,camera);
+  if(motion.reduced){camera.zoom=characterZoom();camera.updateProjectionMatrix();}
+  lastTime=performance.now();animate(lastTime);
+  await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
+  await loadingScreen.reveal();
   for(const node of document.querySelectorAll<HTMLElement>('.ui, #scene, .skip-link'))node.inert=node.id==='help-panel';
+  $('app').inert=false;$('app').setAttribute('aria-busy','false');
   arrivalZoom=createArrivalZoom(camera.zoom,characterZoom(),motion.reduced);lastTime=performance.now();
-  $('loading').classList.add('hidden');setTimeout(()=>$('loading').remove(),700);
   canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();if(resourcesReleased)return;toast('Graphics paused. Reload the page to restore the city.',true);});
 }
 

@@ -38,12 +38,7 @@
         document.querySelector('meta[name="theme-color"]').content = night ? '#171c22' : '#a8c8bd';
       })();
     </script>
-    <style>
-      html{background:#26342b;color:#f5f7ef;font-family:Inter,system-ui,sans-serif}
-      html[data-theme=night]{background:#202d34;color:#f0f5f4}
-      .boot-loading{position:fixed;inset:0;display:grid;place-content:center;text-align:center;background:inherit}
-      .boot-loading h2{font-size:1.75rem;font-weight:550;letter-spacing:-.03em}
-    </style>
+    <!-- loading-styles -->
     <title>rpg isomaptric</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
@@ -51,7 +46,8 @@
     <link rel="manifest" href="/site.webmanifest" />
   </head>
   <body>
-    <main id="app" aria-label="City explorer"><div class="boot-loading" role="status" aria-live="polite"><h2>A little world awaits</h2></div></main>
+    <main id="app" aria-label="City explorer" aria-busy="true" inert></main>
+    <div class="boot-loading" id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><h2>A little world awaits</h2></div>
     <script id="world-loading-bootstrap">
       (() => {
         const worlds = ['london', 'dubai', 'bengaluru', 'agra', 'lisbon', 'moon'];
@@ -60,6 +56,7 @@
           try { world = localStorage.getItem('rpg-isomaptric-world'); } catch { world = null; }
         }
         if (world === 'moon') document.querySelector('.boot-loading h2').textContent = 'To the moon...';
+        document.querySelector('#loading .spinner').style.animationDelay = `-${Date.now() % 1000}ms`;
       })();
     </script>
     <script type="module" src="/src/main.ts"></script>

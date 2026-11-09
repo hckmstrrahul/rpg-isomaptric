@@ -1,0 +1,21 @@
+/* Inlined by Vite before first paint; this same surface survives app startup. */
+html{background:#26342b;color:#f5f7ef;font-family:system-ui,sans-serif}
+html[data-theme=night]{background:#202d34;color:#f0f5f4}
+.boot-loading{
+  --loading-duration:180ms;
+  --loading-ease:cubic-bezier(.23,1,.32,1);
+  position:fixed;inset:0;z-index:20;box-sizing:border-box;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;text-align:center;background:var(--glass-surface,#26342b);color:var(--glass-ink,#f5f7ef);
+  font-family:system-ui,sans-serif;font-weight:400;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+html[data-theme=night] .boot-loading{background:var(--glass-surface,#202d34);color:var(--glass-ink,#f0f5f4)}
+.boot-loading h2{font-family:inherit;font-size:1.75rem;font-weight:550;line-height:1.2;letter-spacing:-.03em;margin:22px 0 0}
+.boot-loading p{font-size:.875rem;line-height:1.6}
+.boot-loading .spinner{
+  box-sizing:border-box;flex:none;width:32px;height:32px;
+  border:2px solid #ffffff24;border-top-color:currentColor;border-radius:50%;
+  animation:loading-spin 1s linear infinite;
+}
+@keyframes loading-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.boot-loading .spinner{animation:none}}

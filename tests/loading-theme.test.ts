@@ -31,12 +31,12 @@ test('Moon first paint uses its travel message for direct URLs and saved selecti
     ['?world=agra','moon','A little world awaits'],
     ['',null,'A little world awaits'],
   ]){
-    const title={textContent:'A little world awaits'};
-    runInNewContext(worldScript,{URLSearchParams,location:{search},localStorage:{getItem:()=>saved},document:{querySelector:()=>title}});
+    const title={textContent:'A little world awaits'},spinner={style:{}};
+    runInNewContext(worldScript,{URLSearchParams,location:{search},localStorage:{getItem:()=>saved},document:{querySelector:(selector:string)=>selector.includes('spinner')?spinner:title}});
     assert.equal(title.textContent,expected);
   }
   const title={textContent:'A little world awaits'};
-  runInNewContext(worldScript,{URLSearchParams,location:{search:'?world=moon'},localStorage:{getItem:()=>{throw new Error('Blocked');}},document:{querySelector:()=>title}});
+  runInNewContext(worldScript,{URLSearchParams,location:{search:'?world=moon'},localStorage:{getItem:()=>{throw new Error('Blocked');}},document:{querySelector:(selector:string)=>selector.includes('spinner')?{style:{}}:title}});
   assert.equal(title.textContent,'To the moon...');
   assert.ok(html.indexOf('world-loading-bootstrap')<html.indexOf('src="/src/main.ts"'));
 });

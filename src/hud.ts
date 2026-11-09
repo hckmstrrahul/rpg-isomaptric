@@ -25,5 +25,4 @@ export const hud = `
   </footer>
 
   <div class="player-tag ui" id="player-tag"><span>YOU</span></div><div id="damage-bars" class="damage-bars" aria-live="off"></div>
-  <div class="loading" id="loading" role="status" aria-live="polite"><div class="spinner"></div><h2>${WORLD_ID==='moon'?'To the moon...':'A little world awaits'}</h2></div>
 `;
