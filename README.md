@@ -1,7 +1,5 @@
 # rpg isomaptric
 
-**Six little worlds. Walk, fly, explore, and make a mess.**
-
 A playable collection of isometric dioramas built with Three.js: London, Dubai, Bengaluru, Agra, Lisbon, and a fictional Moon base. Wander through landmarks, switch between day and night, follow the traffic, plant trees, or take a grenade launcher to the scenery.
 
 [Play in your browser](https://rpg-isomaptric.vercel.app) · [Gameplay video](https://youtu.be/l_WwsOZ4Jgw) · [Reusable glass UI](styles/glass-ui/) · [Build a world](docs/WORLD-AUTHORING.md)
