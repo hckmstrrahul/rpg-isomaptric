@@ -21,6 +21,8 @@ import Moon02Icon from '@hugeicons/core-free-icons/Moon02Icon';
 import ArrowUp02Icon from '@hugeicons/core-free-icons/ArrowUp02Icon';
 import ArrowLeft02Icon from '@hugeicons/core-free-icons/ArrowLeft02Icon';
 import ArrowDown02Icon from '@hugeicons/core-free-icons/ArrowDown02Icon';
+import NewTwitterIcon from '@hugeicons/core-free-icons/NewTwitterIcon';
+import GithubIcon from '@hugeicons/core-free-icons/GithubIcon';
 
 // The free Hugeicons set uses Stroke Rounded throughout.
 // A navigation compass with cardinal marks, distinct from a stopwatch or drafting tool.
@@ -42,6 +44,7 @@ const icons = {
   tree: PineTreeIcon, hero: User03Icon, city: Building06Icon,
   sun: Sun03Icon, moon: Moon02Icon, up: ArrowUp02Icon,
   left: ArrowLeft02Icon, down: ArrowDown02Icon, right: ArrowRight02Icon,
+  x: NewTwitterIcon, github: GithubIcon,
 };
 const escape = (value: unknown) => String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 export function icon(name: keyof typeof icons, size = 17) {

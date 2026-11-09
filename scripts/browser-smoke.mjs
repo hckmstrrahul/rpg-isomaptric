@@ -33,8 +33,11 @@ try {
       assert.deepEqual(await page.locator('#toolbelt .equipment').evaluateAll(nodes=>nodes.map(node=>node.id)),['explore-tool','bomb-tool','tree-tool']);
       assert.equal(await page.locator('#teleport-button,#teleport-panel').count(),0);
       await page.keyboard.press('KeyM');assert.equal((await state(page)).tool,'explore');
-      assert.equal(await page.locator('.brand-links').evaluate(node=>getComputedStyle(node).marginTop),'12px');
-      report.checks.push({name:'three tools; Explore replaces Teleport; header link gap is 12px'});
+      const headerRow=await page.locator('.brand-meta').evaluate(node=>{const p=node.querySelector('p').getBoundingClientRect(),links=node.querySelector('.brand-links').getBoundingClientRect();return Math.abs((p.top+p.bottom)/2-(links.top+links.bottom)/2)<2;});
+      assert.ok(headerRow,'Social icons sit beside the subtitle');
+      assert.equal(await page.locator('.controls,#location,#character-portrait,#help-close').count(),0);
+      assert.ok(await page.locator('.mini-map #location-name').isVisible());
+      report.checks.push({name:'three tools; compact header links; area name in minimap'});
       await page.locator('#birdview').click();await page.waitForTimeout(250);assert.equal(await page.locator('#birdview').getAttribute('aria-pressed'),'true');report.checks.push({name:'Birdview',zoom:(await state(page)).zoom});
       await page.locator('#theme-button').click();assert.equal((await state(page)).night,true);assert.equal(await page.evaluate(()=>localStorage.getItem('little-london-appearance')),'night');report.checks.push({name:'theme toggle persists'});
       await page.screenshot({path:'artifacts/browser-desktop.png'});
@@ -60,10 +63,13 @@ try {
   for(const viewport of [{width:390,height:844},{width:820,height:1180},{width:320,height:740}]) {
     const context=await browser.newContext({viewport,deviceScaleFactor:1,hasTouch:true,isMobile:true,reducedMotion:'reduce'});const p=await context.newPage();p.on('pageerror',error=>report.errors.push(error.message));await p.goto(url);await ready(p);
     assert.ok(await p.locator('#touch-pad').isVisible());assert.ok(await p.locator('#run-tool').isVisible());assert.ok(!(await p.locator('.controls').isVisible()));
-    const layout=await p.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,controls:[...document.querySelectorAll('#toolbelt,.mini-map,.north-mini,.touch-pad,.touch-actions,.brand,.world-switcher')].map(e=>{const r=e.getBoundingClientRect();return {name:e.className,left:r.left,right:r.right,top:r.top,bottom:r.bottom};})}));
+    assert.equal(await p.locator('.mini-map').isVisible(),false);assert.equal(await p.locator('.zoom-tools').isVisible(),false);
+    const layout=await p.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,controls:[...document.querySelectorAll('#toolbelt,.touch-pad,.touch-actions,.brand,.world-switcher')].map(e=>{const r=e.getBoundingClientRect();return {name:e.className,left:r.left,right:r.right,top:r.top,bottom:r.bottom};})}));
     assert.ok(layout.scroll<=layout.width+1);for(const box of layout.controls){assert.ok(box.left>=-1&&box.right<=viewport.width+1,`${box.name} stays in viewport`);assert.ok(box.bottom<=viewport.height+1);}
-    const mapBox=layout.controls.find(b=>b.name.includes('mini-map')),compassBox=layout.controls.find(b=>b.name==='north-mini');
-    assert.ok(Math.abs((compassBox.left+compassBox.right)/2-mapBox.right)<2&&Math.abs((compassBox.top+compassBox.bottom)/2-mapBox.top)<2,'Compass straddles the upper-right map corner');
+    const tools=layout.controls.find(b=>b.name.includes('toolbelt')),arrows=layout.controls.find(b=>b.name.includes('touch-pad')),actions=layout.controls.find(b=>b.name==='touch-actions');
+    assert.ok(Math.abs(arrows.bottom-actions.bottom)<1,'Run shares the arrows’ bottom baseline');
+    if(viewport.width<=640)assert.ok(tools.top>=arrows.bottom+10,'Mobile tools sit below movement controls');
+    else assert.ok(Math.abs(tools.bottom-arrows.bottom)<1,'Tablet controls share a bottom baseline');
     assert.equal((await state(p)).zoom,8);await p.screenshot({path:`artifacts/browser-${viewport.width}.png`});report.checks.push({name:`${viewport.width}px touch layout`,...layout});await context.close();
   }
   assert.deepEqual(report.errors,[]);

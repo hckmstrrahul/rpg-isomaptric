@@ -5,6 +5,7 @@ Use Node.js 24, `npm ci`, and `npm run dev`. Keep changes focused and run `npm r
 ## Repository layout
 
 - `src/`: the application, procedural world and simulations.
+- `styles/glass-ui/`: portable glass tokens, components, behavior and visual specification.
 - `tests/`: geometry, gameplay, lighting, camera and input regression tests.
 - `scripts/`: audits, asset preparation and reproducible media capture.
 - `public/assets/`: locally served source-derived assets with provenance.
@@ -20,7 +21,17 @@ Update the shared street/river data before changing visual geometry. Preserve fi
 
 ## Media capture
 
-Capture runs against an explicitly enabled HTTPS preview. It uses a clean Playwright browser context and the installed Google Chrome, not a personal browser profile. The capture module is excluded from ordinary production builds.
+Capture uses an explicitly enabled preview, a clean Playwright browser context and the installed Google Chrome. The capture module is excluded from ordinary production builds.
+
+Refresh the README's six static screenshots and the glass spec's background images locally, leaving the London GIF untouched:
+
+```sh
+VITE_CAPTURE=1 npm run dev -- --host 127.0.0.1 --port 5194 --strictPort
+# In another terminal:
+node scripts/capture-readme.mjs http://127.0.0.1:5194
+```
+
+The same script accepts an HTTPS capture preview and an optional comma-separated world list as its final argument. The original London media workflow uses an HTTPS preview:
 
 ```sh
 vercel deploy --build-env VITE_CAPTURE=1

@@ -33,13 +33,14 @@
           if (saved === 'night' || saved === 'day') night = saved === 'night';
         } catch { /* The system theme still works when storage is unavailable. */ }
         document.documentElement.dataset.theme = night ? 'night' : 'day';
+        document.documentElement.dataset.glassTheme = night ? 'dark' : 'light';
         document.documentElement.style.colorScheme = night ? 'dark' : 'light';
         document.querySelector('meta[name="theme-color"]').content = night ? '#171c22' : '#a8c8bd';
       })();
     </script>
     <style>
-      html{background:#fbfaef;color:#284a43;font-family:Inter,system-ui,sans-serif}
-      html[data-theme=night]{background:#252d33;color:#dde3e4}
+      html{background:#26342b;color:#f5f7ef;font-family:Inter,system-ui,sans-serif}
+      html[data-theme=night]{background:#202d34;color:#f0f5f4}
       .boot-loading{position:fixed;inset:0;display:grid;place-content:center;text-align:center;background:inherit}
       .boot-loading h2{font-size:1.75rem;font-weight:550;letter-spacing:-.03em}
     </style>

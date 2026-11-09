@@ -11,8 +11,8 @@ export function mountNotifications() {
     theme:night?'dark':'light',position:'top-center',closeButton:true,visibleToasts:3,gap:10,
     offset:{top:'calc(var(--top) + 64px)'},mobileOffset:{top:'calc(var(--top) + 64px)'},
     containerAriaLabel:'City notifications',
-    style:{'--normal-bg':'var(--surface)','--normal-text':'var(--ink)','--normal-border':'var(--line)','--border-radius':'12px'} as CSSProperties,
-    toastOptions:{closeButtonAriaLabel:'Dismiss notification',style:{fontFamily:'inherit',fontSize:'12px',boxShadow:'var(--shadow)'}},
+    style:{'--normal-bg':'var(--glass)','--normal-text':'var(--ink)','--normal-border':'var(--edge)','--border-radius':'16px'} as CSSProperties,
+    toastOptions:{className:'glass',closeButtonAriaLabel:'Dismiss notification',style:{fontFamily:'inherit',fontSize:'12px',boxShadow:'var(--shadow)'}},
   }));
   // Subscribe before exposing show(), including errors raised during city startup.
   flushSync(()=>render(document.documentElement.dataset.theme==='night'));

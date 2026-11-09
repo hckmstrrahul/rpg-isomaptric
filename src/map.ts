@@ -36,7 +36,9 @@ export class CityMap {
     const polygon=(points:{x:number;z:number}[],color:string)=>{
       ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(map(p.x),map(p.z)):ctx.moveTo(map(p.x),map(p.z)));ctx.closePath();ctx.fillStyle=color;ctx.fill();
     };
-    ctx.fillStyle=ACTIVE_PLAN.waterVisible===false||ACTIVE_PLAN.londonRiver?palette.background:palette.water;ctx.fillRect(0,0,size,size);
+    // Inland minimaps meet the CSS clip directly; a separate canvas margin
+    // would create a second, square edge inside the rounded glass frame.
+    ctx.fillStyle=ACTIVE_PLAN.waterVisible===false?(this.full?palette.background:palette.land):ACTIVE_PLAN.londonRiver?palette.background:palette.water;ctx.fillRect(0,0,size,size);
     for(const land of ACTIVE_PLAN.map.land)polygon(land,palette.land);
     for(const water of ACTIVE_PLAN.map.water??[])polygon(water,palette.water);
     if(ACTIVE_PLAN.map.craters){

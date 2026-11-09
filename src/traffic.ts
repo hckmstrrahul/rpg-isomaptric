@@ -2,7 +2,7 @@ import * as T from 'three';
 import { bank, BRIDGES, GROUND, bridgeLiftAt, PLAYER_SPAWN, LANDMARKS } from './layout.ts';
 import { TRAFFIC_NORTH, ROAD_SOUTH } from './cityPlan.ts';
 import { WorldObjects } from './interactables.ts';
-import { createRoadVehicle, VEHICLE_TYPES } from './roadVehicles.ts';
+import { createRoadVehicle, VEHICLE_TYPES, type VehicleType } from './roadVehicles.ts';
 import { createTrafficSignals, signalPhase } from './trafficSignals.ts';
 import type {Road} from './cityPlan.ts';
 
@@ -81,50 +81,83 @@ function bridgeLoop(north:number,south:number) {
   for(let z=south-8;z>north+7;z-=2)points.push(new T.Vector3(bank(z,1,4.2),0,z));
   points.push(new T.Vector3(bank(north,1,4.2),0,north),points[0].clone());return points;
 }
-export function createTraffic(scene:T.Scene,objects:WorldObjects,options?:{loops:{x:number;z:number}[][];junctions:{x:number;z:number}[];laneSign?:number;laneOffset?:number;carsPerRoute?:number;city?:string;roads?:Road[]}) {
+export function createTraffic(scene:T.Scene,objects:WorldObjects,options?:{loops:{x:number;z:number}[][];junctions:{x:number;z:number}[];laneSign?:number;laneOffset?:number;carsPerRoute?:number;city?:string;roads?:Road[];fleet?:readonly VehicleType[];nightDensity?:number}) {
   const routes=options?options.loops.flatMap(loop=>{const p=loop.map(p=>new T.Vector3(p.x,0,p.z));return [new RoadRoute(p,options.laneSign,options.laneOffset),new RoadRoute([...p].reverse(),options.laneSign,options.laneOffset)];}):[-1,1].flatMap(side=>{const p=bankLoop(side);return [new RoadRoute(p),new RoadRoute([...p].reverse())];});
   if(!options)for(const [north,south] of [[-51,8],[8,48]]){const p=bridgeLoop(north,south);routes.push(new RoadRoute(p),new RoadRoute([...p].reverse()));}
   const signals=createTrafficSignals(scene,options?.junctions,options?.roads);
   const parked:{x:number;z:number;length:number}[]=[{...PLAYER_SPAWN,length:4},...LANDMARKS.map(l=>({x:l.visitX,z:l.visitZ,length:3}))];
-  const cars=routes.flatMap((route,index)=>Array.from({length:options?.carsPerRoute??(index<4?8:3)},(_,i)=>{
-    let kind=VEHICLE_TYPES[(i+index*2)%VEHICLE_TYPES.length];
-    if(options?.city&&options.city!=='London'){if(kind==='bus')kind='van';else if(kind==='taxi')kind='car';}
+  const dense=!!options?.fleet,spawned:Footprint[]=[],fixedObstacles=[...objects.obstacles];
+  const countFor=(index:number)=>options?.fleet?.length??options?.carsPerRoute??(index<4?8:3);
+  const cars=routes.flatMap((route,index)=>Array.from({length:countFor(index)},(_,i)=>{
+    let kind:VehicleType=options?.fleet?.[(i+index*2)%options.fleet.length]??VEHICLE_TYPES[(i+index*2)%VEHICLE_TYPES.length];
+    if(!dense&&options?.city&&options.city!=='London'){if(kind==='bus')kind='van';else if(kind==='taxi')kind='car';}
     const model=createRoadVehicle(kind,['#ebe4cd','#263c42','#aa5941','#526f7b','#d3d7cd','#927d5e'][i%6]);
-    let distance=route.length*(i+.31+index*.09)/(options?.carsPerRoute??(index<4?8:3));
-    for(let n=0;n<200;n++) {
+    let distance=route.length*(i+.31+index*.09)/countFor(index),placed=false;
+    for(let n=0;n<(dense?Math.ceil(route.length*2):200);n++) {
       const pose=route.sample(distance),p=pose.point;
-      if(!signals.junctions.some(j=>Math.hypot(p.x-j.x,p.z-j.z)<10)&&!parked.some(o=>Math.hypot(p.x-o.x,p.z-o.z)<(model.length+o.length)/2+2.5))break;
-      distance+=5;
+      const footprint={x:p.x,z:p.z,w:model.width+.12,d:model.length+.8,yaw:pose.yaw};
+      const occupied=dense?spawned.some(other=>overlap(footprint,other))||fixedObstacles.some(o=>Math.hypot(o.x-p.x,o.z-p.z)<model.length+Math.max(o.w,o.d)&&overlap(footprint,{...o,yaw:0}))||Math.hypot(p.x-PLAYER_SPAWN.x,p.z-PLAYER_SPAWN.z)<3:parked.some(o=>Math.hypot(p.x-o.x,p.z-o.z)<(model.length+o.length)/2+2.5);
+      if(!signals.junctions.some(j=>Math.hypot(p.x-j.x,p.z-j.z)<(dense?7:10))&&!occupied){placed=true;break;}
+      distance+=dense?.5:5;
     }
+    if(dense&&!placed)throw new Error(`No safe traffic spawn on route ${index} for vehicle ${i}`);
     const {point,yaw}=route.sample(distance);model.root.position.set(point.x,GROUND+.08+bridgeLiftAt(point.x,point.z),point.z);model.root.rotation.y=yaw;scene.add(model.root);parked.push({x:point.x,z:point.z,length:model.length});
+    spawned.push({x:point.x,z:point.z,w:model.width,d:model.length,yaw});
     const obstacle={x:point.x,z:point.z,w:model.width,d:model.length};objects.obstacles.push(obstacle);
-    const name=options?.city&&options.city!=='London'?`${options.city} ${kind}`:kind==='bus'?'London bus':kind==='car'?'City car':model.root.name;
+    const name=kind==='dzire'||kind==='auto'||kind==='electric-auto'||kind==='citybus'?model.root.name:options?.city&&options.city!=='London'?`${options.city} ${kind}`:kind==='bus'?'London bus':kind==='car'?'City car':model.root.name;
     const object=objects.registerModel(model.root,name,'prop',[obstacle]);
     objects.moveModel(object,point.x,point.z,yaw,model.width,model.length);
-    const speed=kind==='bus'?2.3:kind==='bike'?2.5:kind==='truck'?2.4:2.8+i*.035;
-    return {model,object,kind,route,distance,speed,velocity:speed,steering:0,lane:route.laneOffset,junction:null as number|null};
+    const speed=kind==='bus'||kind==='citybus'?2.3:kind==='bike'?2.5:kind==='truck'?2.4:2.8+(i%12)*.035;
+    const density=options?.nightDensity??1,nightService=Math.floor((i+1)*density)>Math.floor(i*density);
+    return {model,object,kind,route,distance,speed,velocity:speed,steering:0,lane:route.laneOffset,junction:null as number|null,nightService};
   }));
   const movingObstacles=new Map(cars.flatMap(car=>objects.models.get(car.object.id)!.obstacles.map(o=>[o,car] as const)));
-  let previous=0,bypassOwner:number|null=null;
-  const update=(time:number,player?:{x:number;z:number})=>{
+  let previous=0,bypassOwner:number|null=null,night=false;
+  const active=(car:typeof cars[number])=>!car.object.destroyed&&car.object.active!==false;
+  const setActive=(car:typeof cars[number],value:boolean)=>{
+    car.object.active=value;car.model.root.visible=value;car.model.root.userData.lightsDisabled=!value;car.velocity=0;
+    const owned=objects.models.get(car.object.id)!.obstacles;
+    for(const obstacle of owned){const index=objects.obstacles.indexOf(obstacle);if(value&&index===-1)objects.obstacles.push(obstacle);else if(!value&&index!==-1)objects.obstacles.splice(index,1);}
+    if(car.junction!==null){const j=signals.junctions[car.junction];if(j.owner===car.object.id)j.owner=null;car.junction=null;}
+  };
+  const restoreDayTraffic=(player?:{x:number;z:number})=>{
+    // Returning daytime traffic uses free road space, never materializing on a
+    // night-service vehicle, a newly planted tree or the explorer.
+    if(!night&&options?.nightDensity!==undefined)for(const car of cars)if(!car.object.destroyed&&car.object.active===false){
+      for(let offset=0;offset<car.route.length;offset+=1){
+        const pose=car.route.sample(car.distance+offset),footprint={x:pose.point.x,z:pose.point.z,w:car.model.width+.12,d:car.model.length+.8,yaw:pose.yaw};
+        if(signals.junctions.some(j=>Math.hypot(j.x-footprint.x,j.z-footprint.z)<7)||player&&overlap(footprint,{...player,w:1.2,d:1.2,yaw:0}))continue;
+        if(objects.obstacles.some(o=>{if(Math.hypot(o.x-footprint.x,o.z-footprint.z)>car.model.length+Math.max(o.w,o.d))return false;const moving=movingObstacles.get(o);return overlap(footprint,moving?{x:o.x,z:o.z,w:moving.model.width,d:moving.model.length,yaw:moving.model.root.rotation.y}:{...o,yaw:0});}))continue;
+        car.distance+=offset;car.lane=car.route.laneOffset;objects.moveModel(car.object,pose.point.x,pose.point.z,pose.yaw,car.model.width,car.model.length);setActive(car,true);break;
+      }
+    }
+  };
+  const setNight=(value:boolean,player?:{x:number;z:number})=>{
+    night=value;
+    if(night&&options?.nightDensity!==undefined)for(const car of cars)if(active(car)&&!car.nightService)setActive(car,false);
+    if(!night)restoreDayTraffic(player);
+  };
+  const update=(time:number,player?:{x:number;z:number},afterDark=night)=>{
+    if(afterDark!==night)setNight(afterDark,player);
     const dt=Math.max(0,Math.min(.1,time-previous));previous=time;signals.update(time);
+    restoreDayTraffic(player);
     if(bypassOwner!==null){const owner=cars.find(c=>c.object.id===bypassOwner)!;const p=owner.model.root.position;
-      if(!player||owner.object.destroyed||Math.hypot(p.x-player.x,p.z-player.z)>12)bypassOwner=null;
+      if(!player||!active(owner)||Math.hypot(p.x-player.x,p.z-player.z)>12)bypassOwner=null;
     }
     if(player&&bypassOwner===null) {
-      const approaching=cars.filter(car=>{if(car.object.destroyed)return false;const pose=car.route.sample(car.distance),dx=player.x-pose.point.x,dz=player.z-pose.point.z,along=dx*Math.sin(pose.yaw)+dz*Math.cos(pose.yaw),across=Math.abs(dx*Math.cos(pose.yaw)-dz*Math.sin(pose.yaw));const center=car.route.sample(car.distance,0),lateral=(-(player.x-center.point.x)*Math.cos(center.yaw)+(player.z-center.point.z)*Math.sin(center.yaw))*car.route.laneSign;return along>0&&along<10&&across<car.model.width/2+.65&&lateral+car.model.width/2+.72>2.1;});
+      const approaching=cars.filter(car=>{if(!active(car))return false;const pose=car.route.sample(car.distance),dx=player.x-pose.point.x,dz=player.z-pose.point.z,along=dx*Math.sin(pose.yaw)+dz*Math.cos(pose.yaw),across=Math.abs(dx*Math.cos(pose.yaw)-dz*Math.sin(pose.yaw));const center=car.route.sample(car.distance,0),lateral=(-(player.x-center.point.x)*Math.cos(center.yaw)+(player.z-center.point.z)*Math.sin(center.yaw))*car.route.laneSign;return along>0&&along<10&&across<car.model.width/2+.65&&lateral+car.model.width/2+.72>2.1;});
       approaching.sort((a,b)=>a.model.root.position.distanceToSquared(new T.Vector3(player.x,a.model.root.position.y,player.z))-b.model.root.position.distanceToSquared(new T.Vector3(player.x,b.model.root.position.y,player.z)));
       if(approaching.length){const candidate=approaching[0],yaw=candidate.model.root.rotation.y;
         const center=candidate.route.sample(candidate.distance,0),across=(-(player.x-center.point.x)*Math.cos(center.yaw)+(player.z-center.point.z)*Math.sin(center.yaw))*candidate.route.laneSign;
-        const oncoming=across+candidate.model.width/2+.72>2.1&&cars.some(other=>other!==candidate&&!other.object.destroyed&&Math.cos(other.model.root.rotation.y-yaw)<-.4&&Math.hypot(other.object.x-player.x,other.object.z-player.z)<14);
+        const oncoming=across+candidate.model.width/2+.72>2.1&&cars.some(other=>other!==candidate&&active(other)&&Math.cos(other.model.root.rotation.y-yaw)<-.4&&Math.hypot(other.object.x-player.x,other.object.z-player.z)<14);
         if(!oncoming)bypassOwner=candidate.object.id;
       }
     }
     for(const car of cars) {
-      if(car.object.destroyed)continue;
+      if(!active(car))continue;
       const current=car.route.sample(car.distance),lookAhead=car.route.sample(car.distance+3);
       const bend=Math.abs(Math.atan2(Math.sin(lookAhead.yaw-current.yaw),Math.cos(lookAhead.yaw-current.yaw)));
-      let targetSpeed=car.speed*(1-.45*Math.min(1,bend/.9)),targetLane=car.route.laneOffset;
+      let targetSpeed=car.speed*(dense?(night?1.1:.88):1)*(1-.45*Math.min(1,bend/.9)),targetLane=car.route.laneOffset;
       if(player) {
         const center=car.route.sample(car.distance,0),dx=player.x-center.point.x,dz=player.z-center.point.z;
         const along=dx*Math.sin(center.yaw)+dz*Math.cos(center.yaw),across=(-dx*Math.cos(center.yaw)+dz*Math.sin(center.yaw))*car.route.laneSign;
@@ -136,7 +169,7 @@ export function createTraffic(scene:T.Scene,objects:WorldObjects,options?:{loops
       const forward=new T.Vector2(Math.sin(preview.yaw),Math.cos(preview.yaw));
       // Headway applies across shared routes, not only vehicles in the same list.
       for(const other of cars) {
-        if(other===car||other.object.destroyed)continue;
+        if(other===car||!active(other))continue;
         const dx=other.model.root.position.x-preview.point.x,dz=other.model.root.position.z-preview.point.z;
         const along=dx*forward.x+dz*forward.y,across=Math.abs(dx*forward.y-dz*forward.x);
         const aligned=Math.cos(other.model.root.rotation.y-preview.yaw)>.6;
@@ -154,8 +187,10 @@ export function createTraffic(scene:T.Scene,objects:WorldObjects,options?:{loops
         if(along<0||distance>13)continue;
         const axis=Math.abs(Math.sin(current.yaw))>.7?'across':'along';
         const green=signalPhase(time,j.index,axis)==='green';
-        if(green&&(j.owner===null||j.owner===car.object.id)&&distance<9){j.owner=car.object.id;car.junction=j.index;break;}
-        if(!green||j.owner!==null)targetSpeed=Math.min(targetSpeed,Math.sqrt(Math.max(0,distance-6-car.model.length/2)*3));
+        // A dense fleet follows one two-way circuit. Both separate lanes may
+        // discharge on green; one exclusive owner would lock opposing queues.
+        if(green&&(dense||j.owner===null||j.owner===car.object.id)&&distance<9){if(!dense)j.owner=car.object.id;car.junction=j.index;break;}
+        if(!green||!dense&&j.owner!==null)targetSpeed=Math.min(targetSpeed,Math.sqrt(Math.max(0,distance-6-car.model.length/2)*3));
       }
       if(player&&bypassOwner!==null&&bypassOwner!==car.object.id&&car.junction===null) {
         const dx=player.x-current.point.x,dz=player.z-current.point.z,along=dx*Math.sin(current.yaw)+dz*Math.cos(current.yaw),across=Math.abs(dx*Math.cos(current.yaw)-dz*Math.sin(current.yaw));
@@ -186,7 +221,7 @@ export function createTraffic(scene:T.Scene,objects:WorldObjects,options?:{loops
       objects.moveModel(car.object,point.x,point.z,yaw,car.model.width,car.model.length);
       car.object.baseY=binding.position.y;car.model.animate(car.distance,car.steering);
     }
-    for(const j of signals.junctions)if(j.owner!==null&&cars.find(c=>c.object.id===j.owner)?.object.destroyed)j.owner=null;
+    for(const j of signals.junctions)if(j.owner!==null&&!cars.some(c=>c.object.id===j.owner&&active(c)))j.owner=null;
   };
-  return {cars,routes,signals,update};
+  return {cars,routes,signals,update,setNight};
 }

@@ -38,7 +38,7 @@ flowchart LR
 | Sandbox | `sandbox.ts`, `interactables.ts`, `effects.ts`, `blastProjection.ts`, `damageBars.ts` | Durability, moving targets, impacts, previews, reusable trees |
 | Camera | `arrivalZoom.ts`, `cameraGlide.ts`, `zoomInput.ts`, `teleport3d.ts` | Opening framing, destination picking and smooth controls |
 | Lighting | `lighting.ts`, `windowLighting.ts`, `landmarkLamp.ts`, `liveClock.ts`, `moon.ts`, `moonMotion.ts` | Theme-aware emission, local-light pool, time and lunar motion |
-| Interface | `hud.ts`, `style.css`, `map.ts`, `icons.ts`, `notifications.ts` | Responsive controls, minimap, icons and themed notices |
+| Interface | `hud.ts`, `styles/app.css`, `map.ts`, `icons.ts`, `notifications.ts` | Responsive controls, minimap, icons and themed notices |
 | Policy | `appearance.ts`, `motion.ts`, `inputFocus.ts`, `touchControls.ts` | Stored theme, reduced motion, scoped keys and independent contacts |
 | Capture | `capture.ts`, `scripts/capture-media.mjs` | Deterministic media rendering; capture API excluded from normal builds |
 

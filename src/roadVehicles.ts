@@ -2,10 +2,12 @@ import * as T from 'three';
 import { Builder, material, vec } from './geometry.ts';
 import { createVehicle } from './vehicles.ts';
 import { glowMaterial } from './lighting.ts';
+import {createBengaluruVehicle,type BengaluruVehicle} from './worlds/bengaluru/vehicles.ts';
 
 export const VEHICLE_TYPES=['bus','car','taxi','van','bike','motorbike','truck','car'] as const;
-export type VehicleType=typeof VEHICLE_TYPES[number];
+export type VehicleType=typeof VEHICLE_TYPES[number]|BengaluruVehicle;
 export function createRoadVehicle(kind:VehicleType,color:string) {
+  if(kind==='dzire'||kind==='auto'||kind==='electric-auto'||kind==='citybus')return createBengaluruVehicle(kind);
   if(kind==='bike'||kind==='motorbike') {
     const motor=kind==='motorbike',b=new Builder(),paint=material(color,.4,.5),metal=material('#425454',.35,.7),r=.26,length=1.62,width=motor?.6:.52;
     for(const [a,c] of [[vec(0,.28,-.53),vec(0,.7,-.12)],[vec(0,.7,-.12),vec(0,.29,.56)],[vec(0,.29,-.53),vec(0,.32,0)],[vec(0,.32,0),vec(0,.7,-.12)],[vec(0,.32,0),vec(0,.64,.36)],[vec(0,.64,.36),vec(0,.29,.56)]])b.beam(a,c,motor?.055:.025,paint);

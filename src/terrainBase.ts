@@ -2,7 +2,7 @@ import * as T from 'three';
 import { TERRAIN_OUTLINE, SOIL_DEPTH } from './boundary.ts';
 
 /** The square street surface stays untouched; only the buried cut softens. */
-export function createTerrainBase() {
+export function createTerrainBase({top=-2.8,capTop=true}:{top?:number;capTop?:boolean}={}) {
   const positions:number[]=[],uv:number[]=[],indices:number[]=[],count=TERRAIN_OUTLINE.length,rows=28;
   for(let row=0;row<=rows;row++) {
     const t=row/rows,soft=T.MathUtils.smoothstep(t,.06,.85),radius=7*soft;
@@ -12,8 +12,9 @@ export function createTerrainBase() {
       if(radius>0){const cx=T.MathUtils.clamp(x,-108+radius,108-radius),cz=T.MathUtils.clamp(z,-108+radius,108-radius),dx=x-cx,dz=z-cz,length=Math.hypot(dx,dz);x=cx+dx/length*radius;z=cz+dz/length*radius;}
       const erosion=soft*(1.2+.65*Math.sin(p.x*.074+p.z*.051)+.35*Math.sin(p.x*.16-p.z*.11+t*2));
       const inset=erosion+bottomRound,scale=(108-inset)/108;
-      positions.push(x*scale,-2.8-(SOIL_DEPTH-2.8)*t,z*scale);
-      uv.push((Math.abs(p.x)===108?p.z:p.x)/12,(-2.8-(SOIL_DEPTH-2.8)*t)/12);
+      const y=top-(SOIL_DEPTH+top)*t;
+      positions.push(x*scale,y,z*scale);
+      uv.push((Math.abs(p.x)===108?p.z:p.x)/12,y/12);
     }
   }
   for(let row=0;row<rows;row++)for(let i=0;i<count;i++) {
@@ -21,7 +22,8 @@ export function createTerrainBase() {
     indices.push(a,b,c,b,d,c);
   }
   // Caps are below the water; the top never covers the open river.
-  for(const [row,y,flip] of [[0,-2.8,false],[rows,-SOIL_DEPTH,true]] as const) {
+  for(const [row,y,flip] of [[0,top,false],[rows,-SOIL_DEPTH,true]] as const) {
+    if(row===0&&!capTop)continue;
     const center=positions.length/3;positions.push(0,y,0);uv.push(0,0);
     for(let i=0;i<count;i++){const a=row*count+i,b=row*count+(i+1)%count;indices.push(...(flip?[center,a,b]:[center,b,a]));}
   }

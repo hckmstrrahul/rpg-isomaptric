@@ -5,7 +5,7 @@ The six chapters are **London, Dubai, Bengaluru, Agra, Lisbon** and the fictiona
 ## Current extension points
 
 - `worldLocation.ts` resolves a known `?world=` value, then the stored selection, then London. Add a new identity and display metadata here.
-- `hud.ts` and `style.css` own the location pill. Links support ordinary navigation, shared URLs, keyboard focus and reduced motion. Selection reconstructs one scene through the themed loader, preserving appearance but resetting temporary world edits.
+- `hud.ts` and `styles/app.css` own the location pill. Links support ordinary navigation, shared URLs, keyboard focus and reduced motion. Selection reconstructs one scene through the themed loader, preserving appearance but resetting temporary world edits.
 - `main.ts` dynamically imports the selected constructor. Only load assets the chapter needs. Return the common scene interface: objects, obstacles, water, update callbacks, lighting and landmarks.
 - `worldPlan.ts` dynamically imports only the selected `worlds/<id>/plan.ts`. Implement the type-only `WorldPlan` contract in `worlds/types.ts`: absolute height field, dry ground, bridges, landmarks, minimap polygons, roads and camera. `layout.ts` dispatches terrain, water, bridge, arrival and landmark queries. `cityPlan.ts` supplies the selected road plan. These queries also feed planting, teleporting, collision and the minimap.
 - `worlds/dubai/plan.ts`, `architecture.ts`, `landmarks.ts`, `marina.ts`, `surfaces.ts` and `world.ts` demonstrate a separate location. London's mature geometry remains in its existing modules; a wholesale move was unnecessary.

@@ -51,7 +51,7 @@ export const TRAFFIC_LOOPS=[TRAFFIC_LOOP];
 export const TRAFFIC_JUNCTIONS=[p(-9,-88),p(-72,-88),p(-13,-7),p(-72,-7),p(25,-88),p(85,20),p(65,101),p(-78,55)];
 export const PARK_PATHS:Road[]=[
  {id:'court-to-park',points:[p(15,-8),p(15,1),p(25,6),p(34,18),p(36,32),p(21,48),p(8,58),p(-4,57)],width:1.7},
- {id:'central-spawn-walk',points:[p(-2,5),p(4,5),p(15,1)],width:1.7},
+ {id:'central-spawn-walk',points:[p(-18.28,5),p(-2,5),p(4,5),p(15,1)],width:1.7},
  {id:'library-axis',points:[p(-24,18),p(-10,22),p(-4,30),p(-4,36)],width:2},
  {id:'park-west-loop',points:[p(-4,30),p(7,20),p(15,1),p(36,-6),p(60,1),p(69,15),p(66,28),p(50,35),p(36,32)],width:1.5},
  {id:'museum-walk',points:[p(36,32),p(43,41),p(43,58),p(58,64),p(72,63),p(78,62)],width:1.7},

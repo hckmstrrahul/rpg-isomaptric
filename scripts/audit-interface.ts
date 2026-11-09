@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import {hud} from '../src/hud.ts';
 
 // Source-token checks, not a substitute for computed browser styles or a screen reader.
-const css=readFileSync(new URL('../src/style.css',import.meta.url),'utf8');
-const blocks=[css.match(/:root \{([\s\S]*?)\n\}/)![1],css.match(/:root\[data-theme=night\] \{([\s\S]*?)\n\}/)![1]];
+const css=readFileSync(new URL('../styles/glass-ui/tokens.css',import.meta.url),'utf8');
+const light=css.match(/\[data-glass-theme="light"\] \{([\s\S]*?)\n\}/)![1];
+const dark=css.match(/\[data-glass-theme="dark"\] \{([\s\S]*?)\n\}/)![1];
+const blocks=[light,light+'\n'+dark];
 function luminance(hex:string){
  const c=hex.match(/[a-f\d]{2}/gi)!.map(x=>parseInt(x,16)/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);
  return c[0]*.2126+c[1]*.7152+c[2]*.0722;
@@ -16,13 +18,13 @@ function composite(glass:string,background:number){
 }
 const pairs:[string,string,number][]=[['ink','surface',4.5],['muted','surface',4.5],['muted','subtle',4.5],['on-accent','accent',4.5],['success','surface',4.5],['danger','surface',4.5],['focus','surface',3],['focus','subtle',3]];
 for(const [i,block]of blocks.entries()){
- const tokens=Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[a-f0-9]{6}(?:[a-f0-9]{2})?)/g)].map(m=>[m[1],m[2]]));
+ const tokens=Object.fromEntries([...block.matchAll(/--glass-([\w-]+):\s*(#[a-f0-9]{6}(?:[a-f0-9]{2})?)/g)].map(m=>[m[1],m[2]]));
  for(const [fg,bg,min]of pairs){const ratio=contrast(tokens[fg],tokens[bg]);assert.ok(ratio>=min,`${i?'Night':'Day'} ${fg}/${bg}: ${ratio}`);console.log(`${i?'Night':'Day'} ${fg}/${bg}: ${ratio.toFixed(2)}:1 (required ${min}:1)`);}
  // The restored glass panels blend with the scene. Check both channel extrema,
  // which bound their possible background luminance, without claiming a render test.
  for(const fg of ['ink','muted','success','danger','focus']){
   const min=fg==='focus'?3:4.5;
-  const ratio=Math.min(...[0,255].map(bg=>contrast(tokens[fg],composite(tokens.glass,bg))));
+  const ratio=Math.min(...[0,255].map(bg=>contrast(tokens[fg],composite(tokens.color,bg))));
   assert.ok(ratio>=min,`${i?'Night':'Day'} ${fg}/glass: ${ratio}`);
   console.log(`${i?'Night':'Day'} ${fg}/glass worst-case: ${ratio.toFixed(2)}:1 (required ${min}:1)`);
  }

@@ -14,6 +14,7 @@ import type {CityAssets} from '../../importedAssets.ts';
 import {strokeGeometry} from '../shared/surfaces.ts';
 import {roadNetworkGeometry} from '../shared/roadNetwork.ts';
 import {createFountain} from '../shared/fountain.ts';
+import {BENGALURU_FLEET,BENGALURU_NIGHT_DENSITY} from './trafficProfile.ts';
 import {PLAN,BENGALURU_LANDMARKS,bengaluruRoads,bengaluruLand,PARK_PATHS,TRAFFIC_LOOPS,TRAFFIC_JUNCTIONS,GARDENS} from './plan.ts';
 import {vidhanaSoudha,attaraKacheri,vikasaSoudha,library,governmentMuseum,ubCity,urbanBlock,officeTower,rainTreeResources,autorickshaw} from './architecture.ts';
 
@@ -23,9 +24,9 @@ export function createBengaluruWorld(scene:T.Scene,_assets:CityAssets={loaded:[]
  const pools:T.Mesh<T.PlaneGeometry,T.MeshBasicMaterial>[]=[];
  const pavement=registerThemeColor(new T.MeshStandardMaterial({roughness:.93}),'#c9c1a9','#737b7a');pavement.name='Bengaluru · warm granite paving';
  // An inland cutaway with visible soil. There is deliberately no invented sea.
- terrain.box(0,GROUND-2.45,0,216,4.5,216,surfaceMaterial('soil'));
- const lowerCut=createTerrainBase();terrain.add(lowerCut,surfaceMaterial('soil'));lowerCut.dispose();
- terrain.box(0,GROUND-.28,0,216,.48,216,material('#8c8969'));
+ // One continuous side wall, with the grass supplying its only top face.
+ // Stacked boxes previously fought for depth along both the rim and lower seam.
+ const lowerCut=createTerrainBase({top:GROUND,capTop:false});terrain.add(lowerCut,surfaceMaterial('soil'));lowerCut.dispose();
  const lawn=new T.PlaneGeometry(216,216);lawn.rotateX(-Math.PI/2);const uv=lawn.getAttribute('uv');for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*27,uv.getY(i)*27);terrain.add(lawn,surfaceMaterial('grass'),0,GROUND,0);lawn.dispose();
  const groundRoot=terrain.finish();groundRoot.name='Bengaluru · inland red-soil civic district';scene.add(groundRoot);
  const river=riverMaterial(),water=new T.Mesh(new T.PlaneGeometry(1,1),river.material);water.rotation.x=-Math.PI/2;water.position.y=WATER_HEIGHT;water.visible=false;water.name='Bengaluru · inactive water surface';scene.add(water);
@@ -101,9 +102,9 @@ export function createBengaluruWorld(scene:T.Scene,_assets:CityAssets={loaded:[]
  // Four low formal hedges establish the library garden and civic forecourt.
  for(const [x,z,w,d] of [[-14,63,.55,8],[6,63,.55,8],[-20,-57,1,7],[-20,-29,1,7]])details.box(x,GROUND+.28,z,w,.5,d,'#49723c');
  const detailsRoot=details.finish();detailsRoot.name='Bengaluru · stone paths and civic forecourts';scene.add(detailsRoot);
- const traffic=createTraffic(scene,objects,{loops:TRAFFIC_LOOPS,junctions:TRAFFIC_JUNCTIONS,roads,laneSign:1,carsPerRoute:12,city:'Bengaluru'});
+ const traffic=createTraffic(scene,objects,{loops:TRAFFIC_LOOPS,junctions:TRAFFIC_JUNCTIONS,roads,laneSign:1,laneOffset:.95,fleet:BENGALURU_FLEET,nightDensity:BENGALURU_NIGHT_DENSITY,city:'Bengaluru'});
  const localLighting=new LocalNightLighting(scene),groundGlows=new NightGroundGlows(scene,pools);
- const update=(time:number,player?:{x:number;z:number},_night=false)=>{objects.updateWind(time);traffic.update(time,player);fountain.update(time);};
+ const update=(time:number,player?:{x:number;z:number},night=false)=>{objects.updateWind(time);traffic.update(time,player,night);fountain.update(time);};
  const updateLights=(dt:number,focus:T.Vector3,_time:number,night:boolean,_reduced=false)=>{groundGlows.update();localLighting.update(dt,focus,night);};
  update(0);
  return {obstacles,roads,objects,water,river,traffic,update,updateLights,updateClock:(_date=new Date())=>{},landmarks:BENGALURU_LANDMARKS,landmarkRoots,localLighting,groundGlows,streetLamps,furniture,homes,shrubs,gardens:GARDENS,circularSites:[],matureCanopies,fountain};

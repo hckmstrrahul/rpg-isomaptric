@@ -1,0 +1,58 @@
+/* Smoked Glass 1.0 · MIT · Rahul Chakraborty
+   Light = warm green smoke. Dark = cool blue smoke. Both use light ink. */
+:root,
+[data-glass-theme="light"] {
+  --glass-ink: #f5f7ef;
+  --glass-muted: #d3dbcf;
+  --glass-surface: #26342b;
+  --glass-subtle: #39483c;
+  --glass-color: #18261dc2;
+  --glass-line: #ffffff24;
+  --glass-edge: #ffffff24;
+  --glass-accent: #465d49;
+  --glass-on-accent: #f8faf3;
+  --glass-focus: #c4e4f5;
+  --glass-success: #d0ebc5;
+  --glass-danger: #ffd0c3;
+  --glass-hover: #ffffff12;
+  --glass-selected: #ffffff24;
+  --glass-key-surface: #ffffff0d;
+  --glass-sheen: linear-gradient(145deg, #ffffff05, transparent 60%);
+  --glass-filter: blur(28px) saturate(125%);
+  --glass-shadow: inset 0 1px 0 #ffffff0c, 0 4px 12px #0b170f12, 0 16px 40px #0b170f24;
+  --glass-font: 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif;
+  --glass-text-title: 1.375rem;
+  --glass-text-label: .75rem;
+  --glass-text-body: .6875rem;
+  --glass-text-caption: .625rem;
+  --glass-text-detail: .5625rem;
+  --glass-radius-panel: 24px;
+  --glass-radius-toolbar: 27px;
+  --glass-radius-pill: 999px;
+  --glass-radius-tooltip: 10px;
+  --glass-border: 1px;
+  --glass-inset: 4px;
+  --glass-group-gap: 6px;
+  --glass-control: 44px;
+  --glass-rail: 54px;
+  --glass-icon: 18px;
+  --glass-panel-padding: 24px;
+  --glass-fade: 96px;
+  --glass-duration: 150ms;
+  --glass-ease: ease-out;
+}
+[data-glass-theme="dark"] {
+  --glass-ink: #f0f5f4;
+  --glass-muted: #d0dadb;
+  --glass-surface: #202d34;
+  --glass-subtle: #35454d;
+  --glass-color: #16232bc2;
+  --glass-line: #ffffff24;
+  --glass-edge: #ffffff24;
+  --glass-accent: #435b61;
+  --glass-on-accent: #f2f7f6;
+  --glass-focus: #c4e4f5;
+  --glass-success: #d0ebc5;
+  --glass-danger: #ffd0c3;
+  --glass-shadow: inset 0 1px 0 #ffffff0c, 0 4px 12px #0000001a, 0 16px 40px #00000033;
+}

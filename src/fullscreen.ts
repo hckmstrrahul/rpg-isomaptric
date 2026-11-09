@@ -11,7 +11,7 @@ export function installFullscreen(button:HTMLButtonElement,canvas:HTMLCanvasElem
     button.innerHTML=icon(active?'collapse':'expand',20);
     button.setAttribute('aria-pressed',String(active));
     button.setAttribute('aria-label',active?'Exit fullscreen':'Enter fullscreen');
-    button.title=active?'Exit fullscreen (Esc)':'Enter fullscreen';
+    button.dataset.tooltip=active?'Exit fullscreen (Esc)':'Enter fullscreen';
     (active?canvas:button).focus({preventScroll:true});
   };
   const exit=async()=>{

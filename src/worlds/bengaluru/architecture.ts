@@ -2,6 +2,8 @@ import * as T from 'three';
 import {Builder,material,vec,canvasTexture} from '../../geometry.ts';
 import {registerGlow} from '../../lighting.ts';
 import {treeResources} from '../../trees.ts';
+import {createBengaluruVehicle} from './vehicles.ts';
+import {roofTileMaterial,TILE_WIDTH,COURSE_HEIGHT,TILES_PER_MAP} from './roofTiles.ts';
 
 const GRANITE='#bfb79e',TRIM='#ded2b8',RED='#a83d2f',REDTRIM='#d76a50',GLASS='#344447';
 let lamps:T.MeshStandardMaterial|undefined;
@@ -131,10 +133,22 @@ export function pitchedRoof(b:Builder,x:number,y:number,z:number,w:number,d:numb
  // The ridge follows each wing's long axis instead of spanning its short end.
  const across=Math.min(w,d),along=Math.max(w,d),yaw=w>d?Math.PI/2:0;
  const vertices=[-across/2,0,-along/2,across/2,0,-along/2,0,h,-along/2,-across/2,0,along/2,across/2,0,along/2,0,h,along/2];
- // Exterior-facing slopes/gables plus a closed soffit. The previous winding
- // faced inward, so roofs disappeared from above and looked detached in orbit.
- const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setIndex([0,2,1,3,4,5,0,5,2,0,3,5,2,4,1,2,5,4,0,1,4,0,4,3]);g.computeVertexNormals();b.add(g,material(color),x,y,z,1,1,1,0,yaw);g.dispose();
- b.box(x,y-.045,z,w,.09,d,material(color));
+ // Separate vertices at each crease: averaged gable/soffit normals made a
+ // planar pitched roof look like a soft, sunken slab as the camera moved.
+ const shell=new T.BufferGeometry();shell.setAttribute('position',new T.Float32BufferAttribute(vertices,3));shell.setIndex([0,2,1,3,4,5,0,1,4,0,4,3]);
+ const g=shell.toNonIndexed();g.computeVertexNormals();b.add(g,material(color),x,y,z,1,1,1,0,yaw);g.dispose();shell.dispose();
+ const slopes=new T.BufferGeometry();slopes.setAttribute('position',new T.Float32BufferAttribute([
+  -across/2,0,-along/2,-across/2,0,along/2,0,h,along/2,0,h,-along/2,
+  0,h,-along/2,0,h,along/2,across/2,0,along/2,across/2,0,-along/2,
+ ],3));
+ const u=along/(TILE_WIDTH*TILES_PER_MAP),v=Math.hypot(across/2,h)/(COURSE_HEIGHT*TILES_PER_MAP);
+ slopes.setAttribute('uv',new T.Float32BufferAttribute([0,0,u,0,u,v,0,v,0,v,u,v,u,0,0,0],2));slopes.setIndex([0,1,2,0,2,3,4,5,6,4,6,7]);slopes.computeVertexNormals();
+ b.add(slopes,roofTileMaterial(color),x,y,z,1,1,1,0,yaw);slopes.dispose();
+ // Small overlapping, tapered ridge caps give the silhouette a real tile edge.
+ const count=Math.ceil(along/.5),step=along/count,cap=new T.CylinderGeometry(.105,.125,step+.025,8,1,false,Math.PI/2,Math.PI);cap.rotateX(Math.PI/2);
+ for(let i=0;i<count;i++){const zz=-along/2+(i+.5)*step;b.add(cap,material(i%5===0?'#bc795c':color),x+Math.sin(yaw)*zz,y+h+.012,z+Math.cos(yaw)*zz,1,1,1,0,yaw);}
+ cap.dispose();
+ for(const side of [-1,1])b.box(x+Math.cos(yaw)*side*across/2,y-.05,z-Math.sin(yaw)*side*across/2,.1,.1,along,color,yaw);
 }
 export function attaraKacheri(){
  const b=new Builder();
@@ -230,8 +244,4 @@ export function officeTower(index:number,w=8,d=9,h=22){
 export function rainTreeResources(){
  const tree=treeResources();return {trunk:tree.trunk.clone().scale(1.4,1.22,1.4),foliage:tree.foliage.clone().scale(1.72,1.05,1.72),bark:tree.bark,leaves:tree.leaves};
 }
-export function autorickshaw(){
- const b=new Builder();b.box(0,.45,0,1.15,.65,1.8,'#418251');b.box(0,1.12,-.1,1.23,.35,1.5,'#d8b33b');b.box(0,.88,.74,1.02,.55,.08,'#253f45');b.box(0,.4,.97,.4,.4,.22,'#5c9a61');
- for(const x of [-.52,.52])b.cylinder(x,.25,-.62,.22,.13,'#232729',.22,10);b.cylinder(0,.23,.78,.23,.13,'#232729',.23,10);
- for(const x of [-.35,.35])b.box(x,.6,.98,.22,.14,.035,'#e6e0bb');const root=b.finish();root.name='Bengaluru green-and-yellow auto rickshaw';return root;
-}
+export function autorickshaw(){return createBengaluruVehicle('auto').root;}

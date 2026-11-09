@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from 'three';
+import {OBB} from 'three/addons/math/OBB.js';
 const context=new Proxy({}, {get:()=>()=>{},set:()=>true});
 globalThis.document={createElement:()=>({width:256,height:256,getContext:()=>context})} as unknown as Document;
 globalThis.window={location:{href:'https://rpg-isomaptric.vercel.app/?world=bengaluru'},localStorage:{getItem:()=>null}} as unknown as Window & typeof globalThis;
@@ -10,6 +11,7 @@ const {canWalk,resolveTeleport}=await import('../src/layout.ts');
 const {plotTouchesRoad,roadClearance}=await import('../src/cityPlan.ts');
 const {Builder}=await import('../src/geometry.ts');
 const {pitchedRoof}=await import('../src/worlds/bengaluru/architecture.ts');
+const {createBengaluruVehicle}=await import('../src/worlds/bengaluru/vehicles.ts');
 const scene=new T.Scene(),world=createBengaluruWorld(scene);
 const moving=new Set(world.traffic.cars.flatMap(car=>world.objects.models.get(car.object.id)!.obstacles));
 const fixed=world.obstacles.filter(o=>!moving.has(o));
@@ -44,6 +46,30 @@ test('Bengaluru roofs have visible outer slopes, gables and a seated underside',
  }
  const underside=new T.Raycaster(new T.Vector3(0,0,0),new T.Vector3(0,1,0)).intersectObject(roof,true)[0];
  assert.ok(underside&&underside.point.y<=3&&underside.face!.normal.y<0,'The eave must close against the wall below');
+ roof.traverse(node=>{
+  if(!(node instanceof T.Mesh)||!node.material.name.includes('terracotta'))return;
+  const normals=node.geometry.getAttribute('normal');
+  for(let i=0;i<normals.count;i++)assert.ok(Math.abs(normals.getY(i)-4/Math.sqrt(20))<1e-5,'Roof slopes must retain flat normals at their creases');
+  assert.ok(node.material.map.generateMipmaps&&node.material.normalMap,'Tile detail needs filtered color and normal maps');
+ });
+});
+test('Bengaluru soil has one continuous exterior at the former overlapping seams',()=>{
+ const soil=scene.getObjectByName('Bengaluru · inland red-soil civic district')!;soil.updateMatrixWorld(true);
+ for(const height of [1.2,1.05,.9,-2.95,-3.15,-5,-12])for(const side of [-1,1]){
+  const hits=new T.Raycaster(new T.Vector3(side*120,height,13.7),new T.Vector3(-side,0,0),0,30).intersectObject(soil,true);
+  assert.equal(hits.length,1,`Expected one exterior surface at y=${height}, side=${side}`);
+ }
+});
+test('reusable Bengaluru vehicle details fit their traffic collision footprints',()=>{
+ for(const kind of ['auto','electric-auto','dzire','citybus'] as const){
+  const a=createBengaluruVehicle(kind),b=createBengaluruVehicle(kind);
+  const bounds=new T.Box3().setFromObject(a.root);
+  assert.ok(Math.max(Math.abs(bounds.min.x),Math.abs(bounds.max.x))<=a.width/2+.015,`${kind} exceeds lane width`);
+  assert.ok(Math.max(Math.abs(bounds.min.z),Math.abs(bounds.max.z))<=a.length/2+.015,`${kind} exceeds following distance`);
+  assert.ok(bounds.max.y<=a.height+.015,`${kind} exceeds declared height`);
+  assert.equal((a.root.children[0] as T.Mesh).geometry,(b.root.children[0] as T.Mesh).geometry,'Instances share their detailed body geometry');
+  assert.notEqual(a.wheels[0].instanceMatrix,b.wheels[0].instanceMatrix,'Wheels animate independently');
+ }
 });
 test('Every Bengaluru street joins another street or reaches the land cut',()=>{
  const edge=(p:{x:number;z:number})=>Math.abs(p.x)===108||Math.abs(p.z)===108;
@@ -61,6 +87,15 @@ test('Bengaluru roads, arrivals and traffic leave building and tree footprints c
  for(const route of world.traffic.routes)for(let d=0;d<route.length;d+=.7){const p=route.sample(d).point;assert.ok(canWalk(p.x,p.z,fixed,.65),`Traffic blocked at ${p.x},${p.z}`);assert.ok(roadClearance(p,world.roads)<.7,`Traffic misses street at ${p.x},${p.z}`);}
  for(const tree of world.objects.state.objects.filter(o=>o.kind==='tree'))assert.ok(roadClearance(tree,PARK_PATHS)>.2,`Tree ${tree.id} blocks a park path`);
 });
+test('the spawn walkway joins the main road without a gap or obstructing trees',()=>{
+ const path=PARK_PATHS.find(p=>p.id==='central-spawn-walk')!;
+ assert.ok(roadClearance(path.points[0],world.roads)<-1.5,'The path must overlap the road surface');
+ assert.ok(roadClearance(PLAN.spawn,[path])<0,'The arrival must sit on the connected path');
+ for(let i=1;i<path.points.length;i++)for(let step=0;step<=30;step++){
+  const a=path.points[i-1],b=path.points[i],t=step/30;
+  assert.ok(canWalk(a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t,fixed,.35),'The joined path must stay walkable');
+ }
+});
 test('All Bengaluru landmark arrivals connect through the same walking map',()=>{
  const start={x:Math.round(PLAN.spawn.x),z:Math.round(PLAN.spawn.z)},queue=[start],seen=new Set([`${start.x},${start.z}`]);
  for(let i=0;i<queue.length;i++){const p=queue[i];for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){const x=p.x+dx,z=p.z+dz,key=`${x},${z}`;if(seen.has(key)||Math.abs(x)>105||Math.abs(z)>105||!canWalk(x,z,fixed,.35))continue;seen.add(key);queue.push({x,z});}}
@@ -76,8 +111,10 @@ test('Bengaluru detail stays inside the bounded lighting and geometry budgets',(
  console.log(`Bengaluru: ${meshes} meshes, ${triangles} unique triangles, ${world.objects.trees.size} trees, ${world.shrubs.count} shrubs, ${world.homes.length} blocks, ${world.streetLamps.length} lamps, ${world.matureCanopies} mature canopy trees.`);
 });
 test('Bengaluru vehicles and cyclists keep circulating without overlap for ten minutes',()=>{
- const cars=world.traffic.cars,start=cars.map(car=>car.distance),half:number[]=[];
- assert.ok(cars.length>=24);assert.ok(cars.filter(car=>car.kind==='bike').length>=3);
+ const cars=world.traffic.cars,start=cars.map(car=>car.distance),half:number[]=[];let maxQueued=0;
+ assert.equal(cars.length,148);assert.equal(cars.filter(car=>car.kind==='auto').length,40);assert.equal(cars.filter(car=>car.kind==='dzire').length,40);
+ assert.equal(cars.filter(car=>car.kind==='electric-auto').length,4);
+ assert.equal(cars.filter(car=>car.kind==='citybus').length,4);assert.ok(cars.filter(car=>car.kind==='motorbike').length>=24);assert.ok(cars.filter(car=>car.kind==='bike').length>=12);
  const corners=(car:typeof cars[number])=>{
   const a=car.model.root.rotation.y,c=Math.cos(a),s=Math.sin(a);
   return [-1,1].flatMap(x=>[-1,1].map(z=>({x:car.object.x+x*car.model.width*.5*c+z*car.model.length*.5*s,z:car.object.z-x*car.model.width*.5*s+z*car.model.length*.5*c})));
@@ -93,8 +130,32 @@ test('Bengaluru vehicles and cyclists keep circulating without overlap for ten m
  };
  for(let tick=1;tick<=6000;tick++){
   world.traffic.update(tick*.1,PLAN.spawn);
+  maxQueued=Math.max(maxQueued,cars.filter(car=>car.velocity<.15).length);
   if(tick===3000)half.push(...cars.map(car=>car.distance));
   if(tick%5===0)for(let i=0;i<cars.length;i++)for(let j=i+1;j<cars.length;j++)assert.ok(!overlaps(cars[i],cars[j]),`Vehicles ${i} and ${j} overlap at ${tick/10}s`);
  }
  cars.forEach((car,i)=>{assert.ok(car.distance-start[i]>.7*car.route.length,`Vehicle ${i} failed to circulate`);assert.ok(car.distance-half[i]>.3*car.route.length,`Vehicle ${i} became stuck during the second half`);});
+ assert.ok(maxQueued>=20,'Daytime signals should produce visible traffic jams');
+});
+test('night traffic thins out, keeps moving, and returns safely in daytime',()=>{
+ const cars=world.traffic.cars;
+ const active=()=>cars.filter(car=>!car.object.destroyed&&car.object.active!==false);
+ const separate=()=>{
+  const visible=active(),boxes=visible.map(car=>new OBB(new T.Vector3(car.object.x,0,car.object.z),new T.Vector3(car.model.width/2,.5,car.model.length/2),new T.Matrix3().setFromMatrix4(new T.Matrix4().makeRotationY(car.model.root.rotation.y))));
+  for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++)assert.ok(!boxes[i].intersectsOBB(boxes[j],1e-6),`Active vehicles ${i} and ${j} overlap`);
+ };
+ world.traffic.setNight(true,PLAN.spawn);
+ assert.equal(active().length,40);
+ for(const car of cars){const enabled=car.object.active!==false;assert.equal(car.model.root.visible,enabled);for(const obstacle of world.objects.models.get(car.object.id)!.obstacles)assert.equal(world.obstacles.includes(obstacle),enabled,'Hidden traffic must not leave invisible collisions');}
+ const service=active(),start=service.map(car=>car.distance);
+ for(let tick=1;tick<=1200;tick++){world.traffic.update(600+tick*.1,PLAN.spawn,true);if(tick%100===0)separate();}
+ service.forEach((car,i)=>assert.ok(car.distance-start[i]>20,'Night-service vehicles must keep circulating'));
+ // A parked explorer can now occupy a former daytime vehicle's position.
+ const inactive=cars.find(car=>car.object.active===false)!,player={x:inactive.object.x,z:inactive.object.z};
+ world.traffic.setNight(false,player);
+ assert.equal(active().length,148,'Density changes must also work while animation is paused');separate();
+ assert.ok(canWalk(player.x,player.z,world.obstacles,.35),'Returning traffic must not appear on the explorer');
+ const removed=cars.find(car=>!car.nightService)!;world.objects.damage(removed.object,10000,721);
+ world.traffic.setNight(true,player);world.traffic.setNight(false,player);
+ assert.equal(active().length,147,'Switching time of day must not revive demolished vehicles');
 });

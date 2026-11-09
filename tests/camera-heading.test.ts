@@ -19,7 +19,7 @@ test('north-up compass points along the camera view for each cardinal orbit',()=
 test('camera controls retain Follow with the compass, and use a gun for both firing controls',()=>{
   assert.doesNotMatch(hud,/id="compass"|>Reset<|Reset camera orientation/);
   const button=(id:string)=>hud.match(new RegExp(`<button[^>]+id="${id}"[^>]*>([\\s\\S]*?)<\\/button>`))![1];
-  assert.ok(button('follow').includes(icon('compass',20)));
+  assert.ok(button('follow').includes(icon('compass',18)));
   assert.ok(button('bomb-tool').includes(icon('gun',21)));
   assert.ok(button('use-tool').includes(icon('gun',20)));
   assert.match(hud,/id="map-compass"[\s\S]*?<b>N<\/b><span class="camera-heading"/,'Fixed north and camera heading have separate visual elements');
