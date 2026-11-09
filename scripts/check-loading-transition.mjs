@@ -14,13 +14,14 @@ process.env.PW_TEST_SCREENSHOT_NO_FONTS_READY='1';
 await mkdir('artifacts/loading',{recursive:true});
 const browser=await chromium.launch({channel:'chrome',headless:true});
 const report=[],errors=[];
-const snapshot=page=>page.evaluate(()=>{
+const snapshotLoader=()=>{
  const loader=document.querySelector('#loading,.boot-loading'),title=loader.querySelector('h2'),spinner=loader.querySelector('.spinner');
  const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};};
  const css=getComputedStyle(loader),text=getComputedStyle(title);
  const circle=spinner?.getBoundingClientRect();
- return {surface:rect(loader),title:rect(title),spinner:spinner?{x:Math.round(circle.x+circle.width/2),y:Math.round(circle.y+circle.height/2),width:spinner.offsetWidth,height:spinner.offsetHeight}:null,background:css.backgroundColor,font:text.fontFamily,size:text.fontSize,weight:text.fontWeight,lineHeight:text.lineHeight,text:title.innerText};
-});
+ return {surface:rect(loader),title:rect(title),spinner:spinner?{x:Math.round(circle.x+circle.width/2),y:Math.round(circle.y+circle.height/2),width:spinner.offsetWidth,height:spinner.offsetHeight}:null,opacity:css.opacity,background:css.backgroundColor,font:text.fontFamily,size:text.fontSize,weight:text.fontWeight,lineHeight:text.lineHeight,text:title.innerText};
+};
+const snapshot=page=>page.evaluate(snapshotLoader);
 const ready=page=>page.waitForFunction(()=>window.__littleLondon&&!document.querySelector('#loading'),{timeout:120000});
 const observeReveal=page=>page.evaluate(()=>{
  window.__loadingFrames=[];
@@ -64,18 +65,17 @@ try{
   if(!record){
    assert.deepEqual(runtime,boot,'Loader must not change layout, font or background when the app bundle arrives');assert.equal(sameNode,true,'Keep the original loader until the world is rendered');
    report.push({night,initialReveal:await checkReveal(page)});
-   // Hold the destination document, then its app bundle, to inspect both sides
-   // of a real tab navigation without relying on arbitrary timing delays.
-   let releaseDocument;const documentGate=new Promise(r=>releaseDocument=r);
+   // Capture departure synchronously before unload. An evaluation against an
+   // outgoing document can wait indefinitely once Chrome swaps renderer contexts.
+   await page.evaluate(`window.__readLoadingSnapshot=${snapshotLoader.toString()};addEventListener('beforeunload',()=>sessionStorage.setItem('loading-departure',JSON.stringify(window.__readLoadingSnapshot())),{once:true});`);
    mainGate=new Promise(r=>releaseMain=r);
-   await page.route(url=>url.pathname==='/'&&url.searchParams.get('world')==='moon',async route=>{await documentGate;await route.continue();});
-   await page.locator('[data-world="moon"]').click();
-   await page.waitForFunction(()=>Number(getComputedStyle(document.querySelector('#loading')).opacity)===1);
-   const departing=await snapshot(page);assert.equal(departing.text,'To the moon...');
-   // A second activation during departure cannot replace the destination.
-   await page.evaluate(()=>document.querySelector('[data-world="lisbon"]').click());
-   releaseDocument();await page.waitForURL('**/?world=moon',{waitUntil:'commit'});
+   // A second synchronous activation cannot replace the chosen destination.
+   await page.locator('[data-world="moon"]').evaluate(tab=>tab.addEventListener('click',()=>document.querySelector('[data-world="lisbon"]').click(),{once:true}));
+   await page.locator('[data-world="moon"]').click({noWaitAfter:true});
+   await page.waitForURL('**/?world=moon',{waitUntil:'commit'});
    await page.locator('.boot-loading').waitFor({state:'visible'});
+   const departing=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('loading-departure')));
+   assert.equal(departing.text,'To the moon...');assert.equal(departing.opacity,'1','Departure must cover GPU teardown');
    const arriving=await snapshot(page);assert.deepEqual(arriving,departing,'No visual change across document navigation');
    await observeReveal(page);releaseMain();await ready(page);
    assert.equal(await page.evaluate(()=>window.__littleLondon.getState().world),'moon');
