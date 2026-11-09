@@ -25,18 +25,18 @@ test('blocked local storage still gives a dark loading screen when the operating
 const worldScript=html.match(/<script id="world-loading-bootstrap">([\s\S]*?)<\/script>/)![1];
 test('Moon first paint uses its travel message for direct URLs and saved selection',()=>{
   for(const [search,saved,expected] of [
-    ['?world=moon','london','To the moon...'],
-    ['', 'moon','To the moon...'],
-    ['?world=invalid','moon','To the moon...'],
-    ['?world=agra','moon','A little world awaits'],
-    ['',null,'A little world awaits'],
+    ['?world=moon','london','moon'],
+    ['', 'moon','moon'],
+    ['?world=invalid','moon','moon'],
+    ['?world=agra','moon','city'],
+    ['',null,'city'],
   ]){
-    const title={textContent:'A little world awaits'},spinner={style:{}};
-    runInNewContext(worldScript,{URLSearchParams,location:{search},localStorage:{getItem:()=>saved},document:{querySelector:(selector:string)=>selector.includes('spinner')?spinner:title}});
-    assert.equal(title.textContent,expected);
+    const element={dataset:{} as Record<string,string>,style:{setProperty:()=>{}}};
+    runInNewContext(worldScript,{URLSearchParams,location:{search},localStorage:{getItem:()=>saved},document:{documentElement:element}});
+    assert.equal(element.dataset.loadingWorld,expected);
   }
-  const title={textContent:'A little world awaits'};
-  runInNewContext(worldScript,{URLSearchParams,location:{search:'?world=moon'},localStorage:{getItem:()=>{throw new Error('Blocked');}},document:{querySelector:(selector:string)=>selector.includes('spinner')?{style:{}}:title}});
-  assert.equal(title.textContent,'To the moon...');
-  assert.ok(html.indexOf('world-loading-bootstrap')<html.indexOf('src="/src/main.ts"'));
+  const element={dataset:{} as Record<string,string>,style:{setProperty:()=>{}}};
+  runInNewContext(worldScript,{URLSearchParams,location:{search:'?world=moon'},localStorage:{getItem:()=>{throw new Error('Blocked');}},document:{documentElement:element}});
+  assert.equal(element.dataset.loadingWorld,'moon');
+  assert.ok(html.indexOf('world-loading-bootstrap')<html.indexOf('<body>'),'Resolve the destination before streamed HTML can paint a loading message');
 });

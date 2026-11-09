@@ -19,7 +19,7 @@ const snapshot=page=>page.evaluate(()=>{
  const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};};
  const css=getComputedStyle(loader),text=getComputedStyle(title);
  const circle=spinner?.getBoundingClientRect();
- return {surface:rect(loader),title:rect(title),spinner:spinner?{x:Math.round(circle.x+circle.width/2),y:Math.round(circle.y+circle.height/2),width:spinner.offsetWidth,height:spinner.offsetHeight}:null,background:css.backgroundColor,font:text.fontFamily,size:text.fontSize,weight:text.fontWeight,lineHeight:text.lineHeight,text:title.textContent};
+ return {surface:rect(loader),title:rect(title),spinner:spinner?{x:Math.round(circle.x+circle.width/2),y:Math.round(circle.y+circle.height/2),width:spinner.offsetWidth,height:spinner.offsetHeight}:null,background:css.backgroundColor,font:text.fontFamily,size:text.fontSize,weight:text.fontWeight,lineHeight:text.lineHeight,text:title.innerText};
 });
 const ready=page=>page.waitForFunction(()=>window.__littleLondon&&!document.querySelector('#loading'),{timeout:120000});
 const observeReveal=page=>page.evaluate(()=>{

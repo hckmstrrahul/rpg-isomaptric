@@ -38,6 +38,17 @@
         document.querySelector('meta[name="theme-color"]').content = night ? '#171c22' : '#a8c8bd';
       })();
     </script>
+    <script id="world-loading-bootstrap">
+      (() => {
+        const worlds = ['london', 'dubai', 'bengaluru', 'agra', 'lisbon', 'moon'];
+        let world = new URLSearchParams(location.search).get('world');
+        if (!worlds.includes(world)) {
+          try { world = localStorage.getItem('rpg-isomaptric-world'); } catch { world = null; }
+        }
+        document.documentElement.dataset.loadingWorld = world === 'moon' ? 'moon' : 'city';
+        document.documentElement.style.setProperty('--loading-spinner-delay', `-${Date.now() % 1000}ms`);
+      })();
+    </script>
     <!-- loading-styles -->
     <title>rpg isomaptric</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
@@ -47,18 +58,7 @@
   </head>
   <body>
     <main id="app" aria-label="City explorer" aria-busy="true" inert></main>
-    <div class="boot-loading" id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><h2>A little world awaits</h2></div>
-    <script id="world-loading-bootstrap">
-      (() => {
-        const worlds = ['london', 'dubai', 'bengaluru', 'agra', 'lisbon', 'moon'];
-        let world = new URLSearchParams(location.search).get('world');
-        if (!worlds.includes(world)) {
-          try { world = localStorage.getItem('rpg-isomaptric-world'); } catch { world = null; }
-        }
-        if (world === 'moon') document.querySelector('.boot-loading h2').textContent = 'To the moon...';
-        document.querySelector('#loading .spinner').style.animationDelay = `-${Date.now() % 1000}ms`;
-      })();
-    </script>
+    <div class="boot-loading" id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><h2><span class="loading-city">A little world awaits</span><span class="loading-moon">To the moon...</span></h2></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

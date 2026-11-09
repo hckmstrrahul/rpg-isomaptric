@@ -11,11 +11,14 @@ html[data-theme=night]{background:#202d34;color:#f0f5f4}
 }
 html[data-theme=night] .boot-loading{background:var(--glass-surface,#202d34);color:var(--glass-ink,#f0f5f4)}
 .boot-loading h2{font-family:inherit;font-size:1.75rem;font-weight:550;line-height:1.2;letter-spacing:-.03em;margin:22px 0 0}
+.boot-loading .loading-moon,html[data-loading-world=moon] .boot-loading .loading-city{display:none}
+html[data-loading-world=moon] .boot-loading .loading-moon{display:inline}
 .boot-loading p{font-size:.875rem;line-height:1.6}
 .boot-loading .spinner{
   box-sizing:border-box;flex:none;width:32px;height:32px;
   border:2px solid #ffffff24;border-top-color:currentColor;border-radius:50%;
   animation:loading-spin 1s linear infinite;
+  animation-delay:var(--loading-spinner-delay,0ms);
 }
 @keyframes loading-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.boot-loading .spinner{animation:none}}
