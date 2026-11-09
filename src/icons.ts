@@ -30,11 +30,14 @@ const compass:typeof CubeIcon=[
   ['path',{d:'m15.5 8.5-2 5-5 2 2-5z'}],
   ['path',{d:'m15.5 8.5-5 2 3 3z',fill:'currentColor',stroke:'none'}],
 ];
+const collapse:typeof CubeIcon=[
+  ['path',{d:'M4 9h5V4m6 0v5h5M20 15h-5v5M9 20v-5H4'}],
+];
 const icons = {
   cube: CubeIcon, map: MapIcon, arrow: ArrowRight02Icon, plus: Add01Icon,
   minus: MinusSignIcon, compass,
   home: City01Icon, help: HelpCircleIcon, pin: Location01Icon,
-  expand: FullScreenIcon, close: Cancel01Icon, mouse: Mouse01Icon,
+  expand: FullScreenIcon, collapse, close: Cancel01Icon, mouse: Mouse01Icon,
   walk: WalkingIcon, flag: Flag01Icon, check: Tick02Icon, gun: GunIcon,
   tree: PineTreeIcon, hero: User03Icon, city: Building06Icon,
   sun: Sun03Icon, moon: Moon02Icon, up: ArrowUp02Icon,

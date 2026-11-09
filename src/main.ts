@@ -25,6 +25,7 @@ import type { CityAssets } from './importedAssets.ts';
 import { hud } from './hud.ts';
 import { renderCharacterPortrait } from './characterPortrait.ts';
 import { installInputFocus } from './inputFocus.ts';
+import { installFullscreen } from './fullscreen.ts';
 import { createMoon, loadMoonTextures } from './moon.ts';
 import { createHeldPointers, bindHoldButton } from './touchControls.ts';
 import { createArrivalZoom } from './arrivalZoom.ts';
@@ -287,6 +288,7 @@ async function init() {
     if(showHint)toast('WASD to walk · Click open ground to fly in Explore · B for bombs · T for trees');
   }
   function setHelp(open:boolean) {
+    if(open&&fullscreen.active)return;
     if(open===helpOpen)return;
     helpOpen=open;
     if(open){keys.clear();clearTouch();heldFire=false;helpReturnFocus=document.activeElement as HTMLElement;}
@@ -295,6 +297,9 @@ async function init() {
     $('touch-help').classList.toggle('active',open);$('touch-help').setAttribute('aria-expanded',String(open));
     if(open)$('help-close').focus();else (helpReturnFocus||canvas).focus({preventScroll:true});
   }
+  const fullscreen=installFullscreen($<HTMLButtonElement>('fullscreen-button'),canvas,()=>{
+    setHelp(false);keys.clear();clearTouch();heldFire=false;pointerDown=null;
+  });
   function flyToPointer() {
     if(tool!=='explore'||helpOpen)return;
     camera.updateMatrixWorld();aimRay.setFromCamera(pointer,camera);
@@ -376,7 +381,7 @@ async function init() {
   const moveKeys=['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowLeft','ArrowDown','ArrowRight'];
   addEventListener('keydown',e=>{
     if(e.metaKey||e.ctrlKey||e.altKey)return;
-    if(e.code==='Escape'){setHelp(false);if(persistentMessage)dismissToast();return;}
+    if(e.code==='Escape'){if(fullscreen.active){void fullscreen.exit();return;}setHelp(false);if(persistentMessage)dismissToast();return;}
     // Character shortcuts belong to the canvas, never focused buttons, links or settings.
     if(e.target!==canvas&&e.target!==document.body)return;
     if(helpOpen)return;

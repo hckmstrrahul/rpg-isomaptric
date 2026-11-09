@@ -53,6 +53,7 @@ a{color:inherit;text-underline-offset:3px}
 .view-actions{top:var(--top);right:var(--right);display:flex;align-items:stretch;gap:12px}
 .theme-button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:6px 14px;border-radius:999px;font-size:var(--label);font-weight:600}
 .theme-button{min-width:88px}
+.fullscreen-button{height:44px;padding:0}
 .equipment.active{background:var(--accent);color:var(--on-accent)}
 .key,kbd{font-family:inherit;font-size:.625rem;font-weight:600;line-height:1.25;display:inline-flex;align-items:center;justify-content:center;min-width:23px;min-height:23px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:linear-gradient(180deg,var(--surface),var(--subtle));color:var(--muted);box-shadow:inset 0 1px 0 var(--edge),0 3px 0 var(--line),0 4px 5px #203e3814;text-shadow:0 1px 0 var(--edge);vertical-align:middle}
 .keys{display:flex;gap:5px}
@@ -88,7 +89,7 @@ a{color:inherit;text-underline-offset:3px}
 .equipment kbd{flex-shrink:0;font-size:.5rem;line-height:1;min-width:16px;min-height:16px;padding:2px 3px;border-radius:4px;box-shadow:inset 0 1px 0 var(--edge),0 2px 0 var(--line),0 3px 3px #203e3814}
 .mini-map{border-radius:19px;padding:4px;position:relative;margin-inline-end:max(0px,calc(18px - var(--right)))}
 .mini-map canvas{width:100%;height:auto;aspect-ratio:1;display:block;border-radius:15px}
-.north-mini{position:absolute;top:0;right:0;transform:translate(50%,-50%);width:36px;height:36px;border-radius:50%;background:#252e35;color:#e0e5e7;display:grid;place-items:center;box-shadow:0 2px 6px #10202a30;pointer-events:none}
+.north-mini{position:absolute;top:0;right:0;transform:translate(50%,-50%);width:36px;height:36px;border-radius:50%;overflow:hidden;background:#252e35;color:#e0e5e7;display:grid;place-items:center;box-shadow:0 2px 6px #10202a30;pointer-events:none}
 .north-mini b{font-size:13px;font-weight:600;line-height:1;z-index:1}
 .compass-ticks{position:absolute;inset:4px;border-radius:50%;background:repeating-conic-gradient(#8d999e 0deg 3deg,transparent 3deg 30deg);mask:radial-gradient(transparent 0 58%,#000 61%);-webkit-mask:radial-gradient(transparent 0 58%,#000 61%)}
 .north-tip{position:absolute;top:3px;width:1px;height:3px;background:#b8c1c4}
@@ -175,9 +176,9 @@ a{color:inherit;text-underline-offset:3px}
 }
 @media(max-width:640px){
  #app{grid-template-columns:minmax(0,1fr) 120px}
- .brand{grid-column:1/-1;grid-row:1}.brand h1{max-width:calc(100% - 48px);min-height:32px}
+ .brand{grid-column:1/-1;grid-row:1}.brand h1{max-width:calc(100% - 104px);min-height:32px}
  .brand{padding:14px}.brand-meta{gap:8px;max-width:100%;white-space:normal;flex-wrap:wrap;row-gap:8px}
- .view-actions{margin:8px}.theme-button{min-width:44px;width:44px;padding:6px}.theme-button>span{display:none}
+ .view-actions{margin:8px;gap:8px}.theme-button{min-width:44px;width:44px;padding:6px}.theme-button>span{display:none}
  .toolbelt{width:100%;grid-template-columns:repeat(3,minmax(0,1fr))}.equipment{flex:1;justify-content:center;padding:6px 8px;gap:6px}
  .tools{width:100%;justify-content:space-between;padding:4px 6px;gap:0}.tools hr{display:none}
  .tools .icon-button{flex:1 0 44px;max-width:60px;padding-inline:4px}
@@ -233,3 +234,11 @@ a{color:inherit;text-underline-offset:3px}
  .toolbelt{grid-row:3}.camera-dock,.footer>.mini-map{grid-row:4}.location-row{grid-row:6}.shortcuts-dock{grid-row:7}
  .world-switcher a{min-height:40px;min-width:76px;padding:6px 14px}
 }
+/* Fullscreen leaves only the world, minimap and a persistent exit control. */
+.is-fullscreen #app{display:block;padding:0}
+.is-fullscreen .brand,.is-fullscreen .world-switcher,.is-fullscreen #theme-button,
+.is-fullscreen .location-row,.is-fullscreen .footer-center,.is-fullscreen .player-tag,
+.is-fullscreen #damage-bars,.is-fullscreen .skip-link,.is-fullscreen #notifications{display:none!important}
+.is-fullscreen .footer{display:contents}
+.is-fullscreen .view-actions{position:fixed;top:var(--top);right:var(--right);margin:0}
+.is-fullscreen .footer>.mini-map{position:fixed;right:max(var(--right),18px);bottom:var(--bottom);width:clamp(112px,16vw,224px);margin:0}
